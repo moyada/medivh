@@ -12,9 +12,11 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
+import javax.annotation.processing.Messager;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.tools.Diagnostic;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -32,8 +34,8 @@ public class CheckTranslator extends BaseTranslator {
     // 校验规则对象
     private Collection<String> ruleClass;
 
-    public CheckTranslator(Context context, Collection<? extends Element> ruleClass) {
-        super(context);
+    public CheckTranslator(Context context, Collection<? extends Element> ruleClass, Messager messager) {
+        super(context, messager);
         this.ruleClass = new ArrayList<>(ruleClass.size());
         for (Element rule : ruleClass) {
             this.ruleClass.add(rule.asType().toString());
@@ -59,6 +61,9 @@ public class CheckTranslator extends BaseTranslator {
         if (isJump(methodDecl)) {
             return;
         }
+
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Validation build for " + methodDecl.sym.getEnclosingElement().asType().toString()
+                + "." + methodDecl.name.toString() + "()");
 
         // 获取前置信息
         String prefix = getPrefixInfo(methodDecl);

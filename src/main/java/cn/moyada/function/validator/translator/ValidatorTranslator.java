@@ -2,8 +2,8 @@ package cn.moyada.function.validator.translator;
 
 import cn.moyada.function.validator.core.BaseValidation;
 import cn.moyada.function.validator.core.NumberValidation;
-import cn.moyada.function.validator.util.RuleHelper;
 import cn.moyada.function.validator.core.StringValidation;
+import cn.moyada.function.validator.util.RuleHelper;
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.TypeTag;
@@ -12,6 +12,8 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
+import javax.annotation.processing.Messager;
+import javax.tools.Diagnostic;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,10 +25,10 @@ import java.util.Map;
 public class ValidatorTranslator extends BaseTranslator {
 
     // 方法名称
-    final static String METHOD_NAME = "_isInvalid";
+    final static String METHOD_NAME = "invalid0";
 
-    public ValidatorTranslator(Context context) {
-        super(context);
+    public ValidatorTranslator(Context context, Messager messager) {
+        super(context, messager);
     }
 
     /**
@@ -63,6 +65,11 @@ public class ValidatorTranslator extends BaseTranslator {
                 validationRule.put(treeMaker.Ident(jcVariableDecl.name), rule);
             }
         }
+        if (validationRule.isEmpty()) {
+            return;
+        }
+
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Rule build for " + jcClassDecl.sym.className());
 
         JCTree.JCBlock body = createBody(validationRule);
         JCTree.JCMethodDecl method = createMethod(body);

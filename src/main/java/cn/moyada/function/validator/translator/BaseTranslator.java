@@ -9,11 +9,15 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Names;
 
+import javax.annotation.processing.Messager;
+
 /**
  * @author xueyikang
  * @since 1.0
  **/
 class BaseTranslator extends TreeTranslator {
+
+    protected final Messager messager;
 
     final TreeMaker treeMaker;
     final Names names;
@@ -27,7 +31,9 @@ class BaseTranslator extends TreeTranslator {
     // false 表达式
     final JCTree.JCLiteral falseNode;
 
-    BaseTranslator(Context context) {
+    BaseTranslator(Context context, Messager messager) {
+        this.messager = messager;
+
         this.treeMaker = TreeMaker.instance(context);
         this.names = Names.instance(context);
 

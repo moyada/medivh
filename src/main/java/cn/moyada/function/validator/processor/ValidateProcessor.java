@@ -14,12 +14,14 @@ import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
+import javax.tools.Diagnostic;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -30,6 +32,8 @@ import java.util.Set;
  **/
 public class ValidateProcessor extends AbstractProcessor {
 
+    private Messager messager;
+
     private Context context;
     private Trees trees;
 
@@ -39,6 +43,9 @@ public class ValidateProcessor extends AbstractProcessor {
 
         this.context = ((JavacProcessingEnvironment) processingEnv).getContext();
         this.trees = Trees.instance(processingEnv);
+        this.messager = processingEnv.getMessager();
+
+        messager.printMessage(Diagnostic.Kind.NOTE, "start validate processor");
     }
 
     @Override
@@ -64,14 +71,14 @@ public class ValidateProcessor extends AbstractProcessor {
         }
 
         // 校验方法生成器
-        TreeTranslator translator = new ValidatorTranslator(context);
+        TreeTranslator translator = new ValidatorTranslator(context, messager);
         for (Element element : ruleClass) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
         }
 
         // 校验逻辑生成器
-        translator = new CheckTranslator(context, ruleClass);
+        translator = new CheckTranslator(context, ruleClass, messager);
         for (Element element : methods) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
@@ -105,6 +112,9 @@ public class ValidateProcessor extends AbstractProcessor {
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latestSupported();
+        if (SourceVersion.latest().compareTo(SourceVersion.RELEASE_8) > 0) {
+            return SourceVersion.latest();
+        }
+        return SourceVersion.RELEASE_8;
     }
 }
