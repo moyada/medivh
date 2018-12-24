@@ -69,7 +69,7 @@ public class ValidatorTranslator extends BaseTranslator {
             return;
         }
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Rule build for " + jcClassDecl.sym.className());
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Init " + METHOD_NAME + " method for " + jcClassDecl.sym.className());
 
         JCTree.JCBlock body = createBody(validationRule);
         JCTree.JCMethodDecl method = createMethod(body);

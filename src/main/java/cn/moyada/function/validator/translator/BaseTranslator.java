@@ -1,6 +1,8 @@
 package cn.moyada.function.validator.translator;
 
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.TypeTag;
+import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
@@ -10,6 +12,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Names;
 
 import javax.annotation.processing.Messager;
+import javax.lang.model.element.ElementKind;
 
 /**
  * @author xueyikang
@@ -20,6 +23,7 @@ class BaseTranslator extends TreeTranslator {
     protected final Messager messager;
 
     final TreeMaker treeMaker;
+    final JavacElements javacElements;
     final Names names;
 
     // null 表达式
@@ -36,6 +40,7 @@ class BaseTranslator extends TreeTranslator {
 
         this.treeMaker = TreeMaker.instance(context);
         this.names = Names.instance(context);
+        this.javacElements = JavacElements.instance(context);
 
         this.nullNode = treeMaker.Literal(TypeTag.BOT, null);
         this.trueNode = treeMaker.Literal(TypeTag.BOOLEAN, 1);
@@ -95,12 +100,35 @@ class BaseTranslator extends TreeTranslator {
      * @param exceptionTypeName
      * @return
      */
-    protected JCTree.JCStatement createThrow(JCTree.JCExpression message, String exceptionTypeName) {
+    protected JCTree.JCStatement newMsgThrow(JCTree.JCExpression message, String exceptionTypeName) {
         JCTree.JCExpression exceptionType = findClass(exceptionTypeName);
 
         List<JCTree.JCExpression> jceBlank = List.nil();
         JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, jceBlank, exceptionType, List.of(message), null);
+
         return treeMaker.Throw(exceptionInstance);
+    }
+
+    /**
+     * 检测异常类是否包含 String 构造函数
+     * @param exceptionTypeName
+     * @return
+     */
+    protected boolean checkException(String exceptionTypeName) {
+        Symbol.ClassSymbol typeElement = javacElements.getTypeElement(exceptionTypeName);
+        for (Symbol element : typeElement.getEnclosedElements()) {
+            if (element.getKind() != ElementKind.CONSTRUCTOR) {
+                continue;
+            }
+            List<Symbol.VarSymbol> parameters = ((Symbol.MethodSymbol) element).getParameters();
+            if (parameters.size() != 1) {
+                continue;
+            }
+            if (parameters.get(0).asType().toString().equals("java.lang.String")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -115,6 +143,7 @@ class BaseTranslator extends TreeTranslator {
         for (int i = 1 ; i < elems.length ; i++) {
             e = e == null ? treeMaker.Ident(names.fromString(elems[i])) : treeMaker.Select(e, names.fromString(elems[i]));
         }
+
         return e;
     }
 }
