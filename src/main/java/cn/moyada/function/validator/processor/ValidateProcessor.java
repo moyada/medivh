@@ -92,7 +92,7 @@ public class ValidateProcessor extends AbstractProcessor {
             return null;
         }
 
-        Set<Symbol.ClassSymbol> classRule = new HashSet<>();
+        Set<Symbol.ClassSymbol> classRule = new HashSet<Symbol.ClassSymbol>();
         Symbol.VarSymbol var;
         for (Element rule : rules) {
             var = (Symbol.VarSymbol) rule;
@@ -103,7 +103,7 @@ public class ValidateProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        Set<String> annotationTypes = new HashSet<>(4);
+        Set<String> annotationTypes = new HashSet<String>(4);
         annotationTypes.add(Validation.class.getName());
         annotationTypes.add(Rule.class.getName());
         annotationTypes.add(Check.class.getName());
@@ -112,9 +112,6 @@ public class ValidateProcessor extends AbstractProcessor {
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
-        if (SourceVersion.latest().compareTo(SourceVersion.RELEASE_8) > 0) {
-            return SourceVersion.latest();
-        }
-        return SourceVersion.RELEASE_8;
+        return SourceVersion.latest();
     }
 }

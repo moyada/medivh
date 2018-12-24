@@ -1,7 +1,8 @@
 package cn.moyada.function.validator.translator;
 
+import cn.moyada.function.validator.util.CTreeUtil;
+import cn.moyada.function.validator.util.TypeTag;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -42,9 +43,9 @@ class BaseTranslator extends TreeTranslator {
         this.names = Names.instance(context);
         this.javacElements = JavacElements.instance(context);
 
-        this.nullNode = treeMaker.Literal(TypeTag.BOT, null);
-        this.trueNode = treeMaker.Literal(TypeTag.BOOLEAN, 1);
-        this.falseNode = treeMaker.Literal(TypeTag.BOOLEAN, 0);
+        this.nullNode = CTreeUtil.newElement(treeMaker, TypeTag.BOT, null);
+        this.trueNode = CTreeUtil.newElement(treeMaker, TypeTag.BOOLEAN, 1);
+        this.falseNode = CTreeUtil.newElement(treeMaker, TypeTag.BOOLEAN, 0);
     }
 
     /**
@@ -87,8 +88,7 @@ class BaseTranslator extends TreeTranslator {
      * @return
      */
     protected JCTree.JCMethodInvocation getMethod(JCTree.JCExpression field, String method, List<JCTree.JCExpression> param) {
-        return treeMaker.Apply(
-                        List.nil(),
+        return treeMaker.Apply(CTreeUtil.nil(),
                         treeMaker.Select(field, names.fromString(method)),
                         param
                 );
@@ -103,8 +103,7 @@ class BaseTranslator extends TreeTranslator {
     protected JCTree.JCStatement newMsgThrow(JCTree.JCExpression message, String exceptionTypeName) {
         JCTree.JCExpression exceptionType = findClass(exceptionTypeName);
 
-        List<JCTree.JCExpression> jceBlank = List.nil();
-        JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, jceBlank, exceptionType, List.of(message), null);
+        JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, CTreeUtil.nil(), exceptionType, List.of(message), null);
 
         return treeMaker.Throw(exceptionInstance);
     }
