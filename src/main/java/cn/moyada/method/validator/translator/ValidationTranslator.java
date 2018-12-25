@@ -1,9 +1,10 @@
-package cn.moyada.function.validator.translator;
+package cn.moyada.method.validator.translator;
 
-import cn.moyada.function.validator.annotation.Check;
-import cn.moyada.function.validator.annotation.Validation;
-import cn.moyada.function.validator.util.CTreeUtil;
-import cn.moyada.function.validator.util.TypeUtil;
+import cn.moyada.method.validator.annotation.Check;
+import cn.moyada.method.validator.annotation.Verify;
+import cn.moyada.method.validator.util.CTreeUtil;
+import cn.moyada.method.validator.util.TypeTag;
+import cn.moyada.method.validator.util.TypeUtil;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
@@ -25,7 +26,7 @@ import java.util.Map;
  * @author xueyikang
  * @since 1.0
  **/
-public class CheckTranslator extends BaseTranslator {
+public class ValidationTranslator extends BaseTranslator {
 
     // 默认前置信息
     private final static String DEFAULT_MESSAGE = "invalid argument";
@@ -33,7 +34,7 @@ public class CheckTranslator extends BaseTranslator {
     // 校验规则对象
     private Collection<String> ruleClass;
 
-    public CheckTranslator(Context context, Collection<? extends Element> ruleClass, Messager messager) {
+    public ValidationTranslator(Context context, Collection<? extends Element> ruleClass, Messager messager) {
         super(context, messager);
         this.ruleClass = new ArrayList<String>(ruleClass.size());
         for (Element rule : ruleClass) {
@@ -61,7 +62,7 @@ public class CheckTranslator extends BaseTranslator {
             return;
         }
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build validation logic for " + methodDecl.sym.getEnclosingElement().asType().toString()
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build Verify logic for " + methodDecl.sym.getEnclosingElement().asType().toString()
                 + "." + methodDecl.name.toString() + "()");
 
         // 获取前置信息
@@ -115,7 +116,7 @@ public class CheckTranslator extends BaseTranslator {
         if ((methodDecl.getModifiers().flags & Flags.ABSTRACT) != 0) {
             return true;
         }
-        if (null == methodDecl.sym.getAnnotation(Validation.class)) {
+        if (null == methodDecl.sym.getAnnotation(Verify.class)) {
             return true;
         }
         return false;
@@ -184,7 +185,7 @@ public class CheckTranslator extends BaseTranslator {
                                                                JCTree.JCIdent ident,
                                                                JCTree.JCIdent field, String method, CheckInfo info) {
         // 将校验结果赋值给临时变量
-        JCTree.JCExpression expression = getMethod(field, ValidatorTranslator.METHOD_NAME, CTreeUtil.emptyParam());
+        JCTree.JCExpression expression = getMethod(field, VerificationTranslator.METHOD_NAME, CTreeUtil.emptyParam());
         JCTree.JCExpressionStatement exec = execMethod(treeMaker.Assign(ident, expression));
 
         // 抛出异常语句
@@ -193,7 +194,7 @@ public class CheckTranslator extends BaseTranslator {
         JCTree.JCStatement throwStatement = newMsgThrow(message, info.exceptionName);
 
         // 校验结果
-        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, cn.moyada.function.validator.util.TypeTag.NE, ident, nullNode);
+        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.NE, ident, nullNode);
         JCTree.JCIf proc = treeMaker.If(condition, throwStatement, null);
 
         // 赋值校验子逻辑
@@ -203,7 +204,7 @@ public class CheckTranslator extends BaseTranslator {
 
         if (info.nullable) {
             // 包装判空逻辑
-            JCTree.JCExpression nullCheck = CTreeUtil.newExpression(treeMaker, cn.moyada.function.validator.util.TypeTag.NE, field, nullNode);
+            JCTree.JCExpression nullCheck = CTreeUtil.newExpression(treeMaker, TypeTag.NE, field, nullNode);
             statements.append(treeMaker.If(nullCheck, getBlock(tempStatement), null));
         } else {
             statements.append(getBlock(tempStatement));
@@ -220,9 +221,9 @@ public class CheckTranslator extends BaseTranslator {
      */
     private void addNotNullCheck(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent field,
                                  String method, CheckInfo info) {
-        JCTree.JCExpression check = CTreeUtil.newExpression(treeMaker, cn.moyada.function.validator.util.TypeTag.EQ, field, nullNode);
+        JCTree.JCExpression check = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, field, nullNode);
 
-        JCTree.JCLiteral msg = CTreeUtil.newElement(treeMaker, cn.moyada.function.validator.util.TypeTag.CLASS, field.name + " is null");
+        JCTree.JCLiteral msg = CTreeUtil.newElement(treeMaker, TypeTag.CLASS, field.name + " is null");
         JCTree.JCMethodInvocation message = concatStatement(msg, method, info.info);
         JCTree.JCStatement throwStatement = newMsgThrow(message, info.exceptionName);
 

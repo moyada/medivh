@@ -1,7 +1,7 @@
-package cn.moyada.function.validator.translator;
+package cn.moyada.method.validator.translator;
 
-import cn.moyada.function.validator.util.CTreeUtil;
-import cn.moyada.function.validator.util.TypeTag;
+import cn.moyada.method.validator.util.CTreeUtil;
+import cn.moyada.method.validator.util.TypeTag;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
@@ -81,6 +81,16 @@ class BaseTranslator extends TreeTranslator {
     }
 
     /**
+     * 获取属性
+     * @param field
+     * @param name
+     * @return
+     */
+    protected JCTree.JCFieldAccess getField(JCTree.JCExpression field, String name) {
+        return treeMaker.Select(field, names.fromString(name));
+    }
+
+    /**
      * 获取方法
      * @param field
      * @param method
@@ -89,7 +99,7 @@ class BaseTranslator extends TreeTranslator {
      */
     protected JCTree.JCMethodInvocation getMethod(JCTree.JCExpression field, String method, List<JCTree.JCExpression> param) {
         return treeMaker.Apply(CTreeUtil.emptyParam(),
-                        treeMaker.Select(field, names.fromString(method)),
+                        getField(field, method),
                         param
                 );
     }
@@ -105,7 +115,7 @@ class BaseTranslator extends TreeTranslator {
 
         JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, CTreeUtil.emptyParam(), exceptionType, List.of(message), null);
 
-        return treeMaker.Throw(exceptionInstance);
+        return CTreeUtil.newThrow(treeMaker, exceptionInstance);
     }
 
     /**

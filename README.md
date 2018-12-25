@@ -2,24 +2,115 @@
 
 自定义注解处理器，在编译时期对语法树做修改，增加方法入参校验逻辑。
 
-目前支持版本为 JDK7 以上
+版本要求 JDK6 以上
 
 ## 如何使用
 
+通过定义注解实现校验规则，即可对方法开启校验逻辑
+
+| 注解 | 作用域 | 效果 |
+| :---- | :----- | :---- |
+| cn.moyada.method.validator.annotation.Rule | 类属性 | 设置类属性的校验规则 |
+| cn.moyada.method.validator.annotation.Verify | 普通方法 | 开启方法校验逻辑 |
+| cn.moyada.method.validator.annotation.Check | 方法参数 | 设置参数的校验逻辑 |
+
+注解内部属性说明
+
+| 属性 | 作用 |
+| :--- | :--- |
+| Rule.nullable() | 是否允许参数为空，primitive 类型无效 |
+| Rule.min() | 数字类型属性最小值 |
+| Rule.max() | 数字类型属性最大值 |
+| Rule.maxLength() | String 或 数组 类型属性的最大长度 |
+| Check.invalid() | 参数校验失败时抛出异常类，需要拥有字符串构造方法 |
+| Check.message() | 异常信息头 |
+| Check.nullable() | 参数是否可为空 |
+
+
+示例
+
+```
+public class Service {
+
+    @Verify
+    public void go(@Check(invalid = RuntimeException.class) Args args,
+                    @Check(message = "something error", nullable = true) Info info,
+                    @Check String name,
+                    int num) {
+        // process
+        ...
+    }
+
+    class Args {
+
+        @Rule(maxLength = 20)
+        String name;
+
+        @Rule(maxLength = 5, nullable = true)
+        String[] values;
+
+        @Rule(min = 40, max = 200)
+        int id;
+    }
+
+    class Info {
+
+        @Rule(maxLength = 20)
+        String type;
+
+        @Rule(min = -250, max = 500, nullable = true)
+        Double price;
+    }
+}
+```
+
+
+### 普通工程
+
+1. 创建处理器 jar 包
+
+进入工程主目录，执行命令创建 jar 包。或者[下载](https://github.com/moyada/method-validator/releases)已创建 jar 包使用。
+
+```
+target_dir=$(pwd)/target
+
+if [ ! -d $target_dir ];then
+mkdir $target_dir
+fi
+
+meta_dir=$(find . -name "META-INF") 
+cp -R $meta_dir $target_dir
+
+cd src/main/java
+
+javac -proc:none -cp $JAVA_HOME/lib/tools.jar -d $target_dir $(find . -name "*.java")
+
+cd $target_dir
+
+jar cvf method-validator.jar .
+```
+
+2. 编译目标源文件
+
+```
+javac -cp method-validator.jar MyApp.java
+```
+
+### Maven 工程
+
 1. 安装配置 Maven 依赖
 
-源代码工程中编译安装对应版本依赖 `mvn clean install [-P jdk7]` ，或者[下载](https://github.com/moyada/function-validator/releases)至本地使用 
+在源码工程中编译安装校验器依赖 `mvn clean install` ，或者[下载](https://github.com/moyada/method-validator/releases)至本地引用
 
-2. 配置对应编译器版本的校验器依赖
+2. 在目标工程中需配置校验器依赖
 
 ```
 <dependencies>
     <dependency>
         <groupId>cn.moyada</groupId>
-        <artifactId>function-validator</artifactId>
+        <artifactId>method-validator</artifactId>
         <version>1.0-SNAPSHOT</version>
         <scope>provided</scope>
-        <classifier>jdk7</classifier> // 如果jdk版本为 1.7.xx
     </dependency>
 <dependencies/>
 
@@ -36,91 +127,13 @@
         </plugin>
     </plugins>
 </build>
-
 ```
 
-* java9 及以上
+3. 执行 `mvn clean compile` 进行编译
 
-```
-<dependencies>
-    <dependency>
-        <groupId>cn.moyada</groupId>
-        <artifactId>function-validator</artifactId>
-        <version>1.0-SNAPSHOT</version>
-        <scope>provided</scope>
-        <exclusions>
-            <exclusion>
-                <groupId>com.sun</groupId>
-                <artifactId>tools</artifactId>
-            </exclusion>
-        </exclusions>
-    </dependency>
-</dependencies>
+## 编译后逻辑
 
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <source>${java.version}</source>
-                <target>${java.version}</target>
-                <showWarnings>true</showWarnings>
-                <fork>true</fork>
-            </configuration>
-        </plugin>
-    </plugins>
-</build>
-```
-
-3. 定义校验规则，对方法开启校验逻辑
-
-| 注解 | 作用域 | 效果 |
-| :---- | :----- | :---- |
-| cn.moyada.function.validator.annotation.Rule | 类属性 | 设置类属性的校验规则 |
-| cn.moyada.function.validator.annotation.Validation | 普通方法 | 开启方法校验逻辑 |
-| cn.moyada.function.validator.annotation.Check | 方法参数 | 设置参数的校验逻辑 |
-
-示例
-
-```
-public class Service {
-
-    @Validation
-    public void go(@Check(invalid = RuntimeException.class) Args args,
-                    @Check(message = "something error", nullable = true) Info info,
-                    @Check String name,
-                    int num) {
-        // process
-        ...
-    }
-
-    class Args {
-
-        @Rule(maxLength = 20)
-        String name;
-
-        @Rule(maxLength = 5, nullable = true)
-        String type;
-
-        @Rule(min = 40, max = 200)
-        int value;
-    }
-
-    class Info {
-
-        @Rule(maxLength = 20)
-        String type;
-
-        @Rule(min = -250, max = 500, nullable = true)
-        Double price;
-    }
-}
-```
-
-3. 执行 `mvn clean compile`
-
-查看编译后 class 文件反编译结果为
+如示例 [Service.go](#如何使用) 方法，经过编译后内容为
 
 ```
 public void go(Args args, Info info, String name, int num) {

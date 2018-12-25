@@ -1,4 +1,4 @@
-package cn.moyada.function.validator.util;
+package cn.moyada.method.validator.util;
 
 import com.sun.tools.javac.main.JavaCompiler;
 

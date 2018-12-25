@@ -1,17 +1,17 @@
-package cn.moyada.function.validator.validation;
+package cn.moyada.method.validator.regulation;
 
 /**
  * 数字校验规则
  * @author xueyikang
  * @since 1.0
  **/
-public class NumberValidation extends BaseValidation {
+public class NumberRegulation extends BaseRegulation {
 
     private long min;
 
     private long max;
 
-    public NumberValidation(long min, long max) {
+    public NumberRegulation(long min, long max) {
         this.min = min;
         this.max = max;
     }

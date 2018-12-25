@@ -1,4 +1,4 @@
-package cn.moyada.function.validator.util;
+package cn.moyada.method.validator.util;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
@@ -94,6 +94,32 @@ public final class CTreeUtil {
         Object field = ClassUtil.getStaticField(targetClass, typeTag.name());
         try {
             return (JCTree.JCExpression) method.invoke(treeMaker, field, left, right);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 生成抛出异常语句
+     * @param treeMaker
+     * @param exceptionType
+     * @return
+     */
+    public static JCTree.JCStatement newThrow(TreeMaker treeMaker, Object exceptionType) {
+        Class<?> param;
+        switch (ClassUtil.VERSION) {
+            case ClassUtil.OLD_VERSION:
+                param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree");
+                break;
+            default:
+                param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree$JCExpression");
+                break;
+        }
+        Method method = ClassUtil.getMethod(TreeMaker.class, "Throw", param);
+        try {
+            return (JCTree.JCStatement) method.invoke(treeMaker, exceptionType);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {

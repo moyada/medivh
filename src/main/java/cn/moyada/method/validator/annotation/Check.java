@@ -1,4 +1,4 @@
-package cn.moyada.function.validator.annotation;
+package cn.moyada.method.validator.annotation;
 
 import java.lang.annotation.*;
 
@@ -15,19 +15,16 @@ public @interface Check {
 
     /**
      * 规则校验失败时抛出异常
-     * @return
      */
     Class<? extends RuntimeException> invalid() default IllegalArgumentException.class;
 
     /**
      * 异常头信息
-     * @return
      */
     String message() default "";
 
     /**
-     *
-     * @return
+     * 方法参数是否允许为空
      */
     boolean nullable() default false;
 }

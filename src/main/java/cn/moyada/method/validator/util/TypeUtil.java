@@ -1,4 +1,4 @@
-package cn.moyada.function.validator.util;
+package cn.moyada.method.validator.util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -79,6 +79,10 @@ public final class TypeUtil {
 
     public static boolean isStr(String name) {
         return name.equals("java.lang.String");
+    }
+
+    public static boolean isArr(String name) {
+        return name.endsWith("[]");
     }
 
     public static char getNumType(String name) {

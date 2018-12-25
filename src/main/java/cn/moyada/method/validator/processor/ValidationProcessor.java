@@ -1,11 +1,11 @@
-package cn.moyada.function.validator.processor;
+package cn.moyada.method.validator.processor;
 
 
-import cn.moyada.function.validator.annotation.Check;
-import cn.moyada.function.validator.annotation.Rule;
-import cn.moyada.function.validator.annotation.Validation;
-import cn.moyada.function.validator.translator.CheckTranslator;
-import cn.moyada.function.validator.translator.ValidatorTranslator;
+import cn.moyada.method.validator.annotation.Check;
+import cn.moyada.method.validator.annotation.Rule;
+import cn.moyada.method.validator.annotation.Verify;
+import cn.moyada.method.validator.translator.ValidationTranslator;
+import cn.moyada.method.validator.translator.VerificationTranslator;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
@@ -30,7 +30,7 @@ import java.util.Set;
  * @author xueyikang
  * @since 0.0.1
  **/
-public class ValidateProcessor extends AbstractProcessor {
+public class ValidationProcessor extends AbstractProcessor {
 
     private Messager messager;
 
@@ -52,7 +52,7 @@ public class ValidateProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         // 获取校验方法
         Set<? extends Element> methods = ElementFilter.methodsIn(
-                roundEnv.getElementsAnnotatedWith(Validation.class));
+                roundEnv.getElementsAnnotatedWith(Verify.class));
         if (methods.isEmpty()) {
             return true;
         }
@@ -71,14 +71,14 @@ public class ValidateProcessor extends AbstractProcessor {
         }
 
         // 校验方法生成器
-        TreeTranslator translator = new ValidatorTranslator(context, messager);
+        TreeTranslator translator = new VerificationTranslator(context, messager);
         for (Element element : ruleClass) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
         }
 
         // 校验逻辑生成器
-        translator = new CheckTranslator(context, ruleClass, messager);
+        translator = new ValidationTranslator(context, ruleClass, messager);
         for (Element element : methods) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
@@ -104,7 +104,7 @@ public class ValidateProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> annotationTypes = new HashSet<String>(4);
-        annotationTypes.add(Validation.class.getName());
+        annotationTypes.add(Verify.class.getName());
         annotationTypes.add(Rule.class.getName());
         annotationTypes.add(Check.class.getName());
         return annotationTypes;
@@ -112,6 +112,10 @@ public class ValidateProcessor extends AbstractProcessor {
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
+        if (SourceVersion.latest().compareTo(SourceVersion.RELEASE_6) > 0) {
+            return SourceVersion.latest();
+        } else {
+            return SourceVersion.RELEASE_6;
+        }
     }
 }

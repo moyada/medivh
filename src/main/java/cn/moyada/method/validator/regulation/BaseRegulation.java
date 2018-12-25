@@ -1,17 +1,17 @@
-package cn.moyada.function.validator.validation;
+package cn.moyada.method.validator.regulation;
 
 /**
  * 校验规则
  * @author xueyikang
  * @since 1.0
  **/
-public class BaseValidation {
+public class BaseRegulation {
 
     private boolean nullable;
 
     private boolean primitive;
 
-    public BaseValidation() {
+    public BaseRegulation() {
         this.primitive = false;
     }
 
