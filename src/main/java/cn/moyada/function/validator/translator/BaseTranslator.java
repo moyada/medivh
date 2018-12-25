@@ -88,7 +88,7 @@ class BaseTranslator extends TreeTranslator {
      * @return
      */
     protected JCTree.JCMethodInvocation getMethod(JCTree.JCExpression field, String method, List<JCTree.JCExpression> param) {
-        return treeMaker.Apply(CTreeUtil.nil(),
+        return treeMaker.Apply(CTreeUtil.emptyParam(),
                         treeMaker.Select(field, names.fromString(method)),
                         param
                 );
@@ -103,7 +103,7 @@ class BaseTranslator extends TreeTranslator {
     protected JCTree.JCStatement newMsgThrow(JCTree.JCExpression message, String exceptionTypeName) {
         JCTree.JCExpression exceptionType = findClass(exceptionTypeName);
 
-        JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, CTreeUtil.nil(), exceptionType, List.of(message), null);
+        JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, CTreeUtil.emptyParam(), exceptionType, List.of(message), null);
 
         return treeMaker.Throw(exceptionInstance);
     }

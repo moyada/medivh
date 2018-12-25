@@ -10,6 +10,7 @@ import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
 import javax.annotation.processing.Messager;
@@ -141,7 +142,7 @@ public class ValidatorTranslator extends BaseTranslator {
 //        JCTree.JCLiteral lenField = treeMaker.Literal(TypeTag.INT, length);
 
         // 调用 length()
-        JCTree.JCExpressionStatement getLength = execMethod(getMethod(field, "length", CTreeUtil.nil()));
+        JCTree.JCExpressionStatement getLength = execMethod(getMethod(field, "length", CTreeUtil.emptyParam()));
 
         JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, getLength.getExpression(), lenField);
 //        JCTree.JCExpression condition = treeMaker.Binary(JCTree.Tag.GT, getLength.getExpression(), lenField);
@@ -209,7 +210,6 @@ public class ValidatorTranslator extends BaseTranslator {
      */
     private JCTree.JCLiteral createStr(String value) {
         return CTreeUtil.newElement(treeMaker, TypeTag.CLASS, value);
-//        return treeMaker.Literal(TypeTag.CLASS, value);
     }
 
     /**
@@ -218,10 +218,13 @@ public class ValidatorTranslator extends BaseTranslator {
      * @return
      */
     private JCTree.JCMethodDecl createMethod(JCTree.JCBlock body) {
+        List<JCTree.JCTypeParameter> param = List.nil();
+        List<JCTree.JCVariableDecl> var = List.nil();
+        List<JCTree.JCExpression> thrown = List.nil();
         return treeMaker.MethodDef(treeMaker.Modifiers(Flags.PUBLIC),
                 names.fromString(METHOD_NAME),
                 findClass(String.class.getName()),
-                CTreeUtil.nil(), CTreeUtil.nil(), CTreeUtil.nil(),
+                param, var, thrown,
                 body, null);
     }
 }

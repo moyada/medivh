@@ -8,7 +8,9 @@
 
 1. 安装配置 Maven 依赖
 
-编译安装对应版本依赖 `mvn clean install [-P jdk(6|7|8)]` 
+源代码工程中编译安装对应版本依赖 `mvn clean install [-P jdk(6|7|8)]` ，或者[下载](https://github.com/moyada/function-validator/releases)至本地使用 
+
+2. 配置校验器依赖
 
 ```
 <dependencies>
@@ -36,7 +38,7 @@
 </build>
 ```
 
-2. 在类上定义校验规则，于使用该类为入参方法上开启校验逻辑，编译后执行即可查看效果。
+3. 定义校验规则，对方法开启校验逻辑
 
 | 注解 | 作用域 | 效果 |
 | :---- | :----- | :---- |

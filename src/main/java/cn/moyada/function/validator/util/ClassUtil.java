@@ -1,11 +1,12 @@
 package cn.moyada.function.validator.util;
 
+import com.sun.tools.javac.main.JavaCompiler;
+
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ResourceBundle;
 
 /**
  * @author xueyikang
@@ -13,19 +14,18 @@ import java.util.ResourceBundle;
  **/
 public final class ClassUtil {
 
-    public final static int VERSION;
+    public final static byte VERSION;
+    public final static byte OLD_VERSION = 0;
+    public final static byte JAVA8_VERSION = 1;
 
     static {
-        ResourceBundle bundle = ResourceBundle.getBundle("com.sun.tools.javac.resources.version");
-        String version = bundle.getString("release");
-        if (version.startsWith("1.6")) {
-            VERSION = 6;
-        } else if (version.startsWith("1.7")) {
-            VERSION = 7;
+        String version = JavaCompiler.version();
+        if (version.startsWith("1.6") || version.startsWith("1.7")) {
+            VERSION = OLD_VERSION;
         } else if (version.startsWith("1.8")) {
-            VERSION = 8;
+            VERSION = JAVA8_VERSION;
         } else {
-            throw new IllegalStateException("version.not.available " + version);
+            throw new UnsupportedClassVersionError(version + " version java compiler not support");
         }
     }
 

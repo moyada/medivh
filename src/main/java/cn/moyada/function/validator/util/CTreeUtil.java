@@ -16,7 +16,7 @@ import java.lang.reflect.Method;
  **/
 public final class CTreeUtil {
 
-    public static List nil(){
+    public static List<JCTree.JCExpression> emptyParam(){
         return List.nil();
     }
 
@@ -44,19 +44,17 @@ public final class CTreeUtil {
         String target;
         Method method;
         switch (ClassUtil.VERSION) {
-            case 6: case 7:
+            case ClassUtil.OLD_VERSION:
                 method = ClassUtil.getMethod(TreeMaker.class, "Literal", int.class, Object.class);
                 target = "com.sun.tools.javac.code.TypeTags";
                 break;
-            case 8:
-                Class param = ClassUtil.getClass("com.sun.tools.javac.code.TypeTag");
+            default:
+                Class<?> param = ClassUtil.getClass("com.sun.tools.javac.code.TypeTag");
                 method = ClassUtil.getMethod(TreeMaker.class, "Literal", param, Object.class);
                 target = "com.sun.tools.javac.code.TypeTag";
                 break;
-            default:
-                return null;
         }
-        Class targetClass = ClassUtil.getClass(target);
+        Class<?> targetClass = ClassUtil.getClass(target);
         Object field = ClassUtil.getStaticField(targetClass, typeTag.name());
         try {
             return (JCTree.JCLiteral) method.invoke(treeMaker, field, value);
@@ -68,7 +66,7 @@ public final class CTreeUtil {
     }
 
     /**
-     * 获取表达式
+     * 获取 Binary 表达式
      * @param treeMaker
      * @param typeTag
      * @param left
@@ -80,21 +78,19 @@ public final class CTreeUtil {
         String target;
         Method method;
         switch (ClassUtil.VERSION) {
-            case 6: case 7:
+            case ClassUtil.OLD_VERSION:
                 method = ClassUtil.getMethod(TreeMaker.class, "Binary", int.class,
                         JCTree.JCExpression.class, JCTree.JCExpression.class);
                 target = "com.sun.tools.javac.tree.JCTree";
                 break;
-            case 8:
-                Class param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree$Tag");
+            default:
+                Class<?> param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree$Tag");
                 method = ClassUtil.getMethod(TreeMaker.class, "Binary", param,
                         JCTree.JCExpression.class, JCTree.JCExpression.class);
                 target = "com.sun.tools.javac.tree.JCTree$Tag";
                 break;
-            default:
-                return null;
         }
-        Class targetClass = ClassUtil.getClass(target);
+        Class<?> targetClass = ClassUtil.getClass(target);
         Object field = ClassUtil.getStaticField(targetClass, typeTag.name());
         try {
             return (JCTree.JCExpression) method.invoke(treeMaker, field, left, right);

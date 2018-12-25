@@ -184,7 +184,7 @@ public class CheckTranslator extends BaseTranslator {
                                                                JCTree.JCIdent ident,
                                                                JCTree.JCIdent field, String method, CheckInfo info) {
         // 将校验结果赋值给临时变量
-        JCTree.JCExpression expression = getMethod(field, ValidatorTranslator.METHOD_NAME, CTreeUtil.nil());
+        JCTree.JCExpression expression = getMethod(field, ValidatorTranslator.METHOD_NAME, CTreeUtil.emptyParam());
         JCTree.JCExpressionStatement exec = execMethod(treeMaker.Assign(ident, expression));
 
         // 抛出异常语句
@@ -194,7 +194,6 @@ public class CheckTranslator extends BaseTranslator {
 
         // 校验结果
         JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, cn.moyada.function.validator.util.TypeTag.NE, ident, nullNode);
-//        JCTree.JCExpression condition = treeMaker.Binary(JCTree.Tag.NE, ident, nullNode);
         JCTree.JCIf proc = treeMaker.If(condition, throwStatement, null);
 
         // 赋值校验子逻辑
@@ -205,7 +204,6 @@ public class CheckTranslator extends BaseTranslator {
         if (info.nullable) {
             // 包装判空逻辑
             JCTree.JCExpression nullCheck = CTreeUtil.newExpression(treeMaker, cn.moyada.function.validator.util.TypeTag.NE, field, nullNode);
-//            JCTree.JCExpression nullCheck = treeMaker.Binary(JCTree.Tag.NE, field, nullNode);
             statements.append(treeMaker.If(nullCheck, getBlock(tempStatement), null));
         } else {
             statements.append(getBlock(tempStatement));
@@ -223,11 +221,9 @@ public class CheckTranslator extends BaseTranslator {
     private void addNotNullCheck(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent field,
                                  String method, CheckInfo info) {
         JCTree.JCExpression check = CTreeUtil.newExpression(treeMaker, cn.moyada.function.validator.util.TypeTag.EQ, field, nullNode);
-//        JCTree.JCExpression check = treeMaker.Binary(JCTree.Tag.EQ, field, nullNode);
 
         JCTree.JCLiteral msg = CTreeUtil.newElement(treeMaker, cn.moyada.function.validator.util.TypeTag.CLASS, field.name + " is null");
         JCTree.JCMethodInvocation message = concatStatement(msg, method, info.info);
-//        JCTree.JCMethodInvocation message = concatStatement(treeMaker.Literal(TypeTag.CLASS, field.name + " is null"), method, info.info);
         JCTree.JCStatement throwStatement = newMsgThrow(message, info.exceptionName);
 
         statements.add(treeMaker.If(check, throwStatement, null));

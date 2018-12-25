@@ -68,7 +68,7 @@ public final class RuleHelper {
     }
 
     private static long getMin(char type, long value) {
-        Long min = TypeUtil.getMin(type);
+        long min = TypeUtil.getMin(type);
         if (min < value) {
             return value;
         }
@@ -76,7 +76,7 @@ public final class RuleHelper {
     }
 
     private static long getMax(char type, long value) {
-        Long max = TypeUtil.getMax(type);
+        long max = TypeUtil.getMax(type);
         if (value < max) {
             return value;
         }
