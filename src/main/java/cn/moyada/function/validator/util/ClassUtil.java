@@ -25,7 +25,8 @@ public final class ClassUtil {
         } else if (version.startsWith("1.8")) {
             VERSION = JAVA8_VERSION;
         } else {
-            throw new UnsupportedClassVersionError(version + " version java compiler not support");
+            VERSION = JAVA8_VERSION;
+//            throw new UnsupportedClassVersionError("Unsupported java compiler version" + version);
         }
     }
 

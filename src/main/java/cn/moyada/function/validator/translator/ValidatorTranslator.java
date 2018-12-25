@@ -1,8 +1,8 @@
 package cn.moyada.function.validator.translator;
 
-import cn.moyada.function.validator.core.BaseValidation;
-import cn.moyada.function.validator.core.NumberValidation;
-import cn.moyada.function.validator.core.StringValidation;
+import cn.moyada.function.validator.validation.BaseValidation;
+import cn.moyada.function.validator.validation.NumberValidation;
+import cn.moyada.function.validator.validation.StringValidation;
 import cn.moyada.function.validator.util.CTreeUtil;
 import cn.moyada.function.validator.util.RuleHelper;
 import cn.moyada.function.validator.util.TypeTag;

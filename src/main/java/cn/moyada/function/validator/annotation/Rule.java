@@ -1,6 +1,6 @@
 package cn.moyada.function.validator.annotation;
 
-import cn.moyada.function.validator.core.StringValidation;
+import cn.moyada.function.validator.validation.StringValidation;
 
 import java.lang.annotation.*;
 

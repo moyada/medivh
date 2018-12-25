@@ -1,4 +1,4 @@
-package cn.moyada.function.validator.core;
+package cn.moyada.function.validator.validation;
 
 /**
  * 数字校验规则

@@ -1,9 +1,9 @@
 package cn.moyada.function.validator.util;
 
 import cn.moyada.function.validator.annotation.Rule;
-import cn.moyada.function.validator.core.BaseValidation;
-import cn.moyada.function.validator.core.NumberValidation;
-import cn.moyada.function.validator.core.StringValidation;
+import cn.moyada.function.validator.validation.BaseValidation;
+import cn.moyada.function.validator.validation.NumberValidation;
+import cn.moyada.function.validator.validation.StringValidation;
 import com.sun.tools.javac.tree.JCTree;
 
 /**
@@ -29,6 +29,10 @@ public final class RuleHelper {
         if (TypeUtil.isStr(type)) {
             int length = rule.maxLength();
             if (length < 1) {
+                // 无意义规则
+                if (rule.nullable()) {
+                    return null;
+                }
                 validation = new BaseValidation();
             } else {
                 validation = new StringValidation(length);
@@ -61,6 +65,7 @@ public final class RuleHelper {
             validation.setNullable(rule.nullable());
         }
 
+        // 无意义规则
         if (isEmpty(validation)) {
             return null;
         }
