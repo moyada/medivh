@@ -11,7 +11,7 @@ public class BaseRegulation {
 
     private boolean primitive;
 
-    public BaseRegulation() {
+    BaseRegulation() {
         this.primitive = false;
     }
 

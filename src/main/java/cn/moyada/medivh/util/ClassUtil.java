@@ -4,6 +4,7 @@ import com.sun.tools.javac.main.JavaCompiler;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,17 +16,20 @@ import java.util.Map;
 public final class ClassUtil {
 
     public final static byte VERSION;
-    public final static byte OLD_VERSION = 0;
-    public final static byte JAVA8_VERSION = 1;
+    public final static byte VERSION_6 = 0;
+    public final static byte VERSION_7 = 1;
+    public final static byte VERSION_8 = 2;
 
     static {
         String version = JavaCompiler.version();
-        if (version.startsWith("1.6") || version.startsWith("1.7")) {
-            VERSION = OLD_VERSION;
+        if (version.startsWith("1.6")) {
+            VERSION = VERSION_6;
+        } else if (version.startsWith("1.7")) {
+            VERSION = VERSION_7;
         } else if (version.startsWith("1.8")) {
-            VERSION = JAVA8_VERSION;
+            VERSION = VERSION_8;
         } else {
-            VERSION = JAVA8_VERSION;
+            VERSION = VERSION_8;
 //            throw new UnsupportedClassVersionError("Unsupported java compiler version" + version);
         }
     }
@@ -88,6 +92,17 @@ public final class ClassUtil {
 
         putReference(methodMap, name, method);
         return method;
+    }
+
+    @SuppressWarnings("unchecked")
+    public final static <T> T invoke(Method method, Object target, Object... args) {
+        try {
+            return (T) method.invoke(target, args);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

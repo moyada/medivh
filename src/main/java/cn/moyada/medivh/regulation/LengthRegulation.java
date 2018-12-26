@@ -7,9 +7,9 @@ package cn.moyada.medivh.regulation;
  **/
 public class LengthRegulation extends BaseRegulation {
 
-    public final static byte STRING = 0;
-    public final static byte ARRAY = 1;
-    public final static byte COLLECTION = 2;
+    final static byte STRING = 0;
+    final static byte ARRAY = 1;
+    final static byte COLLECTION = 2;
 
     public final static int EXCLUDE = -1;
 
@@ -17,7 +17,7 @@ public class LengthRegulation extends BaseRegulation {
 
     private byte type;
 
-    public LengthRegulation(int length, byte type) {
+    LengthRegulation(int length, byte type) {
         this.length = length;
         this.type = type;
     }

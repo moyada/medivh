@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * 类型工具
  * @author xueyikang
  * @since 1.0
  **/
@@ -18,8 +19,8 @@ public final class TypeUtil {
     private static final char FLOAT = 'F';
     private static final char DOUBLE = 'D';
 
-    public static final Map<Character, Long> MIN = new HashMap<Character, Long>();
-    public static final Map<Character, Long> MAX = new HashMap<Character, Long>();
+    private static final Map<Character, Long> MIN = new HashMap<Character, Long>();
+    private static final Map<Character, Long> MAX = new HashMap<Character, Long>();
 
     static {
         MIN.put(BYTE, Byte.valueOf(Byte.MIN_VALUE).longValue());

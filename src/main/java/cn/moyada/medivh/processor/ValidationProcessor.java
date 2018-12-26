@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
+ * 校验注解处理器
  * @author xueyikang
  * @since 0.0.1
  **/
@@ -87,6 +88,11 @@ public class ValidationProcessor extends AbstractProcessor {
         return true;
     }
 
+    /**
+     * 获取规则属性所属的类集合
+     * @param rules
+     * @return
+     */
     private Collection<? extends Element> getClass(Set<? extends Element> rules) {
         if (rules.isEmpty()) {
             return null;

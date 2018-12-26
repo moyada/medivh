@@ -11,7 +11,7 @@ public class NumberRegulation extends BaseRegulation {
 
     private long max;
 
-    public NumberRegulation(long min, long max) {
+    NumberRegulation(long min, long max) {
         this.min = min;
         this.max = max;
     }

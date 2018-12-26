@@ -228,7 +228,7 @@ public class ValidationTranslator extends BaseTranslator {
         List<JCTree.JCVariableDecl> var = List.nil();
         List<JCTree.JCExpression> thrown = List.nil();
         return treeMaker.MethodDef(treeMaker.Modifiers(Flags.PUBLIC),
-                names.fromString(METHOD_NAME),
+                CTreeUtil.fromString(namesInstance, METHOD_NAME),
                 findClass(String.class.getName()),
                 param, var, thrown,
                 body, null);

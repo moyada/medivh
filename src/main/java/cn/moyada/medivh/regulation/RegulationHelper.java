@@ -88,6 +88,7 @@ public final class RegulationHelper {
             validation = new BaseRegulation();
         }
 
+        // 基础类型排除空校验
         if (TypeUtil.isPrimitive(className)) {
             validation.setPrimitive(true);
             validation.setNullable(true);

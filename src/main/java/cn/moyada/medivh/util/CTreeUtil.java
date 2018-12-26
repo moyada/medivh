@@ -3,10 +3,8 @@ package cn.moyada.medivh.util;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
-import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.*;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -33,6 +31,36 @@ public final class CTreeUtil {
         return symbol.asType().asElement().toString();
     }
 
+    public static Object newNames(Context instance) {
+        Method method;
+        switch (ClassUtil.VERSION) {
+            case ClassUtil.VERSION_6:
+                Class<?> tableClass = ClassUtil.getClass("com.sun.tools.javac.util.Name$Table");
+                method = ClassUtil.getMethod(tableClass, "instance", Context.class);
+                break;
+            default:
+                Class<?> namesClass = ClassUtil.getClass("com.sun.tools.javac.util.Names");
+                method = ClassUtil.getMethod(namesClass, "instance", Context.class);
+                break;
+        }
+        return ClassUtil.invoke(method, null, instance);
+    }
+
+    public static Name fromString(Object instance, String name) {
+        Method method;
+        switch (ClassUtil.VERSION) {
+            case ClassUtil.VERSION_6:
+                Class<?> nameClass = ClassUtil.getClass("com.sun.tools.javac.util.Name");
+                Class<?> tableClass = ClassUtil.getClass("com.sun.tools.javac.util.Name$Table");
+                method = ClassUtil.getMethod(nameClass, "fromString", tableClass, String.class);
+                return ClassUtil.invoke(method, null, instance, name);
+            default:
+                Class<?> namesClass = ClassUtil.getClass("com.sun.tools.javac.util.Names");
+                method = ClassUtil.getMethod(namesClass, "fromString", String.class);
+                return ClassUtil.invoke(method, instance, name);
+        }
+    }
+
     /**
      * 获取类型对象
      * @param treeMaker
@@ -44,7 +72,8 @@ public final class CTreeUtil {
         String target;
         Method method;
         switch (ClassUtil.VERSION) {
-            case ClassUtil.OLD_VERSION:
+            case ClassUtil.VERSION_6:
+            case ClassUtil.VERSION_7:
                 method = ClassUtil.getMethod(TreeMaker.class, "Literal", int.class, Object.class);
                 target = "com.sun.tools.javac.code.TypeTags";
                 break;
@@ -56,13 +85,7 @@ public final class CTreeUtil {
         }
         Class<?> targetClass = ClassUtil.getClass(target);
         Object field = ClassUtil.getStaticField(targetClass, typeTag.name());
-        try {
-            return (JCTree.JCLiteral) method.invoke(treeMaker, field, value);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        return ClassUtil.invoke(method, treeMaker, field, value);
     }
 
     /**
@@ -78,7 +101,8 @@ public final class CTreeUtil {
         String target;
         Method method;
         switch (ClassUtil.VERSION) {
-            case ClassUtil.OLD_VERSION:
+            case ClassUtil.VERSION_6:
+            case ClassUtil.VERSION_7:
                 method = ClassUtil.getMethod(TreeMaker.class, "Binary", int.class,
                         JCTree.JCExpression.class, JCTree.JCExpression.class);
                 target = "com.sun.tools.javac.tree.JCTree";
@@ -92,13 +116,8 @@ public final class CTreeUtil {
         }
         Class<?> targetClass = ClassUtil.getClass(target);
         Object field = ClassUtil.getStaticField(targetClass, typeTag.name());
-        try {
-            return (JCTree.JCExpression) method.invoke(treeMaker, field, left, right);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+
+        return ClassUtil.invoke(method, treeMaker, field, left, right);
     }
 
     /**
@@ -110,7 +129,8 @@ public final class CTreeUtil {
     public static JCTree.JCStatement newThrow(TreeMaker treeMaker, Object exceptionType) {
         Class<?> param;
         switch (ClassUtil.VERSION) {
-            case ClassUtil.OLD_VERSION:
+            case ClassUtil.VERSION_6:
+            case ClassUtil.VERSION_7:
                 param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree");
                 break;
             default:
@@ -118,13 +138,7 @@ public final class CTreeUtil {
                 break;
         }
         Method method = ClassUtil.getMethod(TreeMaker.class, "Throw", param);
-        try {
-            return (JCTree.JCStatement) method.invoke(treeMaker, exceptionType);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
+        return ClassUtil.invoke(method, treeMaker, exceptionType);
+    }
 }
