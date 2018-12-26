@@ -1,4 +1,4 @@
-package cn.moyada.method.validator.annotation;
+package cn.moyada.medivh.annotation;
 
 import java.lang.annotation.*;
 

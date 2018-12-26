@@ -1,7 +1,7 @@
-package cn.moyada.method.validator.regulation;
+package cn.moyada.medivh.regulation;
 
-import cn.moyada.method.validator.annotation.Rule;
-import cn.moyada.method.validator.util.TypeUtil;
+import cn.moyada.medivh.annotation.Rule;
+import cn.moyada.medivh.util.TypeUtil;
 
 /**
  * 规则工具

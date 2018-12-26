@@ -1,10 +1,10 @@
-package cn.moyada.method.validator.translator;
+package cn.moyada.medivh.translator;
 
-import cn.moyada.method.validator.annotation.Check;
-import cn.moyada.method.validator.annotation.Verify;
-import cn.moyada.method.validator.util.CTreeUtil;
-import cn.moyada.method.validator.util.TypeTag;
-import cn.moyada.method.validator.util.TypeUtil;
+import cn.moyada.medivh.util.CTreeUtil;
+import cn.moyada.medivh.annotation.Check;
+import cn.moyada.medivh.annotation.Verify;
+import cn.moyada.medivh.util.TypeTag;
+import cn.moyada.medivh.util.TypeUtil;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;

@@ -1,4 +1,4 @@
-package cn.moyada.method.validator.regulation;
+package cn.moyada.medivh.regulation;
 
 /**
  * 校验规则

@@ -1,6 +1,6 @@
-package cn.moyada.method.validator.annotation;
+package cn.moyada.medivh.annotation;
 
-import cn.moyada.method.validator.regulation.LengthRegulation;
+import cn.moyada.medivh.regulation.LengthRegulation;
 
 import java.lang.annotation.*;
 

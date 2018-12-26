@@ -1,4 +1,4 @@
-package cn.moyada.method.validator.util;
+package cn.moyada.medivh.util;
 
 /**
  * @author xueyikang

@@ -1,12 +1,12 @@
-package cn.moyada.method.validator.translator;
+package cn.moyada.medivh.translator;
 
-import cn.moyada.method.validator.annotation.Rule;
-import cn.moyada.method.validator.regulation.BaseRegulation;
-import cn.moyada.method.validator.regulation.LengthRegulation;
-import cn.moyada.method.validator.regulation.NumberRegulation;
-import cn.moyada.method.validator.regulation.RegulationHelper;
-import cn.moyada.method.validator.util.CTreeUtil;
-import cn.moyada.method.validator.util.TypeTag;
+import cn.moyada.medivh.regulation.BaseRegulation;
+import cn.moyada.medivh.regulation.NumberRegulation;
+import cn.moyada.medivh.util.CTreeUtil;
+import cn.moyada.medivh.annotation.Rule;
+import cn.moyada.medivh.regulation.LengthRegulation;
+import cn.moyada.medivh.regulation.RegulationHelper;
+import cn.moyada.medivh.util.TypeTag;
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;

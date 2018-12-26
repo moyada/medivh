@@ -1,11 +1,11 @@
-package cn.moyada.method.validator.processor;
+package cn.moyada.medivh.processor;
 
 
-import cn.moyada.method.validator.annotation.Check;
-import cn.moyada.method.validator.annotation.Rule;
-import cn.moyada.method.validator.annotation.Verify;
-import cn.moyada.method.validator.translator.VerificationTranslator;
-import cn.moyada.method.validator.translator.ValidationTranslator;
+import cn.moyada.medivh.annotation.Check;
+import cn.moyada.medivh.annotation.Rule;
+import cn.moyada.medivh.annotation.Verify;
+import cn.moyada.medivh.translator.ValidationTranslator;
+import cn.moyada.medivh.translator.VerificationTranslator;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;

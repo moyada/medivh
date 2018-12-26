@@ -1,4 +1,4 @@
-package cn.moyada.method.validator.util;
+package cn.moyada.medivh.util;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;

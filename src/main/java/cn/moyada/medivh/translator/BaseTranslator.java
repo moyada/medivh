@@ -1,7 +1,7 @@
-package cn.moyada.method.validator.translator;
+package cn.moyada.medivh.translator;
 
-import cn.moyada.method.validator.util.CTreeUtil;
-import cn.moyada.method.validator.util.TypeTag;
+import cn.moyada.medivh.util.CTreeUtil;
+import cn.moyada.medivh.util.TypeTag;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
