@@ -1,6 +1,8 @@
-# 方法校验生成器
+# 方法校验器
 
-自定义注解处理器，在编译时期对语法树做修改，增加方法入参校验逻辑。
+自定义注解处理器，在 `编译期` 对语法树做修改，增加方法入参校验逻辑。
+
+支持对 基础类型及其包装类、String、数组、集合 的属性校验。
 
 版本要求 JDK6 以上
 
@@ -19,15 +21,15 @@
 | 属性 | 作用 |
 | :--- | :--- |
 | Rule.nullable() | 是否允许参数为空，primitive 类型无效 |
-| Rule.min() | 数字类型属性最小值 |
-| Rule.max() | 数字类型属性最大值 |
-| Rule.maxLength() | String 或 数组 类型属性的最大长度 |
+| Rule.min() | 设置数字类型属性的最小允许数值 |
+| Rule.max() | 设置数字类型属性的最大允许数值 |
+| Rule.maxLength() | 设置 String、数组、集合 类型属性的最大允许长度或容量 |
 | Check.invalid() | 参数校验失败时抛出异常类，需要拥有字符串构造方法 |
 | Check.message() | 异常信息头 |
 | Check.nullable() | 参数是否可为空 |
 
 
-示例
+<span id="示例">示例</span>
 
 ```
 public class Service {
@@ -43,23 +45,26 @@ public class Service {
 
     class Args {
 
-        @Rule(maxLength = 20)
-        String name;
+        @Rule(min = 10, max = 2000)
+        int id;
+
+        @Rule
+        HashMap<String, Object> param;
 
         @Rule(maxLength = 5, nullable = true)
-        String[] values;
-
-        @Rule(min = 40, max = 200)
-        int id;
+        String[] value;
     }
 
     class Info {
 
         @Rule(maxLength = 20)
-        String type;
+        String name;
 
         @Rule(min = -250, max = 500, nullable = true)
         Double price;
+        
+        @Rule(maxLength = 10)
+        List<String> extra;
     }
 }
 ```
@@ -133,7 +138,7 @@ javac -cp method-validator.jar MyApp.java
 
 ## 编译后逻辑
 
-如示例 [Service.go](#如何使用) 方法，经过编译后内容为
+如示例 [Service.go](#示例) 方法，经过编译后内容将会为
 
 ```
 public void go(Args args, Info info, String name, int num) {

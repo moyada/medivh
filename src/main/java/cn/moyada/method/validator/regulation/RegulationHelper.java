@@ -1,10 +1,7 @@
-package cn.moyada.method.validator.util;
+package cn.moyada.method.validator.regulation;
 
 import cn.moyada.method.validator.annotation.Rule;
-import cn.moyada.method.validator.regulation.BaseRegulation;
-import cn.moyada.method.validator.regulation.LengthRegulation;
-import cn.moyada.method.validator.regulation.NumberRegulation;
-import com.sun.tools.javac.tree.JCTree;
+import cn.moyada.method.validator.util.TypeUtil;
 
 /**
  * 规则工具
@@ -17,16 +14,32 @@ public final class RegulationHelper {
 
     /**
      * 获取属性规则
-     * @param ele
+     * @param className
+     * @param rule
      * @return
      */
-    public static BaseRegulation getRule(JCTree.JCVariableDecl ele) {
-        Rule rule = ele.sym.getAnnotation(Rule.class);
-        String type = CTreeUtil.getOriginalTypeName(ele.sym);
-
+    public static BaseRegulation build(String className, Rule rule, boolean isCollection) {
         BaseRegulation validation = null;
+
+        // 集合 Collection \ Map
+        if (isCollection) {
+            int length = rule.maxLength();
+            if (length < 1) {
+                // 无意义规则
+                if (rule.nullable()) {
+                    return null;
+                }
+                validation = new BaseRegulation();
+            } else {
+                validation = new LengthRegulation(length, LengthRegulation.COLLECTION);
+            }
+
+            validation.setNullable(rule.nullable());
+            return validation;
+        }
+
         // 字符串逻辑
-        if (TypeUtil.isStr(type)) {
+        if (TypeUtil.isStr(className)) {
             int length = rule.maxLength();
             if (length < 1) {
                 // 无意义规则
@@ -43,7 +56,7 @@ public final class RegulationHelper {
         }
 
         // 数组规则
-        if (TypeUtil.isArr(type)) {
+        if (TypeUtil.isArr(className)) {
             int length = rule.maxLength();
             if (length < 1) {
                 // 无意义规则
@@ -60,7 +73,7 @@ public final class RegulationHelper {
         }
 
         // 数字逻辑
-        char numType = TypeUtil.getNumType(type);
+        char numType = TypeUtil.getNumType(className);
         if (numType != TypeUtil.UNKNOWN) {
             long min = getMin(numType, rule.min());
             long max = getMax(numType, rule.max());
@@ -75,7 +88,7 @@ public final class RegulationHelper {
             validation = new BaseRegulation();
         }
 
-        if (TypeUtil.isPrimitive(type)) {
+        if (TypeUtil.isPrimitive(className)) {
             validation.setPrimitive(true);
             validation.setNullable(true);
         } else {

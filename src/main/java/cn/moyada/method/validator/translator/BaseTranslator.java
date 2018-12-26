@@ -3,6 +3,8 @@ package cn.moyada.method.validator.translator;
 import cn.moyada.method.validator.util.CTreeUtil;
 import cn.moyada.method.validator.util.TypeTag;
 import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -14,6 +16,8 @@ import com.sun.tools.javac.util.Names;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * @author xueyikang
@@ -26,6 +30,7 @@ class BaseTranslator extends TreeTranslator {
     final TreeMaker treeMaker;
     final JavacElements javacElements;
     final Names names;
+    final Types types;
 
     // null 表达式
     final JCTree.JCLiteral nullNode;
@@ -36,16 +41,86 @@ class BaseTranslator extends TreeTranslator {
     // false 表达式
     final JCTree.JCLiteral falseNode;
 
+    // collection
+    final Symbol.ClassSymbol collectionSymbol;
+    final Symbol.ClassSymbol mapSymbol;
+
     BaseTranslator(Context context, Messager messager) {
         this.messager = messager;
 
         this.treeMaker = TreeMaker.instance(context);
         this.names = Names.instance(context);
         this.javacElements = JavacElements.instance(context);
+        this.types = Types.instance(context);
 
         this.nullNode = CTreeUtil.newElement(treeMaker, TypeTag.BOT, null);
         this.trueNode = CTreeUtil.newElement(treeMaker, TypeTag.BOOLEAN, 1);
         this.falseNode = CTreeUtil.newElement(treeMaker, TypeTag.BOOLEAN, 0);
+
+        collectionSymbol = javacElements.getTypeElement(Collection.class.getName());
+        mapSymbol = javacElements.getTypeElement(Map.class.getName());
+    }
+
+    /**
+     * 检测异常类是否包含 String 构造函数
+     * @param exceptionTypeName
+     * @return
+     */
+    protected boolean checkException(String exceptionTypeName) {
+        Symbol.ClassSymbol typeElement = javacElements.getTypeElement(exceptionTypeName);
+        for (Symbol element : typeElement.getEnclosedElements()) {
+            if (element.getKind() != ElementKind.CONSTRUCTOR) {
+                continue;
+            }
+            List<Symbol.VarSymbol> parameters = ((Symbol.MethodSymbol) element).getParameters();
+            if (parameters.size() != 1) {
+                continue;
+            }
+            if (parameters.get(0).asType().toString().equals("java.lang.String")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 是否属于集合或子类
+     * @param className
+     * @return
+     */
+    protected boolean isCollection(String className) {
+        Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(className);
+        // primitive 类型
+        if (null == classSymbol) {
+            return false;
+        }
+
+        if (classSymbol.isInterface()) {
+            return isCollection(classSymbol);
+        } else {
+            List<Type> interfaces = classSymbol.getInterfaces();
+            int size = interfaces.size();
+            if (size == 0) {
+                return false;
+            }
+
+            Symbol.TypeSymbol typeSymbol;
+            for (int i = 0; i < size; i++) {
+                typeSymbol = interfaces.get(i).tsym;
+                if (isCollection(typeSymbol)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isCollection(Symbol typeSymbol) {
+        return isInstanceOf(typeSymbol, collectionSymbol) || isInstanceOf(typeSymbol, mapSymbol);
+    }
+
+    private boolean isInstanceOf(Symbol typeSymbol, Symbol.ClassSymbol classSymbol) {
+        return typeSymbol.isSubClass(classSymbol, types);
     }
 
     /**
@@ -116,28 +191,6 @@ class BaseTranslator extends TreeTranslator {
         JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, CTreeUtil.emptyParam(), exceptionType, List.of(message), null);
 
         return CTreeUtil.newThrow(treeMaker, exceptionInstance);
-    }
-
-    /**
-     * 检测异常类是否包含 String 构造函数
-     * @param exceptionTypeName
-     * @return
-     */
-    protected boolean checkException(String exceptionTypeName) {
-        Symbol.ClassSymbol typeElement = javacElements.getTypeElement(exceptionTypeName);
-        for (Symbol element : typeElement.getEnclosedElements()) {
-            if (element.getKind() != ElementKind.CONSTRUCTOR) {
-                continue;
-            }
-            List<Symbol.VarSymbol> parameters = ((Symbol.MethodSymbol) element).getParameters();
-            if (parameters.size() != 1) {
-                continue;
-            }
-            if (parameters.get(0).asType().toString().equals("java.lang.String")) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

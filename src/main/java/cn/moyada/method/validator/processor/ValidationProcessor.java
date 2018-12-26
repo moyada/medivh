@@ -4,8 +4,8 @@ package cn.moyada.method.validator.processor;
 import cn.moyada.method.validator.annotation.Check;
 import cn.moyada.method.validator.annotation.Rule;
 import cn.moyada.method.validator.annotation.Verify;
-import cn.moyada.method.validator.translator.ValidationTranslator;
 import cn.moyada.method.validator.translator.VerificationTranslator;
+import cn.moyada.method.validator.translator.ValidationTranslator;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
@@ -71,14 +71,14 @@ public class ValidationProcessor extends AbstractProcessor {
         }
 
         // 校验方法生成器
-        TreeTranslator translator = new VerificationTranslator(context, messager);
+        TreeTranslator translator = new ValidationTranslator(context, messager);
         for (Element element : ruleClass) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
         }
 
         // 校验逻辑生成器
-        translator = new ValidationTranslator(context, ruleClass, messager);
+        translator = new VerificationTranslator(context, ruleClass, messager);
         for (Element element : methods) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);

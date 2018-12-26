@@ -41,14 +41,29 @@ public final class TypeUtil {
         MAX.put(DOUBLE, Double.valueOf(Double.MAX_VALUE).longValue());
     }
 
+    /**
+     * 获取数字类型最小值
+     * @param type
+     * @return
+     */
     public static long getMin(char type) {
         return MIN.get(type);
     }
 
+    /**
+     * 获取数字类型最大值
+     * @param type
+     * @return
+     */
     public static long getMax(char type) {
         return MAX.get(type);
     }
 
+    /**
+     * 是否基本类型
+     * @param name
+     * @return
+     */
     public static boolean isPrimitive(String name) {
         if (name.equals("byte")) {
             return true;
@@ -77,14 +92,29 @@ public final class TypeUtil {
         return false;
     }
 
+    /**
+     * 是否字符串
+     * @param name
+     * @return
+     */
     public static boolean isStr(String name) {
         return name.equals("java.lang.String");
     }
 
+    /**
+     * 是否数组
+     * @param name
+     * @return
+     */
     public static boolean isArr(String name) {
         return name.endsWith("[]");
     }
 
+    /**
+     * 是否数字类型
+     * @param name
+     * @return
+     */
     public static char getNumType(String name) {
         if (name.equals("byte") || name.equals("java.lang.Byte")) {
             return BYTE;

@@ -30,7 +30,7 @@ public final class CTreeUtil {
      * @return
      */
     public static String getOriginalTypeName(Symbol symbol) {
-        return symbol.asType().toString();
+        return symbol.asType().asElement().toString();
     }
 
     /**

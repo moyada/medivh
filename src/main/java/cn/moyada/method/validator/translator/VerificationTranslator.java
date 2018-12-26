@@ -1,12 +1,11 @@
 package cn.moyada.method.validator.translator;
 
-import cn.moyada.method.validator.regulation.BaseRegulation;
-import cn.moyada.method.validator.regulation.NumberRegulation;
-import cn.moyada.method.validator.regulation.LengthRegulation;
+import cn.moyada.method.validator.annotation.Check;
+import cn.moyada.method.validator.annotation.Verify;
 import cn.moyada.method.validator.util.CTreeUtil;
-import cn.moyada.method.validator.util.RegulationHelper;
 import cn.moyada.method.validator.util.TypeTag;
-import com.sun.source.tree.Tree;
+import cn.moyada.method.validator.util.TypeUtil;
+import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
@@ -14,215 +13,269 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
 import javax.annotation.processing.Messager;
+import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.tools.Diagnostic;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 
 /**
- * 校验方法生成器
+ * 校验逻辑生成器
+ * 对定义 @link{Verify} 注解的方法增加入参合法性校验
  * @author xueyikang
  * @since 1.0
  **/
 public class VerificationTranslator extends BaseTranslator {
 
-    // 方法名称
-    final static String METHOD_NAME = "invalid0";
+    // 默认前置信息
+    private final static String DEFAULT_MESSAGE = "invalid argument";
 
-    public VerificationTranslator(Context context, Messager messager) {
+    // 校验规则对象
+    private Collection<String> ruleClass;
+
+    public VerificationTranslator(Context context, Collection<? extends Element> ruleClass, Messager messager) {
         super(context, messager);
+
+        this.ruleClass = new ArrayList<String>(ruleClass.size());
+        for (Element rule : ruleClass) {
+            this.ruleClass.add(rule.asType().toString());
+        }
     }
 
     /**
-     * 扫描类节点
-     * @param jcClassDecl
-     */
-    @Override
-    public void visitClassDef(JCTree.JCClassDecl jcClassDecl) {
-        super.visitClassDef(jcClassDecl);
-
-        // 过滤接口
-        if ((jcClassDecl.mods.flags & Flags.INTERFACE) != 0) {
-            return;
-        }
-
-        // 解析所有参数规则
-        Map<JCTree.JCIdent, BaseRegulation> validationRule = new HashMap<JCTree.JCIdent, BaseRegulation>();
-
-        for (JCTree var : jcClassDecl.defs) {
-            // 过滤变量以外
-            if (var.getKind().equals(Tree.Kind.VARIABLE)) {
-                JCTree.JCVariableDecl jcVariableDecl = (JCTree.JCVariableDecl) var;
-                // 排除枚举
-                if ((jcVariableDecl.mods.flags & Flags.ENUM) != 0) {
-                    continue;
-                }
-
-                // 获取参数规则
-                BaseRegulation rule = RegulationHelper.getRule(jcVariableDecl);
-                if (null == rule) {
-                    continue;
-                }
-
-                validationRule.put(treeMaker.Ident(jcVariableDecl.name), rule);
-            }
-        }
-        if (validationRule.isEmpty()) {
-            return;
-        }
-
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Init " + METHOD_NAME + " method for " + jcClassDecl.sym.className());
-
-        JCTree.JCBlock body = createBody(validationRule);
-        JCTree.JCMethodDecl method = createMethod(body);
-        // 刷新类信息
-        jcClassDecl.defs = jcClassDecl.defs.append(method);
-        this.result = jcClassDecl;
-    }
-
-    /**
-     * 创建代码块
-     * @param validationRule
+     * 创建该方法的报错信息
+     * @param methodDecl
      * @return
      */
-    private JCTree.JCBlock createBody(Map<JCTree.JCIdent, BaseRegulation> validationRule) {
+    private String getPrefixInfo(JCTree.JCMethodDecl methodDecl) {
+        String className = CTreeUtil.getOriginalTypeName(methodDecl.sym.getEnclosingElement());
+        String methodName = methodDecl.name.toString();
+        return " while attempting to access " + className + "." + methodName + "(), because ";
+    }
+
+    @Override
+    public void visitMethodDef(JCTree.JCMethodDecl methodDecl) {
+        super.visitMethodDef(methodDecl);
+
+        // 无需校验的方法
+        if (isJump(methodDecl)) {
+            return;
+        }
+
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build Verify logic for " + methodDecl.sym.getEnclosingElement().asType().toString()
+                + "." + methodDecl.name.toString() + "()");
+
+        // 获取前置信息
+        String prefix = getPrefixInfo(methodDecl);
+
         ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
 
-        JCTree.JCIdent key;
-        BaseRegulation validation;
+        // 创建临时变量提取引用
+        JCTree.JCVariableDecl msg = newVar("_MSG", 0L, String.class.getName(), null);
+        JCTree.JCIdent ident = treeMaker.Ident(msg.name);
 
-        boolean nullcheck;
-        JCTree.JCReturn returnStatement = treeMaker.Return(nullNode);
-        for (Map.Entry<JCTree.JCIdent, BaseRegulation> entry : validationRule.entrySet()) {
-            key = entry.getKey();
-            validation = entry.getValue();
-
-            // 非原始类型且不可非空
-            nullcheck = !validation.isPrimitive() && !validation.isNullable();
-            if (nullcheck) {
-                addNotNullCheck(statements, key);
+        CheckInfo checkInfo;
+        for (JCTree.JCVariableDecl param : methodDecl.params) {
+            Check annotation = param.sym.getAnnotation(Check.class);
+            if (null == annotation) {
+                continue;
             }
-            addRangeCheck(statements, key, validation, nullcheck);
-            addLengthCheck(statements, key, validation, nullcheck);
+
+            // 默认异常类
+            String exception = getException(param.sym.getAnnotationMirrors());
+            if (null == exception) {
+                exception = IllegalArgumentException.class.getName();
+            } else {
+                if (!checkException(exception)) {
+                    messager.printMessage(Diagnostic.Kind.ERROR, exception + " must be provide a String constructor!");
+                }
+            }
+
+            checkInfo = new CheckInfo(exception, annotation.message(), annotation.nullable());
+            buildLogic(statements, ident, param, prefix, checkInfo);
         }
 
-        // 校验通过返回 null
-        statements.add(returnStatement);
+        statements.addAll(methodDecl.body.stats);
+        statements.prepend(msg);
 
-        return getBlock(statements);
+        // 获取代码块
+        JCTree.JCBlock body = getBlock(statements);
+        methodDecl.body = body;
+        this.result = newMethod(methodDecl, body);
     }
 
     /**
-     * 增加非空校验
-     * @param statements
-     * @param field
-     */
-    private void addNotNullCheck(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent field) {
-        JCTree.JCExpression nullCheck = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, field, nullNode);
-        statements.append(treeMaker.If(nullCheck, treeMaker.Return(createStr(field.name.toString() + " is null")), null));
-    }
-
-    /**
-     * 增加长度校验
-     * @param statements
-     * @param field
-     * @param validation
-     * @param nullcheck
-     */
-    private void addLengthCheck(ListBuffer<JCTree.JCStatement> statements,
-                                JCTree.JCIdent field, BaseRegulation validation, boolean nullcheck) {
-
-        if (!(validation instanceof LengthRegulation)) {
-            return;
-        }
-        LengthRegulation lengthValidation = (LengthRegulation) validation;
-        int length = lengthValidation.getLength();
-        JCTree.JCLiteral lenField = CTreeUtil.newElement(treeMaker, TypeTag.INT, length);
-
-        // 获取长度信息
-        JCTree.JCExpression getLength;
-        JCTree.JCLiteral message;
-        if (lengthValidation.isStr()) {
-            getLength = execMethod(getMethod(field, "length", CTreeUtil.emptyParam())).getExpression();
-            message = createStr(field.name.toString() + ".length() great than " + length);
-        } else {
-            getLength = getField(field, "length");
-            message = createStr(field.name.toString() + ".length great than " + length);
-        }
-
-        // 创建对比语句
-        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, getLength, lenField);
-        JCTree.JCIf expression = treeMaker.If(condition, treeMaker.Return(message), null);
-
-        // 没经过判空校验
-        if (!nullcheck) {
-            JCTree.JCExpression notnull = CTreeUtil.newExpression(treeMaker, TypeTag.NE, field, nullNode);
-            expression = treeMaker.If(notnull, expression, null);
-        }
-        statements.append(expression);
-    }
-
-    /**
-     * 增加范围校验
-     * @param statements
-     * @param field
-     * @param validation
-     * @param nullcheck
-     */
-    private void addRangeCheck(ListBuffer<JCTree.JCStatement> statements,
-                               JCTree.JCIdent field, BaseRegulation validation, boolean nullcheck) {
-
-        if (!(validation instanceof NumberRegulation)) {
-            return;
-        }
-        NumberRegulation numberValidation = (NumberRegulation) validation;
-
-        String name = field.name.toString();
-
-        // min logic
-        long min = numberValidation.getMin();
-        JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, TypeTag.INT, min);
-        JCTree.JCExpression minCondition = CTreeUtil.newExpression(treeMaker, TypeTag.LT, field, minField);
-
-        // max logic
-        long max = numberValidation.getMax();
-        JCTree.JCLiteral maxField = CTreeUtil.newElement(treeMaker, TypeTag.INT, max);
-        JCTree.JCExpression maxCondition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, field, maxField);
-
-        // 创建判断语句
-        JCTree.JCIf expression = treeMaker.If(maxCondition, treeMaker.Return(createStr(name + " great than " + max)), null);
-        expression = treeMaker.If(minCondition, treeMaker.Return(createStr(name + " less than " + min)), expression);
-
-        // 没做过判空并且非原始类型
-        if (!nullcheck && !validation.isPrimitive()) {
-            JCTree.JCExpression notnull = CTreeUtil.newExpression(treeMaker, TypeTag.NE, field, nullNode);
-            expression = treeMaker.If(notnull, expression, null);
-        }
-
-        statements.append(expression);
-    }
-
-    /**
-     * 获取 java.lang.String 属性
-     * @param value
+     * 跳过 接口、抽象、无注解 方法
+     * @param methodDecl
      * @return
      */
-    private JCTree.JCLiteral createStr(String value) {
-        return CTreeUtil.newElement(treeMaker, TypeTag.CLASS, value);
+    private boolean isJump(JCTree.JCMethodDecl methodDecl) {
+        if ((methodDecl.sym.getEnclosingElement().flags() & Flags.INTERFACE) != 0) {
+            return true;
+        }
+        if ((methodDecl.getModifiers().flags & Flags.ABSTRACT) != 0) {
+            return true;
+        }
+        if (null == methodDecl.sym.getAnnotation(Verify.class)) {
+            return true;
+        }
+        return false;
     }
 
     /**
-     * 创建校验方法
+     * 获取配置异常
+     * @param ms
+     * @return
+     */
+    private String getException(List<Attribute.Compound> ms) {
+        for (Attribute.Compound m : ms) {
+            if (!m.getAnnotationType().toString().equals(Check.class.getName())) {
+                continue;
+            }
+
+            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : m.getElementValues().entrySet()) {
+                if (entry.getKey().toString().equals("invalid()")) {
+                    return entry.getValue().getValue().toString();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 构建检验逻辑
+     * @param statements
+     * @param ident
+     * @param param
+     * @param method
+     * @param checkInfo
+     * @return
+     */
+    private void buildLogic(ListBuffer<JCTree.JCStatement> statements,
+                                                      JCTree.JCIdent ident,
+                                                      JCTree.JCVariableDecl param,
+                                                      String method, CheckInfo checkInfo) {
+        // 获取参数引用
+        JCTree.JCIdent var = treeMaker.Ident(param.name);
+
+        String name = CTreeUtil.getOriginalTypeName(param.sym);
+        if(TypeUtil.isPrimitive(name)) {
+            return;
+        }
+
+        if (!checkInfo.nullable) {
+            addNotNullCheck(statements, var, method, checkInfo);
+        }
+
+        if (ruleClass.contains(name)) {
+            addInvalidStatement(statements, ident, var, method, checkInfo);
+        }
+    }
+
+    /**
+     * 增加校验逻辑
+     * @param statements
+     * @param ident
+     * @param field
+     * @param method
+     * @param info
+     * @return
+     */
+    private void addInvalidStatement(ListBuffer<JCTree.JCStatement> statements,
+                                                               JCTree.JCIdent ident,
+                                                               JCTree.JCIdent field, String method, CheckInfo info) {
+        // 将校验结果赋值给临时变量
+        JCTree.JCExpression expression = getMethod(field, ValidationTranslator.METHOD_NAME, CTreeUtil.emptyParam());
+        JCTree.JCExpressionStatement exec = execMethod(treeMaker.Assign(ident, expression));
+
+        // 抛出异常语句
+        JCTree.JCMethodInvocation message = concatStatement(ident, method, info.info);
+
+        JCTree.JCStatement throwStatement = newMsgThrow(message, info.exceptionName);
+
+        // 校验结果
+        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.NE, ident, nullNode);
+        JCTree.JCIf proc = treeMaker.If(condition, throwStatement, null);
+
+        // 赋值校验子逻辑
+        ListBuffer<JCTree.JCStatement> tempStatement = CTreeUtil.newStatement();
+        tempStatement.append(exec);
+        tempStatement.append(proc);
+
+        if (info.nullable) {
+            // 包装判空逻辑
+            JCTree.JCExpression nullCheck = CTreeUtil.newExpression(treeMaker, TypeTag.NE, field, nullNode);
+            statements.append(treeMaker.If(nullCheck, getBlock(tempStatement), null));
+        } else {
+            statements.append(getBlock(tempStatement));
+        }
+    }
+
+    /**
+     * 添加非空校验
+     * @param statements
+     * @param field
+     * @param method
+     * @param info
+     * @return
+     */
+    private void addNotNullCheck(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent field,
+                                 String method, CheckInfo info) {
+        JCTree.JCExpression check = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, field, nullNode);
+
+        JCTree.JCLiteral msg = CTreeUtil.newElement(treeMaker, TypeTag.CLASS, field.name + " is null");
+        JCTree.JCMethodInvocation message = concatStatement(msg, method, info.info);
+        JCTree.JCStatement throwStatement = newMsgThrow(message, info.exceptionName);
+
+        statements.add(treeMaker.If(check, throwStatement, null));
+    }
+
+    /**
+     * 并且信息
+     * @param info
+     * @param method
+     * @param message
+     * @return
+     */
+    private JCTree.JCMethodInvocation concatStatement(JCTree.JCExpression info, String method, String message) {
+        JCTree.JCExpression args = treeMaker.Literal(message.equals("") ?
+                DEFAULT_MESSAGE + method : message + method);
+        return getMethod(args, "concat", List.of(info));
+    }
+
+    /**
+     * 创建新方法
+     * @param methodDecl
      * @param body
      * @return
      */
-    private JCTree.JCMethodDecl createMethod(JCTree.JCBlock body) {
-        List<JCTree.JCTypeParameter> param = List.nil();
-        List<JCTree.JCVariableDecl> var = List.nil();
-        List<JCTree.JCExpression> thrown = List.nil();
-        return treeMaker.MethodDef(treeMaker.Modifiers(Flags.PUBLIC),
-                names.fromString(METHOD_NAME),
-                findClass(String.class.getName()),
-                param, var, thrown,
-                body, null);
+    private JCTree.JCMethodDecl newMethod(JCTree.JCMethodDecl methodDecl, JCTree.JCBlock body) {
+        return treeMaker.MethodDef(methodDecl.mods,
+                methodDecl.name,
+                methodDecl.restype,
+                methodDecl.typarams,
+                methodDecl.params,
+                methodDecl.thrown,
+                body, methodDecl.defaultValue);
+    }
+
+    /**
+     * 检验逻辑
+     */
+    class CheckInfo {
+
+        private String exceptionName;
+
+        private String info;
+
+        private boolean nullable;
+
+        CheckInfo(String exceptionName, String info, boolean nullable) {
+            this.exceptionName = exceptionName;
+            this.info = info;
+            this.nullable = nullable;
+        }
     }
 }

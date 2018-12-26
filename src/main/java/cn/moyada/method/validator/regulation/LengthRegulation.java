@@ -9,6 +9,7 @@ public class LengthRegulation extends BaseRegulation {
 
     public final static byte STRING = 0;
     public final static byte ARRAY = 1;
+    public final static byte COLLECTION = 2;
 
     public final static int EXCLUDE = -1;
 
