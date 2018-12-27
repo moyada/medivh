@@ -97,7 +97,11 @@ public class VerificationTranslator extends BaseTranslator {
             buildLogic(statements, ident, param, prefix, checkInfo);
         }
 
-        statements.addAll(methodDecl.body.stats);
+        List<JCTree.JCStatement> oldStatements = methodDecl.body.stats;
+        int size = oldStatements.size();
+        for (int i = 0; i < size; i++) {
+            statements.append(oldStatements.get(i));
+        }
         statements.prepend(msg);
 
         // 获取代码块
@@ -229,7 +233,7 @@ public class VerificationTranslator extends BaseTranslator {
         JCTree.JCMethodInvocation message = concatStatement(msg, method, info.info);
         JCTree.JCStatement throwStatement = newMsgThrow(message, info.exceptionName);
 
-        statements.add(treeMaker.If(check, throwStatement, null));
+        statements.append(treeMaker.If(check, throwStatement, null));
     }
 
     /**

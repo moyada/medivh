@@ -11,10 +11,10 @@ import java.util.List;
  * @author xueyikang
  * @since 1.0
  **/
-public class ProcessorTest {
+public class MyApp {
 
     @Verify
-    public static void say(@Check(invalid = RuntimeException.class) Args args,
+    public static void go(@Check(invalid = RuntimeException.class) Args args,
                     @Check(message = "something error", nullable = true) Info info,
                     @Check String name,
                     int num) {

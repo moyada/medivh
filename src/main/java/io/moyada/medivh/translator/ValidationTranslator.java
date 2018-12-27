@@ -111,7 +111,7 @@ public class ValidationTranslator extends BaseTranslator {
         }
 
         // 校验通过返回 null
-        statements.add(returnStatement);
+        statements.append(returnStatement);
 
         return getBlock(statements);
     }

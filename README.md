@@ -4,11 +4,11 @@
 ![version](https://img.shields.io/badge/java-%3E%3D6-red.svg)
 ![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compile-lightgrey.svg)
 [![maven](https://img.shields.io/badge/maven%20central-0.1.1-green.svg)](https://search.maven.org/search?q=g:io.github.moyada%20AND%20a:medivh)
-[![license](https://img.shields.io/hexpm/l/plug.svg)]()
+[![license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/moyada/medivh/blob/master/LICENSE)
  
-自定义注解处理器，通过在 `编译期` 对语法树进行修改，增加方法入参校验逻辑。
+自定义注解处理器，通过在 `编译期` 对语法树进行修改，达到增加方法入参校验逻辑的功能。
 
-支持校验的属性有 基础类型及其包装类、String、数组、集合。
+目前支持校验的属性有 基础类型及其包装类、String、数组、集合。
 
 支持 JDK6 以上版本。
 
@@ -34,7 +34,7 @@
 | Check.message() | 异常信息头 |
 | Check.nullable() | 参数是否可为空 |
 
-#### 示例
+#### 示例 [编译结果](#编译后逻辑)
 
 ```
 public class MyApp {
@@ -115,7 +115,7 @@ public class MyApp {
 git clone git@github.com:moyada/medivh.git
 cd medivh
 
-target_dir=$(pwd)/target
+target_dir=$PWD/target
 
 if [ ! -d $target_dir ];then
 mkdir $target_dir
