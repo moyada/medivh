@@ -1,11 +1,10 @@
 # Medivh
 
 [![Build Status](https://travis-ci.org/moyada/medivh.svg?branch=master)](https://travis-ci.org/moyada/medivh)
-![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compile-lightgrey.svg)
-[![release](https://img.shields.io/badge/release-v0.1.0-blue.svg)](https://github.com/moyada/medivh/releases)
-![license](https://img.shields.io/hexpm/l/plug.svg)
-[![maven](https://img.shields.io/badge/maven%20central-0.1.1-green.svg)](https://mvnrepository.com/artifact/io.github.moyada/medivh)
 ![version](https://img.shields.io/badge/java-%3E%3D6-red.svg)
+![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compile-lightgrey.svg)
+[![maven](https://img.shields.io/badge/maven%20central-0.1.1-green.svg)](https://search.maven.org/search?q=g:io.github.moyada%20AND%20a:medivh)
+[![license](https://img.shields.io/hexpm/l/plug.svg)]()
  
 自定义注解处理器，通过在 `编译期` 对语法树进行修改，增加方法入参校验逻辑。
 
@@ -23,7 +22,7 @@
 | io.moyada.medivh.annotation.Verify | 普通方法 | 开启方法校验逻辑 |
 | io.moyada.medivh.annotation.Check | 方法参数 | 设置参数的校验逻辑 |
 
-#### 注解内部属性说明
+#### 注解属性说明
 
 | 属性 | 作用 |
 | :--- | :--- |
@@ -84,7 +83,7 @@ public class MyApp {
     <dependency>
         <groupId>io.github.moyada</groupId>
         <artifactId>medivh</artifactId>
-        <version>0.1.0</version>
+        <version>0.1.1</version>
         <scope>provided</scope>
     </dependency>
 <dependencies/>
