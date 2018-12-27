@@ -1,4 +1,4 @@
-package cn.moyada.medivh.regulation;
+package io.moyada.medivh.regulation;
 
 /**
  * 数字校验规则

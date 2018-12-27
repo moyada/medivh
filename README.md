@@ -1,6 +1,13 @@
 # Medivh
 
-Medivh 是一个自定义注解处理器，通过在 `编译期` 对语法树进行修改，增加方法入参校验逻辑。
+[![Build Status](https://travis-ci.org/moyada/medivh.svg?branch=master)](https://travis-ci.org/moyada/medivh)
+![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compile-lightgrey.svg)
+[![release](https://img.shields.io/badge/release-v0.1.0-blue.svg)](https://github.com/moyada/medivh/releases)
+![license](https://img.shields.io/hexpm/l/plug.svg)
+[![maven](https://img.shields.io/badge/maven%20central-0.1.1-green.svg)](https://mvnrepository.com/artifact/io.github.moyada/medivh)
+![version](https://img.shields.io/badge/java-%3E%3D6-red.svg)
+ 
+自定义注解处理器，通过在 `编译期` 对语法树进行修改，增加方法入参校验逻辑。
 
 支持校验的属性有 基础类型及其包装类、String、数组、集合。
 
@@ -12,9 +19,9 @@ Medivh 是一个自定义注解处理器，通过在 `编译期` 对语法树进
 
 | 注解 | 作用域 | 效果 |
 | :---- | :----- | :---- |
-| cn.moyada.medivh.annotation.Rule | 类属性 | 设置类属性的校验规则 |
-| cn.moyada.medivh.annotation.Verify | 普通方法 | 开启方法校验逻辑 |
-| cn.moyada.medivh.annotation.Check | 方法参数 | 设置参数的校验逻辑 |
+| io.moyada.medivh.annotation.Rule | 类属性 | 设置类属性的校验规则 |
+| io.moyada.medivh.annotation.Verify | 普通方法 | 开启方法校验逻辑 |
+| io.moyada.medivh.annotation.Check | 方法参数 | 设置参数的校验逻辑 |
 
 #### 注解内部属性说明
 
@@ -28,7 +35,7 @@ Medivh 是一个自定义注解处理器，通过在 `编译期` 对语法树进
 | Check.message() | 异常信息头 |
 | Check.nullable() | 参数是否可为空 |
 
-#### 案例
+#### 示例
 
 ```
 public class MyApp {
@@ -68,13 +75,47 @@ public class MyApp {
 }
 ```
 
+### Maven 工程
+
+1. 在目标工程中需配置校验器依赖
+
+```
+<dependencies>
+    <dependency>
+        <groupId>io.github.moyada</groupId>
+        <artifactId>medivh</artifactId>
+        <version>0.1.0</version>
+        <scope>provided</scope>
+    </dependency>
+<dependencies/>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <source>${java.version}</source>
+                <target>${java.version}</target>
+                <showWarnings>true</showWarnings>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+2. 执行 `mvn clean compile` 进行编译
+
 ### 普通工程
 
 1. 创建处理器 jar 包
 
-进入工程主目录，执行命令创建 jar 包。或者[下载](https://github.com/moyada/medivh/releases)已创建 jar 包使用。
+进入工程主目录，执行命令创建 jar 包。或者[下载](https://github.com/moyada/medivh/releases)已创建的 jar 包使用。
 
 ```
+git clone git@github.com:moyada/medivh.git
+cd medivh
+
 target_dir=$(pwd)/target
 
 if [ ! -d $target_dir ];then
@@ -99,67 +140,84 @@ jar cvf medivh.jar .
 javac -cp medivh.jar MyApp.java
 ```
 
-### Maven 工程
-
-1. 安装配置 Maven 依赖
-
-在源码工程中编译安装校验器依赖 `mvn clean install` ，或者[下载](https://github.com/moyada/medivh/releases)至本地引用
-
-2. 在目标工程中需配置校验器依赖
-
-```
-<dependencies>
-    <dependency>
-        <groupId>cn.moyada</groupId>
-        <artifactId>medivh</artifactId>
-        <version>1.0-SNAPSHOT</version>
-        <scope>provided</scope>
-    </dependency>
-<dependencies/>
-
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <source>${java.version}</source>
-                <target>${java.version}</target>
-                <showWarnings>true</showWarnings>
-            </configuration>
-        </plugin>
-    </plugins>
-</build>
-```
-
-3. 执行 `mvn clean compile` 进行编译
-
 #### 编译后逻辑
 
-如[案例](#案例)方法，经过编译后的内容将会如下所示
+如[示例](#示例)中的方法，经过编译后的内容将会如下所示，并为配置属性规则的类生成校验方法
 
 ```
 public void go(Args args, Info info, String name, int num) {
     if (args == null) {
-        throw new RuntimeException("invalid argument while attempting to access cn.moyada.MyApp.go(), because ".concat("args is null"));
+        throw new RuntimeException("invalid argument while attempting to access io.moyada.MyApp.go(), because ".concat("args is null"));
     } else {
         String _MSG = args.invalid0();
         if (_MSG != null) {
-            throw new RuntimeException("invalid argument while attempting to access cn.moyada.MyApp.go(), because ".concat(_MSG));
+            throw new RuntimeException("invalid argument while attempting to access io.moyada.MyApp.go(), because ".concat(_MSG));
         } else {
             if (info != null) {
                 _MSG = info.invalid0();
                 if (_MSG != null) {
-                    throw new IllegalArgumentException("something error while attempting to access cn.moyada.MyApp.go(), because ".concat(_MSG));
+                    throw new IllegalArgumentException("something error while attempting to access io.moyada.MyApp.go(), because ".concat(_MSG));
                 }
             }
 
             if (name == null) {
-                throw new IllegalArgumentException("invalid argument while attempting to access cn.moyada.MyApp.go(), because ".concat("name is null"));
+                throw new IllegalArgumentException("invalid argument while attempting to access io.moyada.MyApp.go(), because ".concat("name is null"));
             } else {
                 // process
                 ...
             }
+        }
+    }
+}
+
+class Info {
+    String name;
+    Double price;
+    List<String> extra;
+
+    Info() {
+    }
+
+    public String invalid0() {
+        if (this.name == null) {
+            return "name is null";
+        } else if (this.name.length() > 20) {
+            return "name.length() great than 20";
+        } else if (this.extra == null) {
+            return "extra is null";
+        } else if (this.extra.size() > 10) {
+            return "extra.size() great than 10";
+        } else {
+            if (this.price != null) {
+                if (this.price < 0.0D) {
+                    return "price less than 0";
+                }
+
+                if (this.price > 500.0D) {
+                    return "price great than 500";
+                }
+            }
+
+            return null;
+        }
+    }
+}
+
+class Args {
+    int id;
+    HashMap<String, Object> param;
+    String[] values;
+
+    Args() {
+    }
+
+    public String invalid0() {
+        if (this.param == null) {
+            return "param is null";
+        } else if (this.id < 10) {
+            return "id less than 10";
+        } else {
+            return this.id > 2000 ? "id great than 2000" : null;
         }
     }
 }

@@ -1,6 +1,6 @@
-package cn.moyada.medivh.annotation;
+package io.moyada.medivh.annotation;
 
-import cn.moyada.medivh.regulation.LengthRegulation;
+import io.moyada.medivh.regulation.LengthRegulation;
 
 import java.lang.annotation.*;
 

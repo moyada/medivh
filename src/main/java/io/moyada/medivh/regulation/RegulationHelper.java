@@ -1,7 +1,7 @@
-package cn.moyada.medivh.regulation;
+package io.moyada.medivh.regulation;
 
-import cn.moyada.medivh.annotation.Rule;
-import cn.moyada.medivh.util.TypeUtil;
+import io.moyada.medivh.annotation.Rule;
+import io.moyada.medivh.util.TypeUtil;
 
 /**
  * 规则工具

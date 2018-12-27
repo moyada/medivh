@@ -1,12 +1,12 @@
-package cn.moyada.medivh.translator;
+package io.moyada.medivh.translator;
 
-import cn.moyada.medivh.regulation.BaseRegulation;
-import cn.moyada.medivh.regulation.NumberRegulation;
-import cn.moyada.medivh.util.CTreeUtil;
-import cn.moyada.medivh.annotation.Rule;
-import cn.moyada.medivh.regulation.LengthRegulation;
-import cn.moyada.medivh.regulation.RegulationHelper;
-import cn.moyada.medivh.util.TypeTag;
+import io.moyada.medivh.regulation.BaseRegulation;
+import io.moyada.medivh.regulation.NumberRegulation;
+import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.annotation.Rule;
+import io.moyada.medivh.regulation.LengthRegulation;
+import io.moyada.medivh.regulation.RegulationHelper;
+import io.moyada.medivh.util.TypeTag;
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
@@ -64,7 +64,7 @@ public class ValidationTranslator extends BaseTranslator {
                 String className = CTreeUtil.getOriginalTypeName(jcVariableDecl.sym);
 
                 BaseRegulation regulation = RegulationHelper.build(className, rule, isCollection(className));
-                if (null == rule) {
+                if (null == regulation) {
                     continue;
                 }
 
@@ -75,7 +75,7 @@ public class ValidationTranslator extends BaseTranslator {
             return;
         }
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + METHOD_NAME + " method for " + jcClassDecl.sym.className());
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + METHOD_NAME + " method in " + jcClassDecl.sym.className());
 
         JCTree.JCBlock body = createBody(validationRule);
         JCTree.JCMethodDecl method = createMethod(body);
@@ -93,21 +93,21 @@ public class ValidationTranslator extends BaseTranslator {
         ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
 
         JCTree.JCIdent key;
-        BaseRegulation validation;
+        BaseRegulation regulation;
 
         boolean nullcheck;
         JCTree.JCReturn returnStatement = treeMaker.Return(nullNode);
         for (Map.Entry<JCTree.JCIdent, BaseRegulation> entry : validationRule.entrySet()) {
             key = entry.getKey();
-            validation = entry.getValue();
+            regulation = entry.getValue();
 
             // 非原始类型且不可非空
-            nullcheck = !validation.isPrimitive() && !validation.isNullable();
+            nullcheck = !regulation.isPrimitive() && !regulation.isNullable();
             if (nullcheck) {
                 addNotNullCheck(statements, key);
             }
-            addRangeCheck(statements, key, validation, nullcheck);
-            addLengthCheck(statements, key, validation, nullcheck);
+            addRangeCheck(statements, key, regulation, nullcheck);
+            addLengthCheck(statements, key, regulation, nullcheck);
         }
 
         // 校验通过返回 null
@@ -228,7 +228,7 @@ public class ValidationTranslator extends BaseTranslator {
         List<JCTree.JCVariableDecl> var = List.nil();
         List<JCTree.JCExpression> thrown = List.nil();
         return treeMaker.MethodDef(treeMaker.Modifiers(Flags.PUBLIC),
-                CTreeUtil.fromString(namesInstance, METHOD_NAME),
+                CTreeUtil.getName(namesInstance, METHOD_NAME),
                 findClass(String.class.getName()),
                 param, var, thrown,
                 body, null);

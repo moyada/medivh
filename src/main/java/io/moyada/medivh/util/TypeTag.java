@@ -1,6 +1,7 @@
-package cn.moyada.medivh.util;
+package io.moyada.medivh.util;
 
 /**
+ * 语法类型
  * @author xueyikang
  * @since 1.0
  **/

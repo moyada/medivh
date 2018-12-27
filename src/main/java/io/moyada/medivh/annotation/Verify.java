@@ -1,4 +1,4 @@
-package cn.moyada.medivh.annotation;
+package io.moyada.medivh.annotation;
 
 import java.lang.annotation.*;
 

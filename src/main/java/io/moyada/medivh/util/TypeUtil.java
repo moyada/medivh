@@ -1,4 +1,4 @@
-package cn.moyada.medivh.util;
+package io.moyada.medivh.util;
 
 import java.util.HashMap;
 import java.util.Map;

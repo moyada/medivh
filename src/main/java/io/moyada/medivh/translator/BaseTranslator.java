@@ -1,7 +1,7 @@
-package cn.moyada.medivh.translator;
+package io.moyada.medivh.translator;
 
-import cn.moyada.medivh.util.CTreeUtil;
-import cn.moyada.medivh.util.TypeTag;
+import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.TypeTag;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
@@ -40,13 +40,14 @@ class BaseTranslator extends TreeTranslator {
 
     // collection
     final Symbol.ClassSymbol collectionSymbol;
+    // map
     final Symbol.ClassSymbol mapSymbol;
 
     BaseTranslator(Context context, Messager messager) {
         this.messager = messager;
 
         this.treeMaker = TreeMaker.instance(context);
-        this.namesInstance = CTreeUtil.newNames(context);
+        this.namesInstance = CTreeUtil.newInstanceForName(context);
 
         this.javacElements = JavacElements.instance(context);
         this.types = Types.instance(context);
@@ -140,7 +141,7 @@ class BaseTranslator extends TreeTranslator {
      */
     protected JCTree.JCVariableDecl newVar(String name, long flags, String type, JCTree.JCExpression init) {
         return treeMaker.VarDef(treeMaker.Modifiers(flags),
-                CTreeUtil.fromString(namesInstance, name),
+                CTreeUtil.getName(namesInstance, name),
                 findClass(type), init);
     }
 
@@ -160,7 +161,7 @@ class BaseTranslator extends TreeTranslator {
      * @return
      */
     protected JCTree.JCFieldAccess getField(JCTree.JCExpression field, String name) {
-        return treeMaker.Select(field, CTreeUtil.fromString(namesInstance, name));
+        return treeMaker.Select(field, CTreeUtil.getName(namesInstance, name));
     }
 
     /**
@@ -199,10 +200,10 @@ class BaseTranslator extends TreeTranslator {
     protected JCTree.JCExpression findClass(String className) {
         String[] elems = className.split("\\.");
 
-        Name name = CTreeUtil.fromString(namesInstance, elems[0]);
+        Name name = CTreeUtil.getName(namesInstance, elems[0]);
         JCTree.JCExpression e = treeMaker.Ident(name);
         for (int i = 1 ; i < elems.length ; i++) {
-            name = CTreeUtil.fromString(namesInstance, elems[i]);
+            name = CTreeUtil.getName(namesInstance, elems[i]);
             e = e == null ? treeMaker.Ident(name) : treeMaker.Select(e, name);
         }
 

@@ -1,4 +1,4 @@
-package cn.moyada.medivh.util;
+package io.moyada.medivh.util;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
@@ -31,7 +31,12 @@ public final class CTreeUtil {
         return symbol.asType().asElement().toString();
     }
 
-    public static Object newNames(Context instance) {
+    /**
+     * 获取 Name 生成器对象
+     * @param instance
+     * @return
+     */
+    public static Object newInstanceForName(Context instance) {
         Method method;
         switch (ClassUtil.VERSION) {
             case ClassUtil.VERSION_6:
@@ -46,7 +51,13 @@ public final class CTreeUtil {
         return ClassUtil.invoke(method, null, instance);
     }
 
-    public static Name fromString(Object instance, String name) {
+    /**
+     * 获取生成器创建 Name
+     * @param instance
+     * @param name
+     * @return
+     */
+    public static Name getName(Object instance, String name) {
         Method method;
         switch (ClassUtil.VERSION) {
             case ClassUtil.VERSION_6:

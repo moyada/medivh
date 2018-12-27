@@ -1,4 +1,4 @@
-package cn.moyada.medivh.util;
+package io.moyada.medivh.util;
 
 import com.sun.tools.javac.main.JavaCompiler;
 
@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * 类相关工具
  * @author xueyikang
  * @since 1.0
  **/
