@@ -1,5 +1,7 @@
 package io.moyada.medivh.annotation;
 
+import io.moyada.medivh.util.Element;
+
 import java.lang.annotation.*;
 
 /**
@@ -12,4 +14,8 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.SOURCE)
 public @interface Verify {
 
+    /**
+     * 临时对象名称
+     */
+    String value() default Element.DEFAULT_VARIABLE_NAME;
 }

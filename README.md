@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/moyada/medivh.svg?branch=master)](https://travis-ci.org/moyada/medivh)
 ![version](https://img.shields.io/badge/java-%3E%3D6-red.svg)
 ![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compile-lightgrey.svg)
-[![maven](https://img.shields.io/badge/maven%20central-0.1.1-green.svg)](https://search.maven.org/search?q=g:io.github.moyada%20AND%20a:medivh)
+[![Maven Central](https://img.shields.io/badge/maven%20central-0.1.2-brightgreen.svg)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
 [![license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/moyada/medivh/blob/master/LICENSE)
  
 自定义注解处理器，通过在 `编译期` 对语法树进行修改，达到增加方法入参校验逻辑的功能。
@@ -26,15 +26,27 @@
 
 | 属性 | 作用 |
 | :--- | :--- |
-| Rule.nullable() | 是否允许参数为空，primitive 类型无效 |
-| Rule.min() | 设置数字类型属性的最小允许数值 |
-| Rule.max() | 设置数字类型属性的最大允许数值 |
-| Rule.maxLength() | 设置 String、数组、集合 类型属性的最大允许长度或容量 |
-| Check.invalid() | 参数校验失败时抛出异常类，需要拥有字符串构造方法 |
+| Rule.nullable() | 参数是否允许为空，primitive 类型无效 |
+| Rule.min() | 设置数字类型允许的最小数值 |
+| Rule.max() | 设置数字类型允许的最大数值 |
+| Rule.maxLength() | 设置 String、数组、集合 类型允许的最大长度或容量 |
+| Check.invalid() | 设置参数校验失败时抛出异常，异常类需要拥有字符串构造方法 |
 | Check.message() | 异常信息头 |
-| Check.nullable() | 参数是否可为空 |
+| Check.nullable() | 方法参数是否允许为空 |
+| Verify.value() | 配置方法生成逻辑产生的临时变量名称 |
 
-#### 示例 [编译结果](#编译后逻辑)
+
+#### 系统参数
+
+| 属性 | 作用 |
+| :--- | :--- |
+| -Dmedivh.method | 设置定义 Rule 的类校验方法，默认为 invalid0 |
+| -Dmedivh.var | 设置定义 Verify 的类校验方法，默认为 mvar_0 |
+
+
+#### 示例
+
+[编译结果](#编译后逻辑)
 
 ```
 public class MyApp {
@@ -74,38 +86,31 @@ public class MyApp {
 }
 ```
 
-### Maven 工程
+### 添加校验器依赖
 
-1. 在目标工程中需配置校验器依赖
+##### 使用 Maven 管理
 
 ```
 <dependencies>
     <dependency>
         <groupId>io.github.moyada</groupId>
         <artifactId>medivh</artifactId>
-        <version>0.1.1</version>
+        <version>0.1.2</version>
         <scope>provided</scope>
     </dependency>
 <dependencies/>
-
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <source>${java.version}</source>
-                <target>${java.version}</target>
-                <showWarnings>true</showWarnings>
-            </configuration>
-        </plugin>
-    </plugins>
-</build>
 ```
 
-2. 执行 `mvn clean compile` 进行编译
+##### 使用 Gradle 添加
 
-### 普通工程
+```
+dependencies {
+  compileOnly 'io.github.moyada:medivh:0.1.2'
+  // provided 'io.github.moyada:medivh:0.1.2'
+}
+```
+
+##### 非构建工具工程
 
 1. 创建处理器 jar 包
 

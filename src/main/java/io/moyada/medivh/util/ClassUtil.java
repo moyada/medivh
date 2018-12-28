@@ -16,22 +16,106 @@ import java.util.Map;
  **/
 public final class ClassUtil {
 
-    public final static byte VERSION;
-    public final static byte VERSION_6 = 0;
-    public final static byte VERSION_7 = 1;
-    public final static byte VERSION_8 = 2;
+    final static byte VERSION;
+    final static byte VERSION_6 = 0;
+    final static byte VERSION_7 = 1;
+    final static byte VERSION_8 = 2;
 
+    /**
+     * 获取编译器版本号
+     */
     static {
         String version = JavaCompiler.version();
-        if (version.startsWith("1.6")) {
-            VERSION = VERSION_6;
-        } else if (version.startsWith("1.7")) {
-            VERSION = VERSION_7;
-        } else if (version.startsWith("1.8")) {
-            VERSION = VERSION_8;
+        if (null == version) {
+            throw new UnknownError("Can not find available java compiler version.");
+        }
+        int length = version.length();
+        if (length == 0) {
+            throw new UnknownError("Can not find available java compiler version.");
+        }
+
+        int sverion;
+        // 1.xxx
+        if (length > 1 && version.charAt(1) == '.') {
+            if (length < 3) {
+                throw new UnknownError("Unknown java compiler version " + version);
+            }
+
+            // 1.x
+            sverion = getFirstNumber(version, 2);
+
+            // 1.xx
+            if (length > 3) {
+                int number = getIndexNumber(version, 3);
+                if (number >= 0) {
+                    sverion *= 10;
+                    sverion += number;
+                }
+            }
         } else {
-            VERSION = VERSION_8;
-//            throw new UnsupportedClassVersionError("Unsupported java compiler version" + version);
+            // x
+            sverion = getFirstNumber(version, 0);
+
+            // 1x
+            if (sverion < 2 && length > 2) {
+                int number = getIndexNumber(version, 1);
+                if (number >= 0) {
+                    sverion *= 10;
+                    sverion += number;
+                }
+            }
+        }
+
+        VERSION = getSpecialVersion(sverion, version);
+    }
+
+    /**
+     * 获取版本号第一位有效数字，非数字则抛出异常
+     * @param version
+     * @param index
+     * @return
+     */
+    private static int getFirstNumber(String version, int index) {
+        int number = getIndexNumber(version, index);
+        if (number == -1) {
+            throw new UnknownError("Unknown java compiler version " + version);
+        }
+        return number;
+    }
+
+    /**
+     * 获取版本号下标数字
+     * @param version
+     * @param index
+     * @return
+     */
+    private static int getIndexNumber(String version, int index) {
+        char v = version.charAt(index);
+        if (v >= '0' && v <= '9') {
+            return Character.digit(v, 10);
+        } else {
+            return -1;
+        }
+    }
+
+    /**
+     * 检查版本
+     * @param v
+     * @param version
+     * @return
+     */
+    private static byte getSpecialVersion(int v, String version) {
+        if (v < 6) {
+            throw new UnsupportedClassVersionError("Unsupported java compiler version " + version);
+        }
+
+        switch (v) {
+            case 6:
+                return VERSION_6;
+            case 7:
+                return VERSION_7;
+            default:
+                return VERSION_8;
         }
     }
 
@@ -95,10 +179,11 @@ public final class ClassUtil {
         return method;
     }
 
-    @SuppressWarnings("unchecked")
     public final static <T> T invoke(Method method, Object target, Object... args) {
         try {
-            return (T) method.invoke(target, args);
+            @SuppressWarnings("unchecked")
+            T m = (T) method.invoke(target, args);
+            return m;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {

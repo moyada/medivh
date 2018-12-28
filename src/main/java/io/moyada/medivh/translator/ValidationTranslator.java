@@ -1,18 +1,19 @@
 package io.moyada.medivh.translator;
 
-import io.moyada.medivh.regulation.BaseRegulation;
-import io.moyada.medivh.regulation.NumberRegulation;
-import io.moyada.medivh.util.CTreeUtil;
-import io.moyada.medivh.annotation.Rule;
-import io.moyada.medivh.regulation.LengthRegulation;
-import io.moyada.medivh.regulation.RegulationHelper;
-import io.moyada.medivh.util.TypeTag;
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
+import io.moyada.medivh.util.Element;
+import io.moyada.medivh.annotation.Rule;
+import io.moyada.medivh.regulation.BaseRegulation;
+import io.moyada.medivh.regulation.LengthRegulation;
+import io.moyada.medivh.regulation.NumberRegulation;
+import io.moyada.medivh.regulation.RegulationHelper;
+import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.TypeTag;
 
 import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic;
@@ -26,9 +27,6 @@ import java.util.Map;
  * @since 1.0
  **/
 public class ValidationTranslator extends BaseTranslator {
-
-    // 方法名称
-    final static String METHOD_NAME = "invalid0";
 
     public ValidationTranslator(Context context, Messager messager) {
         super(context, messager);
@@ -75,7 +73,7 @@ public class ValidationTranslator extends BaseTranslator {
             return;
         }
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + METHOD_NAME + " method in " + jcClassDecl.sym.className());
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + Element.METHOD_NAME + " method in " + jcClassDecl.sym.className());
 
         JCTree.JCBlock body = createBody(validationRule);
         JCTree.JCMethodDecl method = createMethod(body);
@@ -228,7 +226,7 @@ public class ValidationTranslator extends BaseTranslator {
         List<JCTree.JCVariableDecl> var = List.nil();
         List<JCTree.JCExpression> thrown = List.nil();
         return treeMaker.MethodDef(treeMaker.Modifiers(Flags.PUBLIC),
-                CTreeUtil.getName(namesInstance, METHOD_NAME),
+                CTreeUtil.getName(namesInstance, Element.METHOD_NAME),
                 findClass(String.class.getName()),
                 param, var, thrown,
                 body, null);

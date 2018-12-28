@@ -1,20 +1,21 @@
 package io.moyada.medivh.translator;
 
-import io.moyada.medivh.util.CTreeUtil;
-import io.moyada.medivh.annotation.Check;
-import io.moyada.medivh.annotation.Verify;
-import io.moyada.medivh.util.TypeTag;
-import io.moyada.medivh.util.TypeUtil;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
+import io.moyada.medivh.util.Element;
+import io.moyada.medivh.annotation.Check;
+import io.moyada.medivh.annotation.Verify;
+import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.SystemUtil;
+import io.moyada.medivh.util.TypeTag;
+import io.moyada.medivh.util.TypeUtil;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.tools.Diagnostic;
 import java.util.ArrayList;
@@ -35,11 +36,11 @@ public class VerificationTranslator extends BaseTranslator {
     // 校验规则对象
     private Collection<String> ruleClass;
 
-    public VerificationTranslator(Context context, Collection<? extends Element> ruleClass, Messager messager) {
+    public VerificationTranslator(Context context, Collection<? extends javax.lang.model.element.Element> ruleClass, Messager messager) {
         super(context, messager);
 
         this.ruleClass = new ArrayList<String>(ruleClass.size());
-        for (Element rule : ruleClass) {
+        for (javax.lang.model.element.Element rule : ruleClass) {
             this.ruleClass.add(rule.asType().toString());
         }
     }
@@ -64,6 +65,13 @@ public class VerificationTranslator extends BaseTranslator {
             return;
         }
 
+        Verify verify = methodDecl.sym.getAnnotation(Verify.class);
+        if (null == verify) {
+            return;
+        }
+
+        String varName = SystemUtil.getTmpVar(verify);
+
         messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build Verify logic for " + methodDecl.sym.getEnclosingElement().asType().toString()
                 + "." + methodDecl.name.toString() + "()");
 
@@ -73,7 +81,7 @@ public class VerificationTranslator extends BaseTranslator {
         ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
 
         // 创建临时变量提取引用
-        JCTree.JCVariableDecl msg = newVar("_MSG", 0L, String.class.getName(), null);
+        JCTree.JCVariableDecl msg = newVar(varName, 0L, String.class.getName(), null);
         JCTree.JCIdent ident = treeMaker.Ident(msg.name);
 
         CheckInfo checkInfo;
@@ -120,9 +128,6 @@ public class VerificationTranslator extends BaseTranslator {
             return true;
         }
         if ((methodDecl.getModifiers().flags & Flags.ABSTRACT) != 0) {
-            return true;
-        }
-        if (null == methodDecl.sym.getAnnotation(Verify.class)) {
             return true;
         }
         return false;
@@ -191,7 +196,7 @@ public class VerificationTranslator extends BaseTranslator {
                                                                JCTree.JCIdent ident,
                                                                JCTree.JCIdent field, String method, CheckInfo info) {
         // 将校验结果赋值给临时变量
-        JCTree.JCExpression expression = getMethod(field, ValidationTranslator.METHOD_NAME, CTreeUtil.emptyParam());
+        JCTree.JCExpression expression = getMethod(field, Element.METHOD_NAME, CTreeUtil.emptyParam());
         JCTree.JCExpressionStatement exec = execMethod(treeMaker.Assign(ident, expression));
 
         // 抛出异常语句

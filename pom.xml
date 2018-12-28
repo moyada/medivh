@@ -6,10 +6,10 @@
 
     <groupId>io.github.moyada</groupId>
     <artifactId>medivh</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
 
     <name>Medivh</name>
-    <description>code enhancement processor for method check at compile time.</description>
+    <description>A Java annotation processor for automatic generate method verify at compile time.</description>
     <url>https://github.com/moyada/medivh</url>
 
     <licenses>
