@@ -14,7 +14,9 @@ Java 语言的注解处理器，根据配置规则生成方法的入参校验。
 
 * 支持校验的属性有 基础类型 (如 int 和 Integer)、String、数组、集合、Map。
 
-* 支持 JDK 1.6 以上版本。
+## 要求
+
+JDK 1.6 及以上版本。
 
 ## 快速开始
 
@@ -53,7 +55,45 @@ dependencies {
 
 ### 在程序中配置注解
 
-   注解的使用说明见[这里](#注解描述)。
+注解的使用示例见[这里](#示例)。
+
+#### 注解描述
+
+| 注解类 | 作用域 | 作用 |
+| :---- | :----- | :---- |
+| io.moyada.medivh.annotation.Rule | 类字段 | 为类提供相关字段校验规则。 |
+| io.moyada.medivh.annotation.Verify | 非静态方法 | 开启方法的校验功能。 |
+| io.moyada.medivh.annotation.Check | 方法参数 | 配置参数的校验逻辑，基础类型无效。 |
+
+#### 注解属性
+
+| 属性 | 作用 |
+| :--- | :--- |
+| Rule.nullable() | 设置非基础类型字段是否可以为空。 |
+| Rule.min() | 设置数字类型字段允许的最小值。 |
+| Rule.max() | 设置数字类型字段允许的最大值。 |
+| Rule.maxLength() | 设置 String、数组、集合 类型允许的最大长度或容量。 |
+| Check.invalid() | 设置参数校验失败时抛出异常，异常类需要拥有字符串构造方法。 |
+| Check.message() | 异常信息头。 |
+| Check.nullable() | 设置方法参数是否允许为空。 |
+| Verify.value() | 配置方法生成逻辑时产生的临时变量名称。 |
+
+### 编译项目
+
+使用构建工具的编译命令, 如 `mvn compile` 或 `gradle build`。
+ 
+或者使用 Java 命令进行编译，如 `javac -cp medivh.jar MyApp.java`。
+
+#### 可选系统参数
+
+| 参数 | 作用 |
+| :--- | :--- |
+| -Dmedivh.method | 配置校验方法名，默认为 invalid0 。 |
+| -Dmedivh.var | 配置默认临时变量名称，默认为 mvar_0 。 |
+
+经过编译期后，即可生成校验逻辑。
+
+## 示例
 
 ```
 import io.moyada.medivh.annotation.*;
@@ -92,15 +132,7 @@ public class MyApp {
 }
 ```
 
-### 编译项目
-
-使用构建工具的编译命令, 如 `mvn compile` 或 `gradle build`。
- 
-或者使用 Java 命令进行编译，如 `javac -cp medivh.jar MyApp.java`。
-
-经过编译后，即可生成校验逻辑。
-
-如案例中的代码，编译后的内容将会为:
+如示例中的代码，编译后的内容将会为:
 
 ```
 public void run(Args args, Info info, String name, int num) {
@@ -180,31 +212,3 @@ class Args {
     }
 }
 ``` 
-
-## 注解描述
-
-| 注解类 | 作用域 | 作用 |
-| :---- | :----- | :---- |
-| io.moyada.medivh.annotation.Rule | 类字段 | 为类提供相关字段校验规则。 |
-| io.moyada.medivh.annotation.Verify | 非静态方法 | 开启方法的校验功能。 |
-| io.moyada.medivh.annotation.Check | 方法参数 | 配置参数的校验逻辑，基础类型无效。 |
-
-## 注解属性
-
-| 属性 | 作用 |
-| :--- | :--- |
-| Rule.nullable() | 设置非基础类型字段是否可以为空。 |
-| Rule.min() | 设置数字类型字段允许的最小值。 |
-| Rule.max() | 设置数字类型字段允许的最大值。 |
-| Rule.maxLength() | 设置 String、数组、集合 类型允许的最大长度或容量。 |
-| Check.invalid() | 设置参数校验失败时抛出异常，异常类需要拥有字符串构造方法。 |
-| Check.message() | 异常信息头。 |
-| Check.nullable() | 设置方法参数是否允许为空。 |
-| Verify.value() | 配置方法生成逻辑时产生的临时变量名称。 |
-
-## 系统参数
-
-| 参数 | 作用 |
-| :--- | :--- |
-| -Dmedivh.method | 配置校验方法名，默认为 invalid0 。 |
-| -Dmedivh.var | 配置默认临时变量名称，默认为 mvar_0 。 |
