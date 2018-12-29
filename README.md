@@ -55,7 +55,7 @@ or
 
 ### Configure annotation in you program
 
-   The usage of annotation is [here](#Annotation description).
+   The usage of annotation is [here](#Annotation-description).
 
 ```
 import io.moyada.medivh.annotation.*;
@@ -98,7 +98,7 @@ public class MyApp {
 
 Use compile commands of build tool, like `mvn compile` or `gradle build`.
  
-Or use java compile command `javac -cp medivh.jar MyApp.java`.
+Or use java compile command, like `javac -cp medivh.jar MyApp.java`.
 
 After compilation, the verification logic will be generated.
 
@@ -182,8 +182,6 @@ class Args {
     }
 }
 ``` 
-
-----------
 
 ## Annotation description
 

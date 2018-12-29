@@ -96,7 +96,7 @@ public class MyApp {
 
 使用构建工具的编译命令, 如 `mvn compile` 或 `gradle build`。
  
-或者使用 Java 命令进行编译，`javac -cp medivh.jar MyApp.java`。
+或者使用 Java 命令进行编译，如 `javac -cp medivh.jar MyApp.java`。
 
 经过编译后，即可生成校验逻辑。
 
@@ -180,8 +180,6 @@ class Args {
     }
 }
 ``` 
-
-------------
 
 ## 注解描述
 
