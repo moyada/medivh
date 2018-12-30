@@ -30,9 +30,6 @@ import java.util.Map;
  **/
 public class VerificationTranslator extends BaseTranslator {
 
-    // 默认前置信息
-    private final static String DEFAULT_MESSAGE = "invalid argument";
-
     // 校验规则对象
     private Collection<String> ruleClass;
 
@@ -43,17 +40,6 @@ public class VerificationTranslator extends BaseTranslator {
         for (javax.lang.model.element.Element rule : ruleClass) {
             this.ruleClass.add(rule.asType().toString());
         }
-    }
-
-    /**
-     * 创建该方法的报错信息
-     * @param methodDecl
-     * @return
-     */
-    private String getPrefixInfo(JCTree.JCMethodDecl methodDecl) {
-        String className = CTreeUtil.getOriginalTypeName(methodDecl.sym.getEnclosingElement());
-        String methodName = methodDecl.name.toString();
-        return " while attempting to access " + className + "." + methodName + "(), because ";
     }
 
     @Override
@@ -76,7 +62,8 @@ public class VerificationTranslator extends BaseTranslator {
                 + "." + methodDecl.name.toString() + "()");
 
         // 获取前置信息
-        String prefix = getPrefixInfo(methodDecl);
+        String actionInfo = CTreeUtil.getActionInfo();
+//        String actionInfo = CTreeUtil.getActionInfo(methodDecl);
 
         ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
 
@@ -101,8 +88,14 @@ public class VerificationTranslator extends BaseTranslator {
                 }
             }
 
-            checkInfo = new CheckInfo(exception, annotation.message(), annotation.nullable());
-            buildLogic(statements, ident, param, prefix, checkInfo);
+            String message = annotation.message();
+            if (message.equals("")) {
+                message = Element.MESSAGE + actionInfo;
+            } else {
+                message += actionInfo;
+            }
+            checkInfo = new CheckInfo(exception, message, annotation.nullable());
+            buildLogic(statements, ident, param, checkInfo);
         }
 
         List<JCTree.JCStatement> oldStatements = methodDecl.body.stats;
@@ -158,14 +151,11 @@ public class VerificationTranslator extends BaseTranslator {
      * @param statements
      * @param ident
      * @param param
-     * @param method
      * @param checkInfo
      * @return
      */
-    private void buildLogic(ListBuffer<JCTree.JCStatement> statements,
-                                                      JCTree.JCIdent ident,
-                                                      JCTree.JCVariableDecl param,
-                                                      String method, CheckInfo checkInfo) {
+    private void buildLogic(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent ident,
+                            JCTree.JCVariableDecl param, CheckInfo checkInfo) {
         // 获取参数引用
         JCTree.JCIdent var = treeMaker.Ident(param.name);
 
@@ -175,11 +165,11 @@ public class VerificationTranslator extends BaseTranslator {
         }
 
         if (!checkInfo.nullable) {
-            addNotNullCheck(statements, var, method, checkInfo);
+            addNotNullCheck(statements, var, checkInfo);
         }
 
         if (ruleClass.contains(name)) {
-            addInvalidStatement(statements, ident, var, method, checkInfo);
+            addInvalidStatement(statements, ident, var, checkInfo);
         }
     }
 
@@ -188,19 +178,17 @@ public class VerificationTranslator extends BaseTranslator {
      * @param statements
      * @param ident
      * @param field
-     * @param method
      * @param info
      * @return
      */
-    private void addInvalidStatement(ListBuffer<JCTree.JCStatement> statements,
-                                                               JCTree.JCIdent ident,
-                                                               JCTree.JCIdent field, String method, CheckInfo info) {
+    private void addInvalidStatement(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent ident,
+                                     JCTree.JCIdent field, CheckInfo info) {
         // 将校验结果赋值给临时变量
         JCTree.JCExpression expression = getMethod(field, Element.METHOD_NAME, CTreeUtil.emptyParam());
         JCTree.JCExpressionStatement exec = execMethod(treeMaker.Assign(ident, expression));
 
         // 抛出异常语句
-        JCTree.JCMethodInvocation message = concatStatement(ident, method, info.info);
+        JCTree.JCMethodInvocation message = concatStatement(ident, info.info);
 
         JCTree.JCStatement throwStatement = newMsgThrow(message, info.exceptionName);
 
@@ -226,31 +214,27 @@ public class VerificationTranslator extends BaseTranslator {
      * 添加非空校验
      * @param statements
      * @param field
-     * @param method
      * @param info
      * @return
      */
-    private void addNotNullCheck(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent field,
-                                 String method, CheckInfo info) {
+    private void addNotNullCheck(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent field, CheckInfo info) {
         JCTree.JCExpression check = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, field, nullNode);
 
-        JCTree.JCLiteral msg = CTreeUtil.newElement(treeMaker, TypeTag.CLASS, field.name + " is null");
-        JCTree.JCMethodInvocation message = concatStatement(msg, method, info.info);
+        JCTree.JCLiteral message = CTreeUtil.newElement(treeMaker, TypeTag.CLASS, info.info + field.name + " is null");
+        // JCTree.JCMethodInvocation message = concatStatement(msg, info.info);
         JCTree.JCStatement throwStatement = newMsgThrow(message, info.exceptionName);
 
         statements.append(treeMaker.If(check, throwStatement, null));
     }
 
     /**
-     * 并且信息
+     * 拼接信息
      * @param info
-     * @param method
      * @param message
      * @return
      */
-    private JCTree.JCMethodInvocation concatStatement(JCTree.JCExpression info, String method, String message) {
-        JCTree.JCExpression args = treeMaker.Literal(message.equals("") ?
-                DEFAULT_MESSAGE + method : message + method);
+    private JCTree.JCMethodInvocation concatStatement(JCTree.JCExpression info, String message) {
+        JCTree.JCExpression args = treeMaker.Literal(message);
         return getMethod(args, "concat", List.of(info));
     }
 

@@ -28,7 +28,7 @@ public class SystemUtil {
      * @return
      */
     public static String getTmpVar(Verify verify) {
-        String var = verify.value();
+        String var = verify.var();
         if (var.isEmpty()) {
             return Element.LOCAL_VARIABLE;
         }

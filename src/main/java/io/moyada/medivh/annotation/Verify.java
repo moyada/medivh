@@ -17,5 +17,5 @@ public @interface Verify {
     /**
      * 临时对象名称
      */
-    String value() default Element.DEFAULT_VARIABLE_NAME;
+    String var() default Element.DEFAULT_VARIABLE_NAME;
 }

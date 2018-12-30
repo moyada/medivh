@@ -6,7 +6,7 @@
 
     <groupId>io.github.moyada</groupId>
     <artifactId>medivh</artifactId>
-    <version>0.1.2</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <name>Medivh</name>
     <description>A Java annotation processor for automatic generate method verify at compile time.</description>
@@ -40,7 +40,7 @@
         <maven.source.version>3.0.1</maven.source.version>
         <maven.javadoc.version>3.0.1</maven.javadoc.version>
         <maven.gpg.version>1.6</maven.gpg.version>
-        <gpg.skip>false</gpg.skip>
+        <gpg.skip>true</gpg.skip>
     </properties>
 
     <dependencies>

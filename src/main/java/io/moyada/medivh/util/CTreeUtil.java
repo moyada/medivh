@@ -23,6 +23,20 @@ public final class CTreeUtil {
     }
 
     /**
+     * 创建方法的报错信息来源
+     * @param methodDecl
+     * @return
+     */
+    public static String getActionInfo(JCTree.JCMethodDecl methodDecl) {
+        String className = getOriginalTypeName(methodDecl.sym.getEnclosingElement());
+        String methodName = methodDecl.name.toString();
+        return " while attempting to access " + className + "." + methodName + "(), cause ";
+    }
+    public static String getActionInfo() {
+        return ", cause ";
+    }
+
+    /**
      * 获取实际类型名
      * @param symbol
      * @return

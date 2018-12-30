@@ -3,16 +3,24 @@
 [![Build Status](https://travis-ci.org/moyada/medivh.svg?branch=master)](https://travis-ci.org/moyada/medivh)
 ![version](https://img.shields.io/badge/java-%3E%3D6-red.svg)
 ![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compile-yellow.svg)
-[![Maven Central](https://img.shields.io/badge/maven%20central-0.1.2-brightgreen.svg)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
+[![Maven Central](https://img.shields.io/badge/maven%20central-1.0.0-brightgreen.svg)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
 [![license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/moyada/medivh/blob/master/LICENSE)
 
-Java 语言的注解处理器，根据配置规则生成方法的入参校验。
+简体中文 | [English](README.md)
+
+Java 的注解处理器，根据配置规则生成方法的入参校验逻辑。
 
 ## 特性
 
 * 通过在 `编译期` 对语法树进行修改，增加方法入参的校验逻辑。
 
-* 支持校验的属性有 基础类型 (如 int 和 Integer)、String、数组、集合、Map。
+* 支持 对象类型的非空校验。
+
+* 支持 byte、short、int、long、float、double 的范围校验。
+
+* 支持 String、数组的长度校验。
+
+* 支持 集合、Map 的容量校验。
 
 ## 要求
 
@@ -22,42 +30,38 @@ JDK 1.6 及以上版本。
 
 ### 添加依赖
 
-#### Maven
+使用 Maven
 
 ```
 <dependencies>
     <dependency>
         <groupId>io.github.moyada</groupId>
         <artifactId>medivh</artifactId>
-        <version>0.1.2</version>
+        <version>1.0.0</version>
         <scope>provided</scope>
     </dependency>
 <dependencies/>
 ```
 
-#### Gradle
+使用 Gradle
 
 ```
 dependencies {
-  compileOnly 'io.github.moyada:medivh:0.1.2'
+  compileOnly 'io.github.moyada:medivh:1.0.0'
   // 或历史版本方式
-  // provided 'io.github.moyada:medivh:0.1.2'
+  // provided 'io.github.moyada:medivh:1.0.0'
 }
 ```
 
-#### 普通工程
-
-可以通过
-[![release](https://img.shields.io/badge/release-v0.1.2-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
+普通工程可以通过
+[![release](https://img.shields.io/badge/release-v1.0.0-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
 或
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.moyada/medivh.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
 下载最新 jar 包。
 
 ### 在程序中配置注解
 
-注解的使用示例见[这里](#示例)。
-
-#### 注解描述
+注解描述
 
 | 注解类 | 作用域 | 作用 |
 | :---- | :----- | :---- |
@@ -65,7 +69,7 @@ dependencies {
 | io.moyada.medivh.annotation.Verify | 非静态方法 | 开启方法的校验功能。 |
 | io.moyada.medivh.annotation.Check | 方法参数 | 配置参数的校验逻辑，基础类型无效。 |
 
-#### 注解属性
+属性说明
 
 | 属性 | 作用 |
 | :--- | :--- |
@@ -76,7 +80,9 @@ dependencies {
 | Check.invalid() | 设置参数校验失败时抛出异常，异常类需要拥有字符串构造方法。 |
 | Check.message() | 异常信息头。 |
 | Check.nullable() | 设置方法参数是否允许为空。 |
-| Verify.value() | 配置方法生成逻辑时产生的临时变量名称。 |
+| Verify.var() | 配置方法生成逻辑时产生的临时变量名称。 |
+
+使用示例见[这里](#示例)。
 
 ### 编译项目
 
@@ -84,12 +90,13 @@ dependencies {
  
 或者使用 Java 命令进行编译，如 `javac -cp medivh.jar MyApp.java`。
 
-#### 可选系统参数
+#### 系统可选参数
 
 | 参数 | 作用 |
 | :--- | :--- |
 | -Dmedivh.method | 配置校验方法名，默认为 invalid0 。 |
 | -Dmedivh.var | 配置默认临时变量名称，默认为 mvar_0 。 |
+| -Dmedivh.message | 配置默认异常信息头，默认为 invalid argument 。 |
 
 经过编译期后，即可生成校验逻辑。
 
@@ -105,8 +112,8 @@ public class MyApp {
     @Verify
     public void run(@Check(invalid = RuntimeException.class) Args args,
                     @Check(message = "something error", nullable = true) Info info,
-                    @Check String name, // can be check null value for normal Object
-                    @Check int num // ineffective type
+                    @Check String name, // 可以对普通对象进行非空检查
+                    @Check int num // 不支持基本类型
                     ) {
         // process
         ...
