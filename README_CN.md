@@ -22,6 +22,8 @@ Java 的注解处理器，根据配置规则生成方法的入参校验逻辑。
 
 * 支持 集合、Map 的容量校验。
 
+* 校验失败时可以选择抛出异常或返回对象。
+
 ## 要求
 
 JDK 1.6 及以上版本。
@@ -65,7 +67,10 @@ dependencies {
 
 | 注解类 | 作用域 | 作用 |
 | :---- | :----- | :---- |
-| io.moyada.medivh.annotation.Rule | 类字段 | 为类提供相关字段校验规则。 |
+| io.moyada.medivh.annotation.NotNull | 类字段 | 设置非基础类型字段不可为空，当使用任意 Rule 时默认设置。 |
+| io.moyada.medivh.annotation.Nullable | 类字段 | 设置非基础类型字段可以为空，优先于 NotNull。 |
+| io.moyada.medivh.annotation.NumberRule | 类字段 | 为类提供数字类型字段校验规则。 |
+| io.moyada.medivh.annotation.SizeRule | 类字段 | 为类提供长度或容量类型字段校验规则。 |
 | io.moyada.medivh.annotation.Verify | 非静态方法 | 开启方法的校验功能。 |
 | io.moyada.medivh.annotation.Check | 方法参数 | 配置参数的校验逻辑，基础类型无效。 |
 
@@ -73,13 +78,15 @@ dependencies {
 
 | 属性 | 作用 |
 | :--- | :--- |
-| Rule.nullable() | 设置非基础类型字段是否可以为空。 |
-| Rule.min() | 设置数字类型字段允许的最小值。 |
-| Rule.max() | 设置数字类型字段允许的最大值。 |
-| Rule.maxLength() | 设置 String、数组、集合 类型允许的最大长度或容量。 |
-| Check.invalid() | 设置参数校验失败时抛出异常，异常类需要拥有字符串构造方法。 |
+| NumberRule.min() | 设置数字类型字段允许的最小值。 |
+| NumberRule.max() | 设置数字类型字段允许的最大值。 |
+| SizeRule.min() | 设置 String、数组、集合 类型允许的最小长度或容量。 |
+| SizeRule.max() | 设置 String、数组、集合 类型允许的最大长度或容量。 |
+| Check.throwable() | 设置校验失败时的动作，true 为抛出异常，false 为返回值，默认为 true。 |
+| Check.nullable() | 设置方法参数是否允许为空，默认为 true。 |
+| Check.invalid() | 设置抛出异常类，异常类需要拥有字符串构造方法。 |
+| Check.returnValue() | 设置返回值，支持返回类型为基本类型或对象，当返回类型为对象时 returnValue 需要有对应构造函数。 |
 | Check.message() | 异常信息头。 |
-| Check.nullable() | 设置方法参数是否允许为空。 |
 | Verify.var() | 配置方法生成逻辑时产生的临时变量名称。 |
 
 使用示例见[这里](#示例)。
@@ -96,7 +103,7 @@ dependencies {
 | :--- | :--- |
 | -Dmedivh.method | 配置校验方法名，默认为 invalid0 。 |
 | -Dmedivh.var | 配置默认临时变量名称，默认为 mvar_0 。 |
-| -Dmedivh.message | 配置默认异常信息头，默认为 invalid argument 。 |
+| -Dmedivh.message | 配置默认异常信息头，默认为 Invalid input parameter 。 |
 
 经过编译期后，即可生成校验逻辑。
 
@@ -110,31 +117,36 @@ import java.util.List;
 public class MyApp {
 
     @Verify
-    public void run(@Check(invalid = RuntimeException.class) Args args,
+    public Info run(@Check(invalid = RuntimeException.class) Args args,
                     @Check(message = "something error", nullable = true) Info info,
-                    @Check String name, // 可以对普通对象进行非空检查
-                    @Check int num // 不支持基本类型
+                    @Check(throwable = false, returnValue = {"test", "-0.503"}) String name, // 支持其他对象的非空校验
+                    @Check int num // 不支持对象
                     ) {
         // process
         ...
     }
 
     class Args {
+    
+        @NumberRule(max = "1000") int id;
 
-        @Rule(min = 10, max = 2000) int id;
+        @NotNull HashMap<String, Object> param;
 
-        @Rule HashMap<String, Object> param;
-
-        @Rule(maxLength = 5, nullable = true) String[] value;
+        @Nullable @SizeRule(min = 5) boolean[] value;
     }
-
+    
     class Info {
 
-        @Rule(maxLength = 20) String name;
+        @SizeRule(min = 50) String name;
 
-        @Rule(min = -250, max = 500, nullable = true) Double price;
-        
-        @Rule(maxLength = 10) List<String> extra;
+        @Nullable @NumberRule(min = "-25.02", max = "200") Double price;
+
+        @SizeRule(min = 10, max = 10) List<String> extra;
+
+        Info(String name, Double price) {
+            this.name = name;
+            this.price = price;
+        }
     }
 }
 ```
@@ -144,21 +156,21 @@ public class MyApp {
 ```
 public void run(Args args, Info info, String name, int num) {
     if (args == null) {
-        throw new RuntimeException("invalid argument while attempting to access io.moyada.MyApp.go(), because ".concat("args is null"));
+        throw new RuntimeException("Invalid input parameter, cause args is null"));
     } else {
         String mvar_0 = args.invalid0();
         if (mvar_0 != null) {
-            throw new RuntimeException("invalid argument while attempting to access io.moyada.MyApp.go(), because ".concat(mvar_0));
+            throw new RuntimeException("Invalid input parameter, cause " + mvar_0);
         } else {
             if (info != null) {
                 mvar_0 = info.invalid0();
                 if (mvar_0 != null) {
-                    throw new IllegalArgumentException("something error while attempting to access io.moyada.MyApp.go(), because ".concat(mvar_0));
+                    throw new IllegalArgumentException("something error, cause " + mvar_0);
                 }
             }
 
             if (name == null) {
-                throw new IllegalArgumentException("invalid argument while attempting to access io.moyada.MyApp.go(), because ".concat("name is null"));
+                return new ProcessorTest.Info("test", -0.503D);
             } else {
                 // process
                 ...
@@ -172,26 +184,28 @@ class Info {
     Double price;
     List<String> extra;
 
-    Info() {
+    Info(String name, Double price) {
+        this.name = name;
+        this.price = price;
     }
 
     public String invalid0() {
         if (this.name == null) {
             return "name is null";
-        } else if (this.name.length() > 20) {
-            return "name.length() great than 20";
+        } else if (this.name.length() < 50) {
+            return "name.length() less than 50";
         } else if (this.extra == null) {
             return "extra is null";
-        } else if (this.extra.size() > 10) {
-            return "extra.size() great than 10";
+        } else if (this.extra.size() == 10) {
+            return "extra.size() cannot equals 10";
         } else {
             if (this.price != null) {
-                if (this.price < 0.0D) {
-                    return "price less than 0";
+                if (this.price > 200.0D) {
+                    return "price great than 200.0";
                 }
 
-                if (this.price > 500.0D) {
-                    return "price great than 500";
+                if (this.price < -25.02D) {
+                    return "price less than -25.02";
                 }
             }
 
@@ -209,12 +223,12 @@ class Args {
     }
 
     public String invalid0() {
-        if (this.param == null) {
+        if (this.id > 1000) {
+            return "id great than 1000";
+        } else if (this.param == null) {
             return "param is null";
-        } else if (this.id < 10) {
-            return "id less than 10";
         } else {
-            return this.id > 2000 ? "id great than 2000" : null;
+            return this.value != null && this.value.length < 5 ? "value.length less than 5" : null;
         }
     }
 }

@@ -16,6 +16,9 @@ import java.util.Map;
  **/
 public final class ClassUtil {
 
+    private ClassUtil() {
+    }
+
     final static byte VERSION;
     final static byte VERSION_6 = 0;
     final static byte VERSION_7 = 1;

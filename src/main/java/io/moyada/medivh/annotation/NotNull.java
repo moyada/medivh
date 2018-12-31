@@ -3,17 +3,13 @@ package io.moyada.medivh.annotation;
 import java.lang.annotation.*;
 
 /**
- * 开启参数校验
+ * 是否允许为空，基础类型无效
  * @author xueyikang
  * @since 1.0
  **/
 @Documented
-@Target(ElementType.METHOD)
+@Target(ElementType.FIELD)
 @Retention(RetentionPolicy.SOURCE)
-public @interface Verify {
+public @interface NotNull {
 
-    /**
-     * 临时对象名称
-     */
-    String var() default "";
 }

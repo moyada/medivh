@@ -1,6 +1,10 @@
 package io.moyada.medivh.regulation;
 
-import io.moyada.medivh.annotation.Rule;
+import com.sun.tools.javac.code.Symbol;
+import io.moyada.medivh.annotation.NotNull;
+import io.moyada.medivh.annotation.Nullable;
+import io.moyada.medivh.annotation.NumberRule;
+import io.moyada.medivh.annotation.SizeRule;
 import io.moyada.medivh.util.TypeUtil;
 
 /**
@@ -14,77 +18,43 @@ public final class RegulationHelper {
 
     /**
      * 获取属性规则
+     * @param symbol
      * @param className
-     * @param rule
+     * @param isCollection
      * @return
      */
-    public static BaseRegulation build(String className, Rule rule, boolean isCollection) {
-        BaseRegulation validation = null;
+    public static BaseRegulation build(Symbol.VarSymbol symbol, String className, boolean isCollection) {
+        BaseRegulation regulation;
+        // 获取参数规则
 
-        // 集合 Collection \ Map
-        if (isCollection) {
-            int length = rule.maxLength();
-            if (length < 1) {
-                // 无意义规则
-                if (rule.nullable()) {
-                    return null;
-                }
-                validation = new BaseRegulation();
-            } else {
-                validation = new LengthRegulation(length, LengthRegulation.COLLECTION);
-            }
+        NumberRule numberRule = symbol.getAnnotation(NumberRule.class);
+        regulation = buildNumber(className, numberRule);
 
-            validation.setNullable(rule.nullable());
-            return validation;
+        if (null == regulation) {
+            SizeRule sizeRule = symbol.getAnnotation(SizeRule.class);
+            regulation = buildSize(className, sizeRule, isCollection);
         }
 
-        // 字符串逻辑
-        if (TypeUtil.isStr(className)) {
-            int length = rule.maxLength();
-            if (length < 1) {
-                // 无意义规则
-                if (rule.nullable()) {
-                    return null;
-                }
-                validation = new BaseRegulation();
-            } else {
-                validation = new LengthRegulation(length, LengthRegulation.STRING);
-            }
+        boolean nullable;
 
-            validation.setNullable(rule.nullable());
-            return validation;
+        Nullable nullflag = symbol.getAnnotation(Nullable.class);
+        if (null != nullflag) {
+            nullable = true;
+        } else if (regulation != null){
+            nullable = false;
+        } else {
+            NotNull notnull = symbol.getAnnotation(NotNull.class);
+            nullable = notnull == null;
         }
 
-        // 数组规则
-        if (TypeUtil.isArr(className)) {
-            int length = rule.maxLength();
-            if (length < 1) {
-                // 无意义规则
-                if (rule.nullable()) {
-                    return null;
-                }
-                validation = new BaseRegulation();
-            } else {
-                validation = new LengthRegulation(length, LengthRegulation.ARRAY);
+        return check(regulation, className, nullable);
+    }
+
+    private static BaseRegulation check(BaseRegulation validation, String className, boolean nullable) {
+        if (null == validation) {
+            if (nullable) {
+                return null;
             }
-
-            validation.setNullable(rule.nullable());
-            return validation;
-        }
-
-        // 数字逻辑
-        char numType = TypeUtil.getNumType(className);
-        if (numType != TypeUtil.UNKNOWN) {
-            long min = getMin(numType, rule.min());
-            long max = getMax(numType, rule.max());
-
-            if (needCheck(numType, min, max)) {
-                validation = new NumberRegulation(min, max);
-            }
-        }
-
-        // 其他
-        if (validation == null) {
             validation = new BaseRegulation();
         }
 
@@ -93,7 +63,7 @@ public final class RegulationHelper {
             validation.setPrimitive(true);
             validation.setNullable(true);
         } else {
-            validation.setNullable(rule.nullable());
+            validation.setNullable(nullable);
         }
 
         // 无意义规则
@@ -103,31 +73,102 @@ public final class RegulationHelper {
         return validation;
     }
 
-    private static long getMin(char type, long value) {
-        long min = TypeUtil.getMin(type);
-        if (min < value) {
-            return value;
+    /**
+     * 构建数字规则
+     * @param className
+     * @param numberRule
+     * @return
+     */
+    private static BaseRegulation buildNumber(String className, NumberRule numberRule) {
+        if (null == numberRule) {
+            return null;
         }
-        return min;
-    }
 
-    private static long getMax(char type, long value) {
-        long max = TypeUtil.getMax(type);
-        if (value < max) {
-            return value;
+        BaseRegulation regulation = null;
+
+        // 数字逻辑
+        char numType = TypeUtil.getNumType(className);
+        if (numType != TypeUtil.UNKNOWN) {
+            Object min = TypeUtil.getMin(numType, numberRule.min());
+            Object max = TypeUtil.getMax(numType, numberRule.max());
+
+            int result;
+            if (null == min || null == max) {
+                result = -1;
+            } else {
+                result = TypeUtil.compare(numType, min, max);
+            }
+
+            if (null != min || null != max) {
+                if (result == -1) {
+                    regulation = new NumberRegulation(TypeUtil.getTypeTag(numType), min, max);
+                } else if (result == 0) {
+                    regulation = new EqualsRegulation(TypeUtil.getTypeTag(numType), min);
+                }
+            }
         }
-        return max;
+        return regulation;
     }
 
     /**
-     * 范围最大无需校验
-     * @param type
-     * @param min
-     * @param max
+     * 构建大小规则
+     * @param className
+     * @param sizeRule
+     * @param isCollection
      * @return
      */
-    private static boolean needCheck(char type, long min, long max) {
-        return TypeUtil.getMin(type) != min || TypeUtil.getMax(type) != max;
+    private static BaseRegulation buildSize(String className, SizeRule sizeRule, boolean isCollection) {
+        if (null == sizeRule) {
+            return null;
+        }
+
+        BaseRegulation regulation = null;
+
+        // 集合 Collection \ Map
+        if (isCollection) {
+            return getSizeRule(sizeRule, SizeRegulation.COLLECTION);
+        }
+
+        // 字符串逻辑
+        if (TypeUtil.isStr(className)) {
+            return getSizeRule(sizeRule, SizeRegulation.STRING);
+        }
+
+        // 数组规则
+        if (TypeUtil.isArr(className)) {
+            return getSizeRule(sizeRule, SizeRegulation.ARRAY);
+        }
+
+        return regulation;
+    }
+
+    private static BaseRegulation getSizeRule(SizeRule rule, byte type) {
+        Integer minLength = getLength(rule.min());
+        Integer maxLength = getLength(rule.max());
+
+        BaseRegulation validation;
+        if (isInvalid(minLength, maxLength)) {
+            validation = new BaseRegulation();
+        } else {
+            validation = new SizeRegulation(minLength, maxLength, type);
+        }
+        return validation;
+    }
+
+    private static Integer getLength(int length) {
+        return length < 0 ? null : length;
+    }
+
+    private static boolean isInvalid(Integer min, Integer max) {
+        if (null == min && null == max) {
+            return true;
+        }
+        if (null != min && null != max &&
+                TypeUtil.compare(TypeUtil.getNumType("int"), min, max) > 0) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

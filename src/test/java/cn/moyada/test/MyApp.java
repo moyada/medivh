@@ -1,8 +1,6 @@
 package cn.moyada.test;
 
-import io.moyada.medivh.annotation.Check;
-import io.moyada.medivh.annotation.Rule;
-import io.moyada.medivh.annotation.Verify;
+import io.moyada.medivh.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,37 +12,45 @@ import java.util.List;
 public class MyApp {
 
     @Verify
-    public static void go(@Check(invalid = RuntimeException.class) Args args,
+    public static Info go(@Check(invalid = RuntimeException.class) Args args,
                     @Check(message = "something error", nullable = true) Info info,
-                    @Check String name,
+                    @Check(throwable = false, returnValue = {"test", "0.5"}) String name,
                     int num) {
         System.out.println(args);
         System.out.println(info);
         System.out.println(name);
         System.out.println(num);
+        return null;
     }
 
     class Args {
 
-        @Rule(min = 10, max = 2000)
+        @NumberRule(max = "1000")
         int id;
 
-        @Rule
+        @NotNull
         HashMap<String, Object> param;
 
-        @Rule(maxLength = 5, nullable = true)
-        String[] value;
+        @Nullable
+        @SizeRule(min = 5)
+        boolean[] value;
     }
 
-    class Info {
+    static class Info {
 
-        @Rule(maxLength = 20)
+        public Info(String name, Double price) {
+            this.name = name;
+            this.price = price;
+        }
+
+        @SizeRule(min = 50)
         String name;
 
-        @Rule(min = -250, max = 500, nullable = true)
+        @Nullable
+        @NumberRule(min = "-25.02", max = "200")
         Double price;
 
-        @Rule(maxLength = 10)
+        @SizeRule(min = 10, max = 10)
         List<String> extra;
     }
 }

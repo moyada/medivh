@@ -8,12 +8,19 @@ package io.moyada.medivh.util;
 public enum TypeTag {
 
     BOT,
+    BOOLEAN,
+    BYTE,
+    SHORT,
     INT,
+    LONG,
+    FLOAT,
+    DOUBLE,
+    CHAR,
     NE,
     EQ,
     GT,
     LT,
+    PLUS,
     CLASS,
-    BOOLEAN,
     ;
 }

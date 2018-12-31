@@ -30,4 +30,12 @@ public class BaseRegulation {
     public void setPrimitive(boolean primitive) {
         this.primitive = primitive;
     }
+
+    @Override
+    public String toString() {
+        return "BaseRegulation{" +
+                "nullable=" + nullable +
+                ", primitive=" + primitive +
+                '}';
+    }
 }

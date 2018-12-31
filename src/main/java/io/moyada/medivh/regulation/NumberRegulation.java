@@ -1,5 +1,7 @@
 package io.moyada.medivh.regulation;
 
+import io.moyada.medivh.util.TypeTag;
+
 /**
  * 数字校验规则
  * @author xueyikang
@@ -7,20 +9,36 @@ package io.moyada.medivh.regulation;
  **/
 public class NumberRegulation extends BaseRegulation {
 
-    private long min;
+    private TypeTag typeTag;
 
-    private long max;
+    private Object min;
 
-    NumberRegulation(long min, long max) {
+    private Object max;
+
+    NumberRegulation(TypeTag typeTag, Object min, Object max) {
+        this.typeTag = typeTag;
         this.min = min;
         this.max = max;
     }
 
-    public long getMin() {
+    public TypeTag getTypeTag() {
+        return typeTag;
+    }
+
+    public Object getMin() {
         return min;
     }
 
-    public long getMax() {
+    public Object getMax() {
         return max;
+    }
+
+    @Override
+    public String toString() {
+        return "NumberRegulation{" +
+                "typeTag=" + typeTag +
+                ", min=" + min +
+                ", max=" + max +
+                '}';
     }
 }

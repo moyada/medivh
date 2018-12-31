@@ -1,7 +1,5 @@
 package io.moyada.medivh.translator;
 
-import io.moyada.medivh.util.CTreeUtil;
-import io.moyada.medivh.util.TypeTag;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
@@ -9,10 +7,17 @@ import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
-import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Name;
+import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.TypeTag;
+import io.moyada.medivh.util.TypeUtil;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
+import javax.tools.Diagnostic;
 import java.util.Collection;
 import java.util.Map;
 
@@ -114,10 +119,21 @@ class BaseTranslator extends TreeTranslator {
         return false;
     }
 
+    /**
+     * 判断类型是否为集合
+     * @param typeSymbol
+     * @return
+     */
     private boolean isCollection(Symbol typeSymbol) {
         return isInstanceOf(typeSymbol, collectionSymbol) || isInstanceOf(typeSymbol, mapSymbol);
     }
 
+    /**
+     * 判断是否为类型的子类
+     * @param typeSymbol
+     * @param classSymbol
+     * @return
+     */
     private boolean isInstanceOf(Symbol typeSymbol, Symbol.ClassSymbol classSymbol) {
         return typeSymbol.isSubClass(classSymbol, types);
     }
@@ -209,4 +225,75 @@ class BaseTranslator extends TreeTranslator {
 
         return e;
     }
+
+    /**
+     * 返回空构造方法语句
+     * @param returnTypeName
+     * @return
+     */
+    protected JCTree.JCExpression getEmptyType(String returnTypeName) {
+        if (null != TypeUtil.getBaseType(returnTypeName)) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "cannot find return value to " + returnTypeName);
+        }
+        JCTree.JCExpression returnType = findClass(returnTypeName);
+        return treeMaker.NewClass(null, CTreeUtil.emptyParam(), returnType, CTreeUtil.emptyParam(), null);
+    }
+
+    /**
+     * 参数转换
+     * @param classSymbol
+     * @param values
+     * @return
+     */
+    protected List<JCTree.JCExpression> getParamType(Symbol.ClassSymbol classSymbol, String[] values) {
+        int length = values.length;
+
+        List<JCTree.JCExpression> param = null;
+
+        boolean findParam;
+        for (Symbol element : classSymbol.getEnclosedElements()) {
+            // 构造方法
+            if (element.isConstructor()) { // && (element.flags() & Flags.PUBLIC) != 0) {
+                Symbol.MethodSymbol methodSymbol = (Symbol.MethodSymbol) element;
+                List<Symbol.VarSymbol> parameters = methodSymbol.getParameters();
+                if (parameters.size() != values.length) {
+                    continue;
+                }
+
+                findParam = true;
+                for (int i = 0; findParam && i < length; i++) {
+                    Symbol.VarSymbol varSymbol = parameters.get(i);
+                    String typeName = CTreeUtil.getOriginalTypeName(varSymbol);
+
+                    TypeTag baseType = TypeUtil.getBaseType(typeName);
+                    if (null == baseType) {
+                        param = null;
+                        findParam = false;
+                        continue;
+                    }
+
+                    Object value = CTreeUtil.getValue(baseType, values[i]);
+                    if (null == value) {
+                        param = null;
+                        findParam = false;
+                        continue;
+                    }
+
+                    JCTree.JCExpression argsVal = CTreeUtil.newElement(treeMaker, baseType, value);
+                    if (null == param) {
+                        param = List.of(argsVal);
+                    } else {
+                        param = param.append(argsVal);
+                    }
+                }
+
+                if (param != null) {
+                    return param;
+                }
+            }
+        }
+
+        return null;
+    }
+
 }

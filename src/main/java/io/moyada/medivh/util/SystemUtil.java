@@ -8,6 +8,9 @@ import io.moyada.medivh.annotation.Verify;
  **/
 public class SystemUtil {
 
+    private SystemUtil() {
+    }
+
     /**
      * 获取参数
      * @param key

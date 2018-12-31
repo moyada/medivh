@@ -2,17 +2,14 @@ package io.moyada.medivh.translator;
 
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.util.Element;
-import io.moyada.medivh.annotation.Rule;
-import io.moyada.medivh.regulation.BaseRegulation;
-import io.moyada.medivh.regulation.LengthRegulation;
-import io.moyada.medivh.regulation.NumberRegulation;
-import io.moyada.medivh.regulation.RegulationHelper;
+import io.moyada.medivh.regulation.*;
 import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.Element;
 import io.moyada.medivh.util.TypeTag;
 
 import javax.annotation.processing.Messager;
@@ -57,11 +54,10 @@ public class ValidationTranslator extends BaseTranslator {
                     continue;
                 }
 
+                Symbol.VarSymbol symbol = jcVariableDecl.sym;
+                String className = CTreeUtil.getOriginalTypeName(symbol);
                 // 获取参数规则
-                Rule rule = jcVariableDecl.sym.getAnnotation(Rule.class);
-                String className = CTreeUtil.getOriginalTypeName(jcVariableDecl.sym);
-
-                BaseRegulation regulation = RegulationHelper.build(className, rule, isCollection(className));
+                BaseRegulation regulation = RegulationHelper.build(symbol, className, isCollection(className));
                 if (null == regulation) {
                     continue;
                 }
@@ -104,8 +100,14 @@ public class ValidationTranslator extends BaseTranslator {
             if (nullcheck) {
                 addNotNullCheck(statements, key);
             }
-            addRangeCheck(statements, key, regulation, nullcheck);
-            addLengthCheck(statements, key, regulation, nullcheck);
+
+            if (regulation instanceof NumberRegulation) {
+                addRangeCheck(statements, key, (NumberRegulation) regulation, nullcheck);
+            } else if (regulation instanceof SizeRegulation) {
+                addSizeCheck(statements, key, (SizeRegulation) regulation, nullcheck);
+            } else if (regulation instanceof EqualsRegulation) {
+                addEqualsCheck(statements, key, (EqualsRegulation) regulation, nullcheck);
+            }
         }
 
         // 校验通过返回 null
@@ -128,42 +130,94 @@ public class ValidationTranslator extends BaseTranslator {
      * 增加长度校验
      * @param statements
      * @param field
-     * @param validation
+     * @param regulation
      * @param nullcheck
      */
-    private void addLengthCheck(ListBuffer<JCTree.JCStatement> statements,
-                                JCTree.JCIdent field, BaseRegulation validation, boolean nullcheck) {
+    private void addSizeCheck(ListBuffer<JCTree.JCStatement> statements,
+                              JCTree.JCIdent field, SizeRegulation regulation, boolean nullcheck) {
+        String fileName = field.name.toString();
 
-        if (!(validation instanceof LengthRegulation)) {
-            return;
-        }
-        LengthRegulation lengthValidation = (LengthRegulation) validation;
-        int length = lengthValidation.getLength();
-        JCTree.JCLiteral lenField = CTreeUtil.newElement(treeMaker, TypeTag.INT, length);
-
-        // 获取长度信息
+        // 获取大小信息
         JCTree.JCExpression getLength;
-        JCTree.JCLiteral message;
-        if (lengthValidation.isStr()) {
+        String mode;
+        if (regulation.isStr()) {
             getLength = execMethod(getMethod(field, "length", CTreeUtil.emptyParam())).getExpression();
-            message = createStr(field.name.toString() + ".length() great than " + length);
-        } else if (lengthValidation.isArr()) {
+            mode = ".length()";
+        } else if (regulation.isArr()) {
             getLength = getField(field, "length");
-            message = createStr(field.name.toString() + ".length great than " + length);
+            mode = ".length";
         } else {
             getLength = execMethod(getMethod(field, "size", CTreeUtil.emptyParam())).getExpression();
-            message = createStr(field.name.toString() + ".size() great than " + length);
+            mode = ".size()";
         }
 
-        // 创建对比语句
-        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, getLength, lenField);
-        JCTree.JCIf expression = treeMaker.If(condition, treeMaker.Return(message), null);
+        JCTree.JCIf expression = null;
+
+        Integer min = regulation.getMin();
+        Integer max = regulation.getMax();
+        if (null != min && null != max && min.intValue() == max.intValue()) {
+            // equals
+            JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, TypeTag.INT, min);
+
+            // 创建对比语句
+            JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, getLength, minField);
+            expression = treeMaker.If(condition,
+                    treeMaker.Return(createStr(fileName + mode + " cannot equals " + min)), expression);
+        } else {
+            // min logic
+            if (null != min) {
+                JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, TypeTag.INT, min);
+
+                // 创建对比语句
+                JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.LT, getLength, minField);
+                expression = treeMaker.If(condition,
+                        treeMaker.Return(createStr(fileName + mode + " less than " + min)), expression);
+            }
+
+            // max logic
+            if (null != max) {
+                JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, TypeTag.INT, max);
+
+                // 创建对比语句
+                JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, getLength, minField);
+                expression = treeMaker.If(condition,
+                        treeMaker.Return(createStr(fileName + mode + " great than " + max)), expression);
+            }
+        }
 
         // 没经过判空校验
         if (!nullcheck) {
             JCTree.JCExpression notnull = CTreeUtil.newExpression(treeMaker, TypeTag.NE, field, nullNode);
             expression = treeMaker.If(notnull, expression, null);
         }
+
+        statements.append(expression);
+    }
+
+    /**
+     * 增加长度校验
+     * @param statements
+     * @param field
+     * @param regulation
+     * @param nullcheck
+     */
+    private void addEqualsCheck(ListBuffer<JCTree.JCStatement> statements,
+                                JCTree.JCIdent field, EqualsRegulation regulation, boolean nullcheck) {
+        String name = field.name.toString();
+
+        TypeTag typeTag = regulation.getTypeTag();
+
+        Object value = regulation.getValue();
+        JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, typeTag, value);
+        JCTree.JCExpression minCondition = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, field, minField);
+        JCTree.JCIf expression = treeMaker.If(minCondition, treeMaker.Return(createStr(name + " less than " + value)), null);
+
+        // 没做过判空并且非原始类型
+        if (!nullcheck && !regulation.isPrimitive()) {
+            JCTree.JCExpression notnull = CTreeUtil.newExpression(treeMaker, TypeTag.NE, field, nullNode);
+            expression = treeMaker.If(notnull, expression, null);
+        }
+
         statements.append(expression);
     }
 
@@ -171,35 +225,34 @@ public class ValidationTranslator extends BaseTranslator {
      * 增加范围校验
      * @param statements
      * @param field
-     * @param validation
+     * @param regulation
      * @param nullcheck
      */
     private void addRangeCheck(ListBuffer<JCTree.JCStatement> statements,
-                               JCTree.JCIdent field, BaseRegulation validation, boolean nullcheck) {
-
-        if (!(validation instanceof NumberRegulation)) {
-            return;
-        }
-        NumberRegulation numberValidation = (NumberRegulation) validation;
-
+                               JCTree.JCIdent field, NumberRegulation regulation, boolean nullcheck) {
         String name = field.name.toString();
 
+        JCTree.JCIf expression = null;
+
+        TypeTag typeTag = regulation.getTypeTag();
         // min logic
-        long min = numberValidation.getMin();
-        JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, TypeTag.INT, min);
-        JCTree.JCExpression minCondition = CTreeUtil.newExpression(treeMaker, TypeTag.LT, field, minField);
+        Object min = regulation.getMin();
+        if (null != min) {
+            JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, typeTag, min);
+            JCTree.JCExpression minCondition = CTreeUtil.newExpression(treeMaker, TypeTag.LT, field, minField);
+            expression = treeMaker.If(minCondition, treeMaker.Return(createStr(name + " less than " + min)), expression);
+        }
 
         // max logic
-        long max = numberValidation.getMax();
-        JCTree.JCLiteral maxField = CTreeUtil.newElement(treeMaker, TypeTag.INT, max);
-        JCTree.JCExpression maxCondition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, field, maxField);
-
-        // 创建判断语句
-        JCTree.JCIf expression = treeMaker.If(maxCondition, treeMaker.Return(createStr(name + " great than " + max)), null);
-        expression = treeMaker.If(minCondition, treeMaker.Return(createStr(name + " less than " + min)), expression);
+        Object max = regulation.getMax();
+        if (null != max) {
+            JCTree.JCLiteral maxField = CTreeUtil.newElement(treeMaker, typeTag, max);
+            JCTree.JCExpression maxCondition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, field, maxField);
+            expression = treeMaker.If(maxCondition, treeMaker.Return(createStr(name + " great than " + max)), expression);
+        }
 
         // 没做过判空并且非原始类型
-        if (!nullcheck && !validation.isPrimitive()) {
+        if (!nullcheck && !regulation.isPrimitive()) {
             JCTree.JCExpression notnull = CTreeUtil.newExpression(treeMaker, TypeTag.NE, field, nullNode);
             expression = treeMaker.If(notnull, expression, null);
         }

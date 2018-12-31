@@ -1,11 +1,16 @@
 package io.moyada.medivh.util;
 
+import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
-import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Name;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 /**
  * 语法树工具
@@ -13,6 +18,9 @@ import java.lang.reflect.Method;
  * @since 1.0
  **/
 public final class CTreeUtil {
+
+    private CTreeUtil() {
+    }
 
     public static List<JCTree.JCExpression> emptyParam(){
         return List.nil();
@@ -23,17 +31,39 @@ public final class CTreeUtil {
     }
 
     /**
-     * 创建方法的报错信息来源
-     * @param methodDecl
+     * 获取注解类型属性
+     * @param ms
+     * @param className
      * @return
      */
-    public static String getActionInfo(JCTree.JCMethodDecl methodDecl) {
-        String className = getOriginalTypeName(methodDecl.sym.getEnclosingElement());
-        String methodName = methodDecl.name.toString();
-        return " while attempting to access " + className + "." + methodName + "(), cause ";
+    public static Attribute.Compound getAnnotationAttr(List<Attribute.Compound> ms, String className) {
+        for (Attribute.Compound m : ms) {
+            if (!m.getAnnotationType().toString().equals(className)) {
+                continue;
+            }
+
+            return m;
+        }
+        return null;
     }
-    public static String getActionInfo() {
-        return ", cause ";
+
+    /**
+     * 获取注解参数
+     * @param annotationAttr
+     * @param key
+     * @return
+     */
+    public static String getAnnotationValue(Attribute.Compound annotationAttr, String key) {
+        if (null == annotationAttr) {
+            return null;
+        }
+
+        for (Map.Entry<Symbol.MethodSymbol, Attribute> entry : annotationAttr.getElementValues().entrySet()) {
+            if (entry.getKey().toString().equals(key)) {
+                return entry.getValue().getValue().toString();
+            }
+        }
+        return null;
     }
 
     /**
@@ -43,6 +73,51 @@ public final class CTreeUtil {
      */
     public static String getOriginalTypeName(Symbol symbol) {
         return symbol.asType().asElement().toString();
+    }
+
+    /**
+     * 获取返回类型名称
+     * @param methodDecl
+     * @return
+     */
+    public static String getReturnTypeName(JCTree.JCMethodDecl methodDecl) {
+        String returnTypeName = getOriginalTypeName(methodDecl.sym.getReturnType().asElement());
+        if (returnTypeName.equals("void") || returnTypeName.equals("java.lang.Void")) {
+            return null;
+        }
+
+        return returnTypeName;
+    }
+
+    /**
+     * 获取类型节点构造值
+     * @param baseType
+     * @param value
+     * @return
+     */
+    public static Object getValue(TypeTag baseType, String value) {
+        if (baseType == TypeTag.CLASS) {
+            return value;
+        }
+
+        if (baseType == TypeTag.BOOLEAN) {
+            if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
+                return 1;
+            }
+            if (Boolean.FALSE.toString().equalsIgnoreCase(value)) {
+                return 0;
+            }
+            return null;
+        }
+
+        if (baseType == TypeTag.CHAR) {
+            if (value.length() != 1) {
+                return null;
+            }
+            return (int) value.charAt(0);
+        }
+
+        return TypeUtil.getNumberValue(TypeUtil.getNumType(baseType.toString().toLowerCase()), value);
     }
 
     /**

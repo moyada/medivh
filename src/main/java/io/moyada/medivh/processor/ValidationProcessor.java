@@ -1,17 +1,15 @@
 package io.moyada.medivh.processor;
 
 
-import io.moyada.medivh.annotation.Check;
-import io.moyada.medivh.annotation.Rule;
-import io.moyada.medivh.annotation.Verify;
-import io.moyada.medivh.translator.ValidationTranslator;
-import io.moyada.medivh.translator.VerificationTranslator;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
+import io.moyada.medivh.annotation.*;
+import io.moyada.medivh.translator.ValidationTranslator;
+import io.moyada.medivh.translator.VerificationTranslator;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
@@ -60,14 +58,21 @@ public class ValidationProcessor extends AbstractProcessor {
 
         // 获取对象规则
         Set<? extends Element> rules = ElementFilter.fieldsIn(
-                roundEnv.getElementsAnnotatedWith(Rule.class));
-        if (rules.isEmpty()) {
+                roundEnv.getElementsAnnotatedWith(Nullable.class));
+        Set<? extends Element> notnull = ElementFilter.fieldsIn(
+                roundEnv.getElementsAnnotatedWith(NotNull.class));
+        Set<? extends Element> number = ElementFilter.fieldsIn(
+                roundEnv.getElementsAnnotatedWith(NumberRule.class));
+        Set<? extends Element> size = ElementFilter.fieldsIn(
+                roundEnv.getElementsAnnotatedWith(SizeRule.class));
+
+        // 解析聚合类
+        Collection<? extends Element> ruleClass = getClass(rules, notnull, number, size);
+        if (ruleClass == null || ruleClass.isEmpty()) {
             return true;
         }
 
-        // 解析聚合类
-        Collection<? extends Element> ruleClass = getClass(rules);
-        if (ruleClass == null || ruleClass.isEmpty()) {
+        if (rules.isEmpty()) {
             return true;
         }
 
@@ -93,26 +98,33 @@ public class ValidationProcessor extends AbstractProcessor {
      * @param rules
      * @return
      */
-    private Collection<? extends Element> getClass(Set<? extends Element> rules) {
-        if (rules.isEmpty()) {
-            return null;
+    private Collection<? extends Element> getClass(Set<? extends Element>... rules) {
+        Set<Symbol.ClassSymbol> classRule = new HashSet<Symbol.ClassSymbol>();
+
+        Symbol.VarSymbol var;
+        for (Set<? extends Element> rule : rules) {
+            if (rule.isEmpty()) {
+                return null;
+            }
+
+            for (Element element : rule) {
+                var = (Symbol.VarSymbol) element;
+                classRule.add(var.enclClass());
+            }
         }
 
-        Set<Symbol.ClassSymbol> classRule = new HashSet<Symbol.ClassSymbol>();
-        Symbol.VarSymbol var;
-        for (Element rule : rules) {
-            var = (Symbol.VarSymbol) rule;
-            classRule.add(var.enclClass());
-        }
         return classRule;
     }
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        Set<String> annotationTypes = new HashSet<String>(4);
+        Set<String> annotationTypes = new HashSet<String>(8);
         annotationTypes.add(Verify.class.getName());
-        annotationTypes.add(Rule.class.getName());
         annotationTypes.add(Check.class.getName());
+//        annotationTypes.add(Rule.class.getName());
+        annotationTypes.add(Nullable.class.getName());
+        annotationTypes.add(NumberRule.class.getName());
+        annotationTypes.add(SizeRule.class.getName());
         return annotationTypes;
     }
 
