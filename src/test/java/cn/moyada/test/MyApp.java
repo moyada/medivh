@@ -11,15 +11,20 @@ import java.util.List;
  **/
 public class MyApp {
 
-    @Verify
-    public static Info go(@Check(invalid = RuntimeException.class) Args args,
-                    @Check(message = "something error", nullable = true) Info info,
-                    @Check(throwable = false, returnValue = {"test", "0.5"}) String name,
-                    int num) {
+    public static Info go(@Throw(RuntimeException.class) Args args,
+                          @Throw(message = "something error") @Nullable Info info,
+                          @Return({"test", "0.5"}) String name,
+                          int num) {
         System.out.println(args);
         System.out.println(info);
         System.out.println(name);
         System.out.println(num);
+        return null;
+    }
+
+    public static InterfaceA test(@Throw(IllegalStateException.class) ParamA a,
+                                  @Return(value = {"null"}) @Nullable ParamB b,
+                                  @Return(value = {"test", "true"}, type = SubClass.class) ParamC c) {
         return null;
     }
 

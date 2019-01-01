@@ -17,7 +17,7 @@ public final class TypeUtil {
 
     private static final char BYTE = 'B';
     private static final char SHORT = 'S';
-    private static final char INTEGER = 'I';
+    private static final char INT = 'I';
     private static final char LONG = 'L';
     private static final char FLOAT = 'F';
     private static final char DOUBLE = 'D';
@@ -32,8 +32,8 @@ public final class TypeUtil {
         MIN.put(SHORT, Short.MIN_VALUE);
         MAX.put(SHORT, Short.MAX_VALUE);
 
-        MIN.put(INTEGER, Integer.MIN_VALUE);
-        MAX.put(INTEGER, Integer.MAX_VALUE);
+        MIN.put(INT, Integer.MIN_VALUE);
+        MAX.put(INT, Integer.MAX_VALUE);
 
         MIN.put(LONG, Long.MIN_VALUE);
         MAX.put(LONG, Long.MAX_VALUE);
@@ -46,36 +46,78 @@ public final class TypeUtil {
     }
 
     /**
-     * 是否基本类型
+     * 是否原始类型
      * @param name
      * @return
      */
     public static boolean isPrimitive(String name) {
-        if (name.equals("byte")) {
+        if (name.equals(getName(byte.class))) {
             return true;
         }
-        if (name.equals("short")) {
+        if (name.equals(getName(short.class))) {
             return true;
         }
-        if (name.equals("int")) {
+        if (name.equals(getName(int.class))) {
             return true;
         }
-        if (name.equals("long")) {
+        if (name.equals(getName(long.class))) {
             return true;
         }
-        if (name.equals("char")) {
+        if (name.equals(getName(float.class))) {
             return true;
         }
-        if (name.equals("float")) {
+        if (name.equals(getName(double.class))) {
             return true;
         }
-        if (name.equals("double")) {
+        if (name.equals(getName(boolean.class))) {
             return true;
         }
-        if (name.equals("boolean")) {
+        if (name.equals(getName(char.class))) {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 获取包装类型
+     * @param name
+     * @return
+     */
+    public static String getWrapperType(String name) {
+        if (name.equals(getName(byte.class))) {
+            return Byte.class.getName();
+        }
+        if (name.equals(getName(short.class))) {
+            return Short.class.getName();
+        }
+        if (name.equals(getName(int.class))) {
+            return Integer.class.getName();
+        }
+        if (name.equals(getName(long.class))) {
+            return Long.class.getName();
+        }
+        if (name.equals(getName(char.class))) {
+            return Character.class.getName();
+        }
+        if (name.equals(getName(float.class))) {
+            return Float.class.getName();
+        }
+        if (name.equals(getName(double.class))) {
+            return Double.class.getName();
+        }
+        if (name.equals(getName(boolean.class))) {
+            return Boolean.class.getName();
+        }
+        return name;
+    }
+
+    /**
+     * 获取类名
+     * @param clazz
+     * @return
+     */
+    private static String getName(Class<?> clazz) {
+        return clazz.getName();
     }
 
     /**
@@ -84,7 +126,7 @@ public final class TypeUtil {
      * @return
      */
     public static boolean isStr(String name) {
-        return name.equals("java.lang.String");
+        return name.equals(getName(String.class));
     }
 
     /**
@@ -97,68 +139,73 @@ public final class TypeUtil {
     }
 
     /**
-     * 是否数字类型
+     * 返回数字类型标记
      * @param name
      * @return
      */
     public static char getNumType(String name) {
-        if (name.equals("byte") || name.equals("java.lang.Byte")) {
+        if (name.equals(getName(byte.class)) || name.equals(getName(Byte.class))) {
             return BYTE;
         }
-        if (name.equals("short") || name.equals("java.lang.Short")) {
+        if (name.equals(getName(short.class)) || name.equals(getName(Short.class))) {
             return SHORT;
         }
-        if (name.equals("int") || name.equals("java.lang.Integer")) {
-            return INTEGER;
+        if (name.equals(getName(int.class)) || name.equals(getName(Integer.class))) {
+            return INT;
         }
-        if (name.equals("long") || name.equals("java.lang.Long")) {
+        if (name.equals(getName(long.class)) || name.equals(getName(Long.class))) {
             return LONG;
         }
-        if (name.equals("float") || name.equals("java.lang.Float")) {
+        if (name.equals(getName(float.class)) || name.equals(getName(Float.class))) {
             return FLOAT;
         }
-        if (name.equals("double") || name.equals("java.lang.Double")) {
+        if (name.equals(getName(double.class)) || name.equals(getName(Double.class))) {
             return DOUBLE;
         }
         return UNKNOWN;
     }
 
     /**
-     * 返回基本类型
+     * 返回基本类型标签
      * @param name
      * @return
      */
     public static TypeTag getBaseType(String name) {
-        if (name.equals("byte") || name.equals("java.lang.Byte")) {
+        if (name.equals(getName(byte.class)) || name.equals(getName(Byte.class))) {
             return TypeTag.BYTE;
         }
-        if (name.equals("short") || name.equals("java.lang.Short")) {
+        if (name.equals(getName(short.class)) || name.equals(getName(Short.class))) {
             return TypeTag.SHORT;
         }
-        if (name.equals("int") || name.equals("java.lang.Integer")) {
+        if (name.equals(getName(int.class)) || name.equals(getName(Integer.class))) {
             return TypeTag.INT;
         }
-        if (name.equals("long") || name.equals("java.lang.Long")) {
+        if (name.equals(getName(long.class)) || name.equals(getName(Long.class))) {
             return TypeTag.LONG;
         }
-        if (name.equals("float") || name.equals("java.lang.Float")) {
+        if (name.equals(getName(float.class)) || name.equals(getName(Float.class))) {
             return TypeTag.FLOAT;
         }
-        if (name.equals("double") || name.equals("java.lang.Double")) {
+        if (name.equals(getName(double.class)) || name.equals(getName(Double.class))) {
             return TypeTag.DOUBLE;
         }
-        if (name.equals("boolean") || name.equals("java.lang.Boolean")) {
+        if (name.equals(getName(boolean.class)) || name.equals(getName(Boolean.class))) {
             return TypeTag.BOOLEAN;
         }
-        if (name.equals("char") || name.equals("java.lang.Character")) {
+        if (name.equals(getName(char.class)) || name.equals(getName(Character.class))) {
             return TypeTag.CHAR;
         }
-        if (name.equals("java.lang.String")) {
+        if (isStr(name)) {
             return TypeTag.CLASS;
         }
         return null;
     }
 
+    /**
+     * 根据标记获取标签
+     * @param type
+     * @return
+     */
     public static TypeTag getTypeTag(char type) {
         TypeTag typeTag;
         switch (type) {
@@ -168,7 +215,7 @@ public final class TypeUtil {
             case SHORT:
                 typeTag = TypeTag.SHORT;
                 break;
-            case INTEGER:
+            case INT:
                 typeTag = TypeTag.INT;
                 break;
             case LONG:
@@ -187,6 +234,12 @@ public final class TypeUtil {
         return typeTag;
     }
 
+    /**
+     * 转换数值
+     * @param type
+     * @param input
+     * @return
+     */
     static Object getNumberValue(char type, String input) {
         if (null == input) {
             return null;
@@ -201,7 +254,7 @@ public final class TypeUtil {
                 case SHORT:
                     value = Short.valueOf(input);
                     break;
-                case INTEGER:
+                case INT:
                     value = Integer.valueOf(input);
                     break;
                 case LONG:
@@ -263,6 +316,13 @@ public final class TypeUtil {
         return null;
     }
 
+    /**
+     * 比较转换数值
+     * @param type
+     * @param o1
+     * @param o2
+     * @return
+     */
     public static int compare(char type, Object o1, Object o2) {
         Number m1 = (Number) o1;
         Number m2 = (Number) o2;
@@ -271,7 +331,7 @@ public final class TypeUtil {
                 return m1.byteValue() < m2.byteValue() ? -1 : m1.byteValue() > m2.byteValue() ? 1 : 0;
             case SHORT:
                 return m1.shortValue() < m2.shortValue() ? -1 : m1.shortValue() > m2.shortValue() ? 1 : 0;
-            case INTEGER:
+            case INT:
                 return m1.intValue() < m2.intValue() ? -1 : m1.intValue() > m2.intValue() ? 1 : 0;
             case LONG:
                 return m1.longValue() < m2.longValue() ? -1 : m1.longValue() > m2.longValue() ? 1 : 0;

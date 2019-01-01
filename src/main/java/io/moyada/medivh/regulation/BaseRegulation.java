@@ -7,6 +7,8 @@ package io.moyada.medivh.regulation;
  **/
 public class BaseRegulation {
 
+    private boolean type = true;
+
     private boolean nullable;
 
     private boolean primitive;
@@ -29,6 +31,14 @@ public class BaseRegulation {
 
     public void setPrimitive(boolean primitive) {
         this.primitive = primitive;
+    }
+
+    public boolean isField() {
+        return type;
+    }
+
+    public void changeMethod() {
+        this.type = false;
     }
 
     @Override

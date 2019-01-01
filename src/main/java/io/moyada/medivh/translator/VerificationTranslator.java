@@ -1,14 +1,15 @@
 package io.moyada.medivh.translator;
 
 import com.sun.tools.javac.code.Attribute;
-import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.annotation.Check;
-import io.moyada.medivh.annotation.Verify;
+import io.moyada.medivh.annotation.Nullable;
+import io.moyada.medivh.annotation.Return;
+import io.moyada.medivh.annotation.Throw;
+import io.moyada.medivh.annotation.Variable;
 import io.moyada.medivh.util.*;
 
 import javax.annotation.processing.Messager;
@@ -19,7 +20,7 @@ import java.util.Collection;
 
 /**
  * 校验逻辑生成器
- * 对定义 @link{Verify} 注解的方法增加入参合法性校验
+ * 对定义的注解的方法增加入参合法性校验
  * @author xueyikang
  * @since 1.0
  **/
@@ -41,16 +42,6 @@ public class VerificationTranslator extends BaseTranslator {
     public void visitMethodDef(JCTree.JCMethodDecl methodDecl) {
         super.visitMethodDef(methodDecl);
 
-        // 无需校验的方法
-        if (isJump(methodDecl)) {
-            return;
-        }
-
-        Verify verify = methodDecl.sym.getAnnotation(Verify.class);
-        if (null == verify) {
-            return;
-        }
-
         messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build Verify logic for " + methodDecl.sym.getEnclosingElement().asType().toString()
                 + "." + methodDecl.name.toString() + "()");
 
@@ -62,39 +53,19 @@ public class VerificationTranslator extends BaseTranslator {
         ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
 
         // 创建临时变量提取引用
-        JCTree.JCVariableDecl msg = newVar(SystemUtil.getTmpVar(verify), 0L, String.class.getName(), null);
+        JCTree.JCVariableDecl msg = newVar(SystemUtil.getTmpVar(methodDecl.sym.getAnnotation(Variable.class)),
+                0L, String.class.getName(), null);
         JCTree.JCIdent ident = treeMaker.Ident(msg.name);
 
-        CheckInfo checkInfo;
         for (JCTree.JCVariableDecl param : methodDecl.params) {
-            Check annotation = param.sym.getAnnotation(Check.class);
-            if (null == annotation) {
+            CheckData checkData = getCheckInfo(param, returnTypeName, actionInfo);
+            if (null == checkData) {
                 continue;
             }
-
-
-            // 选择抛出异常或者返回类型为 void
-            if (annotation.throwable() || null == returnTypeName) {
-                // 默认异常类
-                Attribute.Compound annotationAttr = CTreeUtil.getAnnotationAttr(param.sym.getAnnotationMirrors(), Check.class.getName());
-                String exception = getException(annotationAttr);
-
-                String message = annotation.message();
-                if (message.equals("")) {
-                    message = Element.MESSAGE + actionInfo;
-                } else {
-                    message += actionInfo;
-                }
-                checkInfo = new CheckInfo(exception, message, annotation.nullable());
-            } else {
-                JCTree.JCStatement statement = getReturn(returnTypeName, annotation.returnValue());
-                if (statement == null) {
-                    return;
-                }
-                checkInfo = new CheckInfo(statement, annotation.nullable());
-            }
-
-            buildLogic(statements, ident, param, checkInfo);
+            buildLogic(statements, ident, param, checkData);
+        }
+        if (statements.isEmpty()) {
+            return;
         }
 
         List<JCTree.JCStatement> oldStatements = methodDecl.body.stats;
@@ -111,18 +82,55 @@ public class VerificationTranslator extends BaseTranslator {
     }
 
     /**
-     * 跳过 接口、抽象、无注解 方法
-     * @param methodDecl
+     * 获取校验信息
+     * @param param
+     * @param returnTypeName
+     * @param actionInfo
      * @return
      */
-    private boolean isJump(JCTree.JCMethodDecl methodDecl) {
-        if ((methodDecl.sym.getEnclosingElement().flags() & Flags.INTERFACE) != 0) {
-            return true;
+    private CheckData getCheckInfo(JCTree.JCVariableDecl param, String returnTypeName, String actionInfo) {
+        boolean nullable = param.sym.getAnnotation(Nullable.class) != null;
+
+        Throw throwAttr = param.sym.getAnnotation(Throw.class);
+        if (null != throwAttr) {
+            // 默认异常类
+            Attribute.Compound annotationAttr = CTreeUtil.getAnnotationAttr(param.sym.getAnnotationMirrors(), Throw.class.getName());
+            String exception = getException(annotationAttr);
+
+            String message = throwAttr.message();
+            if (message.equals("")) {
+                message = Element.MESSAGE + actionInfo;
+            } else {
+                message += actionInfo;
+            }
+
+            return new CheckData(exception, message, nullable);
         }
-        if ((methodDecl.getModifiers().flags & Flags.ABSTRACT) != 0) {
-            return true;
+
+        Return returnAttr = param.sym.getAnnotation(Return.class);
+        if (null != returnAttr && returnTypeName != null) {
+            Attribute.Compound annotationAttr = CTreeUtil.getAnnotationAttr(param.sym.getAnnotationMirrors(), Return.class.getName());
+            // 有指定类型
+            String type = CTreeUtil.getAnnotationValue(annotationAttr, "type()");
+
+            if (null != type && !type.equals(Object.class.getName())) {
+                type = TypeUtil.getWrapperType(type);
+
+                if (isSubClass(type, returnTypeName)) {
+                    returnTypeName = type;
+                } else {
+                    messager.printMessage(Diagnostic.Kind.ERROR, type + " cannot convert to " + returnTypeName);
+                }
+            }
+
+            JCTree.JCStatement statement = getReturn(returnTypeName, returnAttr.value());
+            if (statement == null) {
+                return null;
+            }
+            return new CheckData(statement, nullable);
         }
-        return false;
+
+        return null;
     }
 
     /**
@@ -132,24 +140,38 @@ public class VerificationTranslator extends BaseTranslator {
      */
     private JCTree.JCStatement getReturn(String returnTypeName, String[] values) {
         JCTree.JCExpression returnValue;
-        int length = values.length;
 
+        Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(returnTypeName);
+        boolean errorType;
+        if (null == classSymbol) {
+            errorType = false;
+        } else {
+            errorType = CTreeUtil.isAbsOrInter(classSymbol.flags());
+        }
+
+        if (Element.isReturnNull(values)) {
+            // 返回空对象
+            if (TypeUtil.isPrimitive(returnTypeName)) {
+                messager.printMessage(Diagnostic.Kind.ERROR, "cannot return <nulltype> value to " + returnTypeName);
+            }
+            returnValue = nullNode;
+            return treeMaker.Return(returnValue);
+        }
+
+        if (errorType) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "cannot find constructor from abstract or interface type => " + returnTypeName);
+            return null;
+        }
+
+        int length = values.length;
         if (length == 0) {
+            // 返回空构造方法
             return treeMaker.Return(getEmptyType(returnTypeName));
         } else if (length == 1) {
             String value = values[0];
             if (value.isEmpty()) {
                 // 返回空构造方法
                 return treeMaker.Return(getEmptyType(returnTypeName));
-            }
-
-            if (value.equalsIgnoreCase("null")) {
-                // 返回空对象
-                if (TypeUtil.isPrimitive(returnTypeName)) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, "cannot return <nulltype> value to " + returnTypeName);
-                }
-                returnValue = nullNode;
-                return treeMaker.Return(returnValue);
             }
 
             // 基本类型
@@ -165,7 +187,6 @@ public class VerificationTranslator extends BaseTranslator {
         }
 
         JCTree.JCExpression returnType = findClass(returnTypeName);
-        Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(returnTypeName);
         List<JCTree.JCExpression> paramType = getParamType(classSymbol, values);
         if (null == paramType) {
             messager.printMessage(Diagnostic.Kind.ERROR, "cannot find match param constructor with " + Arrays.toString(values));
@@ -174,14 +195,13 @@ public class VerificationTranslator extends BaseTranslator {
         return treeMaker.Return(returnValue);
     }
 
-
     /**
      * 获取配置异常
      * @param annotationAttr
      * @return
      */
     private String getException(Attribute.Compound annotationAttr) {
-        String exception = CTreeUtil.getAnnotationValue(annotationAttr, "invalid()");
+        String exception = CTreeUtil.getAnnotationValue(annotationAttr, "value()");
         if (null == exception) {
             exception = IllegalArgumentException.class.getName();
         } else {
@@ -197,11 +217,11 @@ public class VerificationTranslator extends BaseTranslator {
      * @param statements
      * @param ident
      * @param param
-     * @param checkInfo
+     * @param checkData
      * @return
      */
     private void buildLogic(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent ident,
-                            JCTree.JCVariableDecl param, CheckInfo checkInfo) {
+                            JCTree.JCVariableDecl param, CheckData checkData) {
         // 获取参数引用
         JCTree.JCIdent var = treeMaker.Ident(param.name);
 
@@ -210,12 +230,12 @@ public class VerificationTranslator extends BaseTranslator {
             return;
         }
 
-        if (!checkInfo.nullable) {
-            addNotNullCheck(statements, var, checkInfo);
+        if (!checkData.nullable) {
+            addNotNullCheck(statements, var, checkData);
         }
 
         if (ruleClass.contains(name)) {
-            addInvalidStatement(statements, ident, var, checkInfo);
+            addInvalidStatement(statements, ident, var, checkData);
         }
     }
 
@@ -226,7 +246,7 @@ public class VerificationTranslator extends BaseTranslator {
      * @param info
      * @return
      */
-    private void addNotNullCheck(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent field, CheckInfo info) {
+    private void addNotNullCheck(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent field, CheckData info) {
         JCTree.JCStatement statement;
 
         JCTree.JCExpression check = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, field, nullNode);
@@ -250,7 +270,7 @@ public class VerificationTranslator extends BaseTranslator {
      * @return
      */
     private void addInvalidStatement(ListBuffer<JCTree.JCStatement> statements, JCTree.JCIdent ident,
-                                     JCTree.JCIdent field, CheckInfo info) {
+                                     JCTree.JCIdent field, CheckData info) {
         JCTree.JCStatement statement;
 
         // 将校验结果赋值给临时变量
@@ -294,11 +314,6 @@ public class VerificationTranslator extends BaseTranslator {
         return CTreeUtil.newExpression(treeMaker, TypeTag.PLUS, args, info);
     }
 
-//    private JCTree.JCMethodInvocation concatStatement(JCTree.JCExpression info, String message) {
-//        JCTree.JCExpression args = treeMaker.Literal(message);
-//        return getMethod(args, "concat", List.of(info));
-//    }
-
     /**
      * 创建新方法
      * @param methodDecl
@@ -318,7 +333,7 @@ public class VerificationTranslator extends BaseTranslator {
     /**
      * 检验逻辑
      */
-    class CheckInfo {
+    class CheckData {
 
         private JCTree.JCStatement returnValue;
 
@@ -328,12 +343,12 @@ public class VerificationTranslator extends BaseTranslator {
 
         private boolean nullable;
 
-        CheckInfo(JCTree.JCStatement returnValue, boolean nullable) {
+        CheckData(JCTree.JCStatement returnValue, boolean nullable) {
             this.returnValue = returnValue;
             this.nullable = nullable;
         }
 
-        CheckInfo(String exceptionName, String info, boolean nullable) {
+        CheckData(String exceptionName, String info, boolean nullable) {
             this.exceptionName = exceptionName;
             this.info = info;
             this.nullable = nullable;

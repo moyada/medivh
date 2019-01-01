@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/moyada/medivh.svg?branch=master)](https://travis-ci.org/moyada/medivh)
 ![version](https://img.shields.io/badge/java-%3E%3D6-red.svg)
 ![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compile-yellow.svg)
-[![Maven Central](https://img.shields.io/badge/maven%20central-1.0.0-brightgreen.svg)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
+[![Maven Central](https://img.shields.io/badge/maven%20central-1.1.0-brightgreen.svg)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
 [![license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/moyada/medivh/blob/master/LICENSE)
 
 简体中文 | [English](README.md)
@@ -39,7 +39,7 @@ JDK 1.6 及以上版本。
     <dependency>
         <groupId>io.github.moyada</groupId>
         <artifactId>medivh</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
         <scope>provided</scope>
     </dependency>
 <dependencies/>
@@ -49,14 +49,14 @@ JDK 1.6 及以上版本。
 
 ```
 dependencies {
-  compileOnly 'io.github.moyada:medivh:1.0.0'
-  // 或历史版本方式
-  // provided 'io.github.moyada:medivh:1.0.0'
+  compileOnly 'io.github.moyada:medivh:1.1.0'
+  // 2.12版本以前
+  // provided 'io.github.moyada:medivh:1.1.0'
 }
 ```
 
 普通工程可以通过
-[![release](https://img.shields.io/badge/release-v1.0.0-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
+[![release](https://img.shields.io/badge/release-v1.1.0-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
 或
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.moyada/medivh.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
 下载最新 jar 包。
@@ -67,12 +67,13 @@ dependencies {
 
 | 注解类 | 作用域 | 作用 |
 | :---- | :----- | :---- |
-| io.moyada.medivh.annotation.NotNull | 类字段 | 设置非基础类型字段不可为空，当使用任意 Rule 时默认设置。 |
-| io.moyada.medivh.annotation.Nullable | 类字段 | 设置非基础类型字段可以为空，优先于 NotNull。 |
-| io.moyada.medivh.annotation.NumberRule | 类字段 | 为类提供数字类型字段校验规则。 |
-| io.moyada.medivh.annotation.SizeRule | 类字段 | 为类提供长度或容量类型字段校验规则。 |
-| io.moyada.medivh.annotation.Verify | 非静态方法 | 开启方法的校验功能。 |
-| io.moyada.medivh.annotation.Check | 方法参数 | 配置参数的校验逻辑，基础类型无效。 |
+| io.moyada.medivh.annotation.Nullable | 类字段、无参方法、方法参数 | 设置非基础类型字段可以为空，优先于 NotNull。 |
+| io.moyada.medivh.annotation.NotNull | 类字段、无参方法 | 设置非基础类型字段不可为空，当使用任意 Rule 时默认设置。 |
+| io.moyada.medivh.annotation.NumberRule | 类字段、无参方法 | 为类提供数字类型字段校验规则。 |
+| io.moyada.medivh.annotation.SizeRule | 类字段、无参方法 | 为类提供长度或容量类型字段校验规则。 |
+| io.moyada.medivh.annotation.Throw | 方法参数 | 配置参数的校验逻辑，校验失败抛出异常，基础类型无效。 |
+| io.moyada.medivh.annotation.Return | 方法参数 | 配置参数的校验逻辑，校验失败返回数据，基础类型无效。 |
+| io.moyada.medivh.annotation.Variable | 非静态方法 | 修改当前方法临时变量名。 |
 
 属性说明
 
@@ -82,12 +83,11 @@ dependencies {
 | NumberRule.max() | 设置数字类型字段允许的最大值。 |
 | SizeRule.min() | 设置 String、数组、集合 类型允许的最小长度或容量。 |
 | SizeRule.max() | 设置 String、数组、集合 类型允许的最大长度或容量。 |
-| Check.throwable() | 设置校验失败时的动作，true 为抛出异常，false 为返回值，默认为 true。 |
-| Check.nullable() | 设置方法参数是否允许为空，默认为 true。 |
-| Check.invalid() | 设置抛出异常类，异常类需要拥有字符串构造方法。 |
-| Check.returnValue() | 设置返回值，支持返回类型为基本类型或对象，当返回类型为对象时 returnValue 需要有对应构造函数。 |
-| Check.message() | 异常信息头。 |
-| Verify.var() | 配置方法生成逻辑时产生的临时变量名称。 |
+| Throw.value() | 设置抛出异常类，异常类需要拥有字符串构造方法。 |
+| Throw.message() | 异常信息头。 |
+| Return.value() | 设置返回值，支持返回类型为基本类型或对象，当返回类型为对象时需要有对应构造函数。 |
+| Return.type() | 设置返回值的类型，需为方法返回类型的子类或实现类。 |
+| Variable.value() | 配置方法生成逻辑时产生的临时变量名称。 |
 
 使用示例见[这里](#示例)。
 
@@ -101,13 +101,19 @@ dependencies {
 
 | 参数 | 作用 |
 | :--- | :--- |
-| -Dmedivh.method | 配置校验方法名，默认为 invalid0 。 |
-| -Dmedivh.var | 配置默认临时变量名称，默认为 mvar_0 。 |
-| -Dmedivh.message | 配置默认异常信息头，默认为 Invalid input parameter 。 |
+| -Dmedivh.method | 配置校验方法名，默认为 `invalid0` 。 |
+| -Dmedivh.var | 配置默认临时变量名称，默认为 `mvar_0` 。 |
+| -Dmedivh.message | 配置默认异常信息头，默认为 `Invalid input parameter` 。 |
+| -Dmedivh.info.null | 配置默认非空校验信息，默认为 `is null` 。 |
+| -Dmedivh.info.equals | 配置默认相等校验信息，默认为 `cannot equals` 。 |
+| -Dmedivh.info.less | 配置默认小于校验信息，默认为 `less than` 。 |
+| -Dmedivh.info.great | 配置默认大于校验信息，默认为 `great than` 。 |
 
 经过编译期后，即可生成校验逻辑。
 
 ## 示例
+
+[更多用法](https://github.com/moyada/medivh/tree/master/src/test/java/cn/moyada/test)
 
 ```
 import io.moyada.medivh.annotation.*;
@@ -115,12 +121,11 @@ import java.util.HashMap;
 import java.util.List;
 
 public class MyApp {
-
-    @Verify
-    public Info run(@Check(invalid = RuntimeException.class) Args args,
-                    @Check(message = "something error", nullable = true) Info info,
-                    @Check(throwable = false, returnValue = {"test", "-0.503"}) String name, // 支持其他对象的非空校验
-                    @Check int num // 不支持对象
+   
+    public Info run(@Throw(RuntimeException.class) Args args,
+                    @Throw(message = "something error") @Nullable Info info,
+                    @Return({"test", "-0.503"}) String name, // 支持其他对象的非空校验
+                    @Return("null") int num // 不支持对象
                     ) {
         // process
         ...
@@ -154,7 +159,7 @@ public class MyApp {
 如示例中的代码，编译后的内容将会为:
 
 ```
-public void run(Args args, Info info, String name, int num) {
+public Info run(Args args, Info info, String name, int num) {
     if (args == null) {
         throw new RuntimeException("Invalid input parameter, cause args is null"));
     } else {

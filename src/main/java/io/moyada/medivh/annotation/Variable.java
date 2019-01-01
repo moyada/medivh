@@ -3,13 +3,14 @@ package io.moyada.medivh.annotation;
 import java.lang.annotation.*;
 
 /**
- * 是否允许为空，基础类型无效
+ * 设置临时对象名称
  * @author xueyikang
  * @since 1.0
  **/
 @Documented
-@Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD})
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.SOURCE)
-public @interface Nullable {
+public @interface Variable {
 
+    String value();
 }

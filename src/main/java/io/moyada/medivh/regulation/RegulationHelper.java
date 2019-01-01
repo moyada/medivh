@@ -23,7 +23,7 @@ public final class RegulationHelper {
      * @param isCollection
      * @return
      */
-    public static BaseRegulation build(Symbol.VarSymbol symbol, String className, boolean isCollection) {
+    public static BaseRegulation build(Symbol symbol, String className, boolean isCollection) {
         BaseRegulation regulation;
         // 获取参数规则
 

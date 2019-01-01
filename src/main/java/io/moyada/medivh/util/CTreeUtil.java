@@ -1,6 +1,7 @@
 package io.moyada.medivh.util;
 
 import com.sun.tools.javac.code.Attribute;
+import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -90,6 +91,15 @@ public final class CTreeUtil {
     }
 
     /**
+     * 是否是抽象或接口
+     * @param flags
+     * @return
+     */
+    public static boolean isAbsOrInter(long flags) {
+        return ((flags & Flags.INTERFACE) != 0 || (flags & Flags.ABSTRACT) != 0);
+    }
+
+    /**
      * 获取类型节点构造值
      * @param baseType
      * @param value
@@ -158,6 +168,39 @@ public final class CTreeUtil {
                 Class<?> namesClass = ClassUtil.getClass("com.sun.tools.javac.util.Names");
                 method = ClassUtil.getMethod(namesClass, "fromString", String.class);
                 return ClassUtil.invoke(method, instance, name);
+        }
+    }
+
+    /**
+     * 获取声明
+     * @param isInterface
+     * @return
+     */
+    public static long getNewMethodFlag(boolean isInterface) {
+        if (!isInterface) {
+            return Flags.PUBLIC;
+        }
+        switch (ClassUtil.VERSION) {
+            case ClassUtil.VERSION_6:
+            case ClassUtil.VERSION_7:
+                return Flags.PUBLIC;
+            default:
+                Object field = ClassUtil.getStaticField(Flags.class, "DEFAULT");
+                return Long.class.cast(field);
+        }
+    }
+
+    /**
+     * 是否可用默认方法
+     * @return
+     */
+    public static boolean isDefaultInterface() {
+        switch (ClassUtil.VERSION) {
+            case ClassUtil.VERSION_6:
+            case ClassUtil.VERSION_7:
+                return false;
+            default:
+                return true;
         }
     }
 

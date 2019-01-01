@@ -6,7 +6,9 @@ import java.lang.annotation.*;
  * 参数校验
  * @author xueyikang
  * @since 1.0
+ * @deprecated use {@link Throw} or {@link Return}
  **/
+@Deprecated
 @Documented
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.SOURCE)

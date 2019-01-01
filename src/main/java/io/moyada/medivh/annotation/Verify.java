@@ -6,7 +6,9 @@ import java.lang.annotation.*;
  * 开启参数校验
  * @author xueyikang
  * @since 1.0
+ * @deprecated use {@link Variable}
  **/
+@Deprecated
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.SOURCE)

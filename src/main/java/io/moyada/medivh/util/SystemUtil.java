@@ -1,6 +1,6 @@
 package io.moyada.medivh.util;
 
-import io.moyada.medivh.annotation.Verify;
+import io.moyada.medivh.annotation.Variable;
 
 /**
  * @author xueyikang
@@ -30,8 +30,11 @@ public class SystemUtil {
      * @param verify
      * @return
      */
-    public static String getTmpVar(Verify verify) {
-        String var = verify.var();
+    public static String getTmpVar(Variable verify) {
+        if (null == verify) {
+            return Element.LOCAL_VARIABLE;
+        }
+        String var = verify.value();
         if (var.isEmpty()) {
             return Element.LOCAL_VARIABLE;
         }

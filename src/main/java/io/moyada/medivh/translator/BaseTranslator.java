@@ -120,6 +120,34 @@ class BaseTranslator extends TreeTranslator {
     }
 
     /**
+     * 是否是目标类或子类或实现类
+     * @param className
+     * @param targetClass
+     * @return
+     */
+    protected boolean isSubClass(String className, String targetClass) {
+        if (className.equals(targetClass)) {
+            return true;
+        }
+
+        Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(className);
+        // primitive 类型
+        if (null == classSymbol) {
+            return false;
+        }
+
+        Symbol.ClassSymbol typeElement = javacElements.getTypeElement(targetClass);
+        // primitive 类型
+        if (null == typeElement) {
+            return false;
+        }
+        if (isInstanceOf(classSymbol, typeElement)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * 判断类型是否为集合
      * @param typeSymbol
      * @return
@@ -168,6 +196,13 @@ class BaseTranslator extends TreeTranslator {
      */
     protected JCTree.JCExpressionStatement execMethod(JCTree.JCExpression expression) {
         return treeMaker.Exec(expression);
+    }
+
+    protected JCTree.JCExpression getExpression(JCTree.JCIdent jcIdent, boolean isField) {
+        if (isField) {
+            return jcIdent;
+        }
+        return treeMaker.Apply(CTreeUtil.emptyParam(), jcIdent, CTreeUtil.emptyParam());
     }
 
     /**
