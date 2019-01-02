@@ -9,6 +9,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
+import io.moyada.medivh.core.TypeTag;
 
 import java.lang.reflect.Method;
 import java.util.Map;

@@ -1,6 +1,7 @@
 package io.moyada.medivh.util;
 
 import io.moyada.medivh.annotation.Variable;
+import io.moyada.medivh.core.Element;
 
 /**
  * @author xueyikang

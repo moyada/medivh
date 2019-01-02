@@ -1,4 +1,4 @@
-package io.moyada.medivh.util;
+package io.moyada.medivh.core;
 
 /**
  * 语法类型

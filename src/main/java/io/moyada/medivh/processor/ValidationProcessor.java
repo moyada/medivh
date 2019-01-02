@@ -8,8 +8,10 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
 import io.moyada.medivh.annotation.*;
+import io.moyada.medivh.core.MakerContext;
 import io.moyada.medivh.translator.ValidationTranslator;
 import io.moyada.medivh.translator.VerificationTranslator;
+import io.moyada.medivh.util.StringUtil;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
@@ -22,6 +24,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashSet;
@@ -65,7 +68,8 @@ public class ValidationProcessor extends AbstractProcessor {
         }
 
         // 获取对象规则
-        Collection<? extends Element> rules = getRules(roundEnv, Nullable.class, NotNull.class, NumberRule.class, SizeRule.class);
+        Collection<? extends Element> rules = getRules(roundEnv,
+                Nullable.class, NotNull.class, NumberRule.class, SizeRule.class);
 
         // 解析聚合类
         Collection<? extends Element> ruleClass = getClass(rules);
@@ -77,15 +81,17 @@ public class ValidationProcessor extends AbstractProcessor {
             return true;
         }
 
+        MakerContext makerContext = MakerContext.newInstance(context);
+
         // 校验方法生成器
-        TreeTranslator translator = new ValidationTranslator(context, messager);
+                TreeTranslator translator = new ValidationTranslator(makerContext, messager);
         for (Element element : ruleClass) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
         }
 
         // 校验逻辑生成器
-        translator = new VerificationTranslator(context, ruleClass, messager);
+        translator = new VerificationTranslator(makerContext, ruleClass, messager);
         for (Element element : methods) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
@@ -170,11 +176,28 @@ public class ValidationProcessor extends AbstractProcessor {
     private Collection<? extends Element> getRules(RoundEnvironment roundEnv, Class<? extends Annotation>... annos) {
         Set<Element> rules = new HashSet<Element>();
 
+        Set<? extends Element> elements;
+
         for (Class<? extends Annotation> anno : annos) {
-            Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(anno);
+            elements = roundEnv.getElementsAnnotatedWith(anno);
             rules.addAll(ElementFilter.fieldsIn(elements));
             rules.addAll(ElementFilter.methodsIn(elements));
         }
+
+        elements = roundEnv.getElementsAnnotatedWith(NotBlank.class);
+        if (elements.isEmpty()) {
+            return rules;
+        }
+
+        rules.addAll(ElementFilter.fieldsIn(elements));
+        rules.addAll(ElementFilter.methodsIn(elements));
+
+        try {
+            StringUtil.createFile(processingEnv.getFiler(), StringUtil.class.getName());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         return rules;
     }
 
@@ -206,8 +229,11 @@ public class ValidationProcessor extends AbstractProcessor {
         annotationTypes.add(Throw.class.getName());
         annotationTypes.add(Return.class.getName());
         annotationTypes.add(Nullable.class.getName());
+        annotationTypes.add(NotNull.class.getName());
+        annotationTypes.add(NotBlank.class.getName());
         annotationTypes.add(NumberRule.class.getName());
         annotationTypes.add(SizeRule.class.getName());
+        annotationTypes.add(Variable.class.getName());
         return annotationTypes;
     }
 

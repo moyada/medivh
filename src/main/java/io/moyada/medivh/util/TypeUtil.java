@@ -1,5 +1,7 @@
 package io.moyada.medivh.util;
 
+import io.moyada.medivh.core.TypeTag;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +14,13 @@ public final class TypeUtil {
 
     private TypeUtil() {
     }
+
+    public final static byte PRIMITIVE = -1;
+
+    public final static byte STRING = 0;
+    public final static byte ARRAY = 1;
+    public final static byte COLLECTION = 2;
+    public final static byte OBJECT = 3;
 
     public static final char UNKNOWN = '-';
 

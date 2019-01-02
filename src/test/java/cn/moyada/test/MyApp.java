@@ -22,12 +22,6 @@ public class MyApp {
         return null;
     }
 
-    public static InterfaceA test(@Throw(IllegalStateException.class) ParamA a,
-                                  @Return(value = {"null"}) @Nullable ParamB b,
-                                  @Return(value = {"test", "true"}, type = SubClass.class) ParamC c) {
-        return null;
-    }
-
     class Args {
 
         @NumberRule(max = "1000")
@@ -48,7 +42,7 @@ public class MyApp {
             this.price = price;
         }
 
-        @SizeRule(min = 50)
+        @NotBlank
         String name;
 
         @Nullable

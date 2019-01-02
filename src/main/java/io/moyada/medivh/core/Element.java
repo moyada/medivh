@@ -1,4 +1,6 @@
-package io.moyada.medivh.util;
+package io.moyada.medivh.core;
+
+import io.moyada.medivh.util.SystemUtil;
 
 /**
  * 构造元素
@@ -27,12 +29,10 @@ public class Element {
     private static final String DEFAULT_MESSAGE = "Invalid input parameter";
     public final static String MESSAGE = SystemUtil.getProperty(MESSAGE_KEY, DEFAULT_MESSAGE);
 
-
     // 非空信息配置
     private static final String NULL_KEY = "medivh.info.null";
     private static final String DEFAULT_NULL_INFO = "is null";
     public final static String NULL_INFO = SystemUtil.getProperty(NULL_KEY, DEFAULT_NULL_INFO);
-
 
     // 相等信息配置
     private static final String EQUALS_KEY = "medivh.info.equals";
@@ -44,11 +44,15 @@ public class Element {
     private static final String DEFAULT_LESS_INFO = "less than";
     public final static String LESS_INFO = SystemUtil.getProperty(LESS_KEY, DEFAULT_LESS_INFO);
 
-
     // 大于信息配置
     private static final String GREAT_KEY = "medivh.info.great";
     private static final String DEFAULT_GREAT_INFO = "great than";
     public final static String GREAT_INFO = SystemUtil.getProperty(GREAT_KEY, DEFAULT_GREAT_INFO);
+
+    // 大于信息配置
+    private static final String BLANK_KEY = "medivh.info.blank";
+    private static final String DEFAULT_BLANK_INFO = "is blank";
+    public final static String BLANK_INFO = SystemUtil.getProperty(BLANK_KEY, DEFAULT_BLANK_INFO);
 
     public static final String ACTION_INFO = ", cause ";
 

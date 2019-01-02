@@ -2,24 +2,24 @@ package io.moyada.medivh.translator;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
-import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Name;
+import io.moyada.medivh.core.MakerContext;
+import io.moyada.medivh.regulation.NotNullWrapperRegulation;
+import io.moyada.medivh.regulation.NullCheckRegulation;
+import io.moyada.medivh.regulation.Regulation;
 import io.moyada.medivh.util.CTreeUtil;
-import io.moyada.medivh.util.TypeTag;
+import io.moyada.medivh.core.Element;
+import io.moyada.medivh.core.TypeTag;
 import io.moyada.medivh.util.TypeUtil;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
 import javax.tools.Diagnostic;
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * @author xueyikang
@@ -29,40 +29,35 @@ class BaseTranslator extends TreeTranslator {
 
     protected final Messager messager;
 
+    protected final MakerContext makerContext;
+
     final TreeMaker treeMaker;
     final JavacElements javacElements;
-    final Object namesInstance;
-    final Types types;
+    final Object namesInstance ;
 
-    // null 表达式
-    final JCTree.JCLiteral nullNode;
-
-    // true 表达式
-    final JCTree.JCLiteral trueNode;
-
-    // false 表达式
-    final JCTree.JCLiteral falseNode;
-
-    // collection
-    final Symbol.ClassSymbol collectionSymbol;
-    // map
-    final Symbol.ClassSymbol mapSymbol;
-
-    BaseTranslator(Context context, Messager messager) {
+    BaseTranslator(MakerContext makerContext, Messager messager) {
+        this.makerContext = makerContext;
         this.messager = messager;
 
-        this.treeMaker = TreeMaker.instance(context);
-        this.namesInstance = CTreeUtil.newInstanceForName(context);
+        this.treeMaker = makerContext.getTreeMaker();
+        this.namesInstance = makerContext.getNamesInstance();
+        this.javacElements = makerContext.getJavacElements();
+    }
 
-        this.javacElements = JavacElements.instance(context);
-        this.types = Types.instance(context);
-
-        this.nullNode = CTreeUtil.newElement(treeMaker, TypeTag.BOT, null);
-        this.trueNode = CTreeUtil.newElement(treeMaker, TypeTag.BOOLEAN, 1);
-        this.falseNode = CTreeUtil.newElement(treeMaker, TypeTag.BOOLEAN, 0);
-
-        collectionSymbol = javacElements.getTypeElement(Collection.class.getName());
-        mapSymbol = javacElements.getTypeElement(Map.class.getName());
+    /**
+     * 增加非原始类型校验
+     * @param regulations
+     * @param checkNull
+     */
+    void appendNullCheck(java.util.List<Regulation> regulations, boolean checkNull) {
+        if (checkNull) {
+            regulations.add(new NullCheckRegulation());
+        } else {
+            // 无规则不使用非空包装
+            if (!regulations.isEmpty()) {
+                regulations.add(new NotNullWrapperRegulation());
+            }
+        }
     }
 
     /**
@@ -70,7 +65,7 @@ class BaseTranslator extends TreeTranslator {
      * @param exceptionTypeName
      * @return
      */
-    protected boolean checkException(String exceptionTypeName) {
+    boolean checkException(String exceptionTypeName) {
         Symbol.ClassSymbol typeElement = javacElements.getTypeElement(exceptionTypeName);
         for (Symbol element : typeElement.getEnclosedElements()) {
             if (element.getKind() != ElementKind.CONSTRUCTOR) {
@@ -88,11 +83,36 @@ class BaseTranslator extends TreeTranslator {
     }
 
     /**
+     * 获取类型
+     * @param className
+     * @return
+     */
+    byte getClassType(String className) {
+        // 字符串逻辑
+        if (TypeUtil.isStr(className)) {
+            return TypeUtil.STRING;
+        }
+        // 数组规则
+        if (TypeUtil.isArr(className)) {
+            return TypeUtil.ARRAY;
+        }
+        // 集合 Collection \ Map
+        if (isCollection(className)) {
+            return TypeUtil.COLLECTION;
+        }
+        if (TypeUtil.isPrimitive(className)) {
+            return TypeUtil.PRIMITIVE;
+        }
+
+        return TypeUtil.OBJECT;
+    }
+
+    /**
      * 是否属于集合或子类
      * @param className
      * @return
      */
-    protected boolean isCollection(String className) {
+    boolean isCollection(String className) {
         Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(className);
         // primitive 类型
         if (null == classSymbol) {
@@ -125,7 +145,7 @@ class BaseTranslator extends TreeTranslator {
      * @param targetClass
      * @return
      */
-    protected boolean isSubClass(String className, String targetClass) {
+    boolean isSubClass(String className, String targetClass) {
         if (className.equals(targetClass)) {
             return true;
         }
@@ -153,7 +173,7 @@ class BaseTranslator extends TreeTranslator {
      * @return
      */
     private boolean isCollection(Symbol typeSymbol) {
-        return isInstanceOf(typeSymbol, collectionSymbol) || isInstanceOf(typeSymbol, mapSymbol);
+        return isInstanceOf(typeSymbol, makerContext.getCollectionSymbol()) || isInstanceOf(typeSymbol, makerContext.getMapSymbol());
     }
 
     /**
@@ -162,8 +182,8 @@ class BaseTranslator extends TreeTranslator {
      * @param classSymbol
      * @return
      */
-    private boolean isInstanceOf(Symbol typeSymbol, Symbol.ClassSymbol classSymbol) {
-        return typeSymbol.isSubClass(classSymbol, types);
+    boolean isInstanceOf(Symbol typeSymbol, Symbol.ClassSymbol classSymbol) {
+        return typeSymbol.isSubClass(classSymbol, makerContext.getTypes());
     }
 
     /**
@@ -171,7 +191,7 @@ class BaseTranslator extends TreeTranslator {
      * @param statements
      * @return
      */
-    protected JCTree.JCBlock getBlock(ListBuffer<JCTree.JCStatement> statements) {
+    JCTree.JCBlock getBlock(ListBuffer<JCTree.JCStatement> statements) {
         return treeMaker.Block(0, statements.toList());
     }
 
@@ -183,10 +203,10 @@ class BaseTranslator extends TreeTranslator {
      * @param init
      * @return
      */
-    protected JCTree.JCVariableDecl newVar(String name, long flags, String type, JCTree.JCExpression init) {
+    JCTree.JCVariableDecl newVar(String name, long flags, String type, JCTree.JCExpression init) {
         return treeMaker.VarDef(treeMaker.Modifiers(flags),
                 CTreeUtil.getName(namesInstance, name),
-                findClass(type), init);
+                makerContext.findClass(type), init);
     }
 
     /**
@@ -194,39 +214,13 @@ class BaseTranslator extends TreeTranslator {
      * @param expression
      * @return
      */
-    protected JCTree.JCExpressionStatement execMethod(JCTree.JCExpression expression) {
+    JCTree.JCExpressionStatement execMethod(JCTree.JCExpression expression) {
         return treeMaker.Exec(expression);
     }
 
-    protected JCTree.JCExpression getExpression(JCTree.JCIdent jcIdent, boolean isField) {
-        if (isField) {
-            return jcIdent;
-        }
-        return treeMaker.Apply(CTreeUtil.emptyParam(), jcIdent, CTreeUtil.emptyParam());
-    }
-
-    /**
-     * 获取属性
-     * @param field
-     * @param name
-     * @return
-     */
-    protected JCTree.JCFieldAccess getField(JCTree.JCExpression field, String name) {
-        return treeMaker.Select(field, CTreeUtil.getName(namesInstance, name));
-    }
-
-    /**
-     * 获取方法
-     * @param field
-     * @param method
-     * @param param
-     * @return
-     */
-    protected JCTree.JCMethodInvocation getMethod(JCTree.JCExpression field, String method, List<JCTree.JCExpression> param) {
-        return treeMaker.Apply(CTreeUtil.emptyParam(),
-                        getField(field, method),
-                        param
-                );
+    JCTree.JCExpressionStatement assignCallback(JCTree.JCIdent giver, JCTree.JCExpression accepter) {
+        JCTree.JCExpression expression = makerContext.getMethod(giver, Element.METHOD_NAME, CTreeUtil.emptyParam());
+        return execMethod(treeMaker.Assign(accepter, expression));
     }
 
     /**
@@ -235,8 +229,8 @@ class BaseTranslator extends TreeTranslator {
      * @param exceptionTypeName
      * @return
      */
-    protected JCTree.JCStatement newMsgThrow(JCTree.JCExpression message, String exceptionTypeName) {
-        JCTree.JCExpression exceptionType = findClass(exceptionTypeName);
+    JCTree.JCStatement newMsgThrow(JCTree.JCExpression message, String exceptionTypeName) {
+        JCTree.JCExpression exceptionType = makerContext.findClass(exceptionTypeName);
 
         JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, CTreeUtil.emptyParam(), exceptionType, List.of(message), null);
 
@@ -244,33 +238,15 @@ class BaseTranslator extends TreeTranslator {
     }
 
     /**
-     * 查询类引用
-     * @param className
-     * @return
-     */
-    protected JCTree.JCExpression findClass(String className) {
-        String[] elems = className.split("\\.");
-
-        Name name = CTreeUtil.getName(namesInstance, elems[0]);
-        JCTree.JCExpression e = treeMaker.Ident(name);
-        for (int i = 1 ; i < elems.length ; i++) {
-            name = CTreeUtil.getName(namesInstance, elems[i]);
-            e = e == null ? treeMaker.Ident(name) : treeMaker.Select(e, name);
-        }
-
-        return e;
-    }
-
-    /**
      * 返回空构造方法语句
      * @param returnTypeName
      * @return
      */
-    protected JCTree.JCExpression getEmptyType(String returnTypeName) {
+    JCTree.JCExpression getEmptyType(String returnTypeName) {
         if (null != TypeUtil.getBaseType(returnTypeName)) {
             messager.printMessage(Diagnostic.Kind.ERROR, "cannot find return value to " + returnTypeName);
         }
-        JCTree.JCExpression returnType = findClass(returnTypeName);
+        JCTree.JCExpression returnType = makerContext.findClass(returnTypeName);
         return treeMaker.NewClass(null, CTreeUtil.emptyParam(), returnType, CTreeUtil.emptyParam(), null);
     }
 
@@ -280,7 +256,7 @@ class BaseTranslator extends TreeTranslator {
      * @param values
      * @return
      */
-    protected List<JCTree.JCExpression> getParamType(Symbol.ClassSymbol classSymbol, String[] values) {
+    List<JCTree.JCExpression> getParamType(Symbol.ClassSymbol classSymbol, String[] values) {
         int length = values.length;
 
         List<JCTree.JCExpression> param = null;
