@@ -3,7 +3,7 @@ package io.moyada.medivh.annotation;
 import java.lang.annotation.*;
 
 /**
- * 属性规则
+ * 空间范围属性规则，可用于 String，数组，集合，Map
  * @author xueyikang
  * @since 1.0
  **/
@@ -13,12 +13,12 @@ import java.lang.annotation.*;
 public @interface SizeRule {
 
     /**
-     * 字符串或数组的最小长度
+     * 最小空间大小/长度
      */
     int min() default -1;
 
     /**
-     * 字符串或数组的最大长度
+     * 最大空间大小/长度
      */
     int max() default -1;
 }

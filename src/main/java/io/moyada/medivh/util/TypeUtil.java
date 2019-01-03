@@ -148,6 +148,28 @@ public final class TypeUtil {
     }
 
     /**
+     * 取值方式
+     * @return
+     */
+    public static String getMode(byte type) {
+        String mode;
+        switch (type) {
+            case TypeUtil.STRING:
+                mode = ".length()";
+                break;
+            case TypeUtil.ARRAY:
+                mode = ".length";
+                break;
+            case TypeUtil.COLLECTION:
+                mode = ".size()";
+                break;
+            default:
+                mode = "";
+        }
+        return mode;
+    }
+
+    /**
      * 返回数字类型标记
      * @param name
      * @return

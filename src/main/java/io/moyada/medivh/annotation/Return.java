@@ -3,7 +3,7 @@ package io.moyada.medivh.annotation;
 import java.lang.annotation.*;
 
 /**
- * 参数校验失败时返回对象
+ * 参数校验失败时返回对象，当返回类型为 void 时无效
  * @author xueyikang
  * @since 1.0
  **/
@@ -19,5 +19,9 @@ public @interface Return {
      */
     String[] value() default {};
 
+    /**
+     * 指定返回类型，需为返回类型或子类或实现类
+     * @return
+     */
     Class type() default Object.class;
 }

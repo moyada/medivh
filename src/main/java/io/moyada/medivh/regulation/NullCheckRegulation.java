@@ -9,7 +9,8 @@ import io.moyada.medivh.core.Element;
 import io.moyada.medivh.core.TypeTag;
 
 /**
- * 校验规则
+ * 空校验规则
+ * 默认规则，针对对象判空处理，可以使用 {@link io.moyada.medivh.annotation.Nullable} 取消
  * @author xueyikang
  * @since 1.0
  **/
@@ -17,24 +18,22 @@ public class NullCheckRegulation extends BaseRegulation implements Regulation {
 
     @Override
     public ListBuffer<JCTree.JCStatement> handle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
-                                                 String fieldName, JCTree.JCExpression self, JCTree.JCExpression rival,
-                                                 JCTree.JCStatement action) {
+                                                 String fieldName, JCTree.JCExpression self, JCTree.JCStatement action) {
         if (null == action) {
             action = createAction(makerContext, buildInfo(fieldName));
         }
-        JCTree.JCStatement exec = doHandle(makerContext, statements, self, rival, action);
+        JCTree.JCStatement exec = doHandle(makerContext, statements, self, action);
+        // 将非空处理提前
         statements.prepend(exec);
         return statements;
     }
 
     @Override
     JCTree.JCStatement doHandle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
-                         JCTree.JCExpression self, JCTree.JCExpression rival,
-                         JCTree.JCStatement action) {
+                         JCTree.JCExpression self, JCTree.JCStatement action) {
         TreeMaker treeMaker = makerContext.getTreeMaker();
-        JCTree.JCExpression condition;
-
-        condition = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, self, rival);
+        // 等于 null 执行动作
+        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, self, makerContext.nullNode);
         return treeMaker.If(condition, action, null);
     }
 

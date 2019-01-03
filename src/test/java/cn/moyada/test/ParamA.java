@@ -1,9 +1,6 @@
 package cn.moyada.test;
 
-import io.moyada.medivh.annotation.NotNull;
-import io.moyada.medivh.annotation.Nullable;
-import io.moyada.medivh.annotation.NumberRule;
-import io.moyada.medivh.annotation.SizeRule;
+import io.moyada.medivh.annotation.*;
 
 import java.util.HashMap;
 
@@ -11,6 +8,7 @@ import java.util.HashMap;
  * @author xueyikang
  * @since 1.0
  **/
+@Variable("fun0")
 public class ParamA {
 
     String name;

@@ -8,7 +8,8 @@ import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.core.TypeTag;
 
 /**
- * 校验规则
+ * 非空包装规则
+ * 当对象可能出现 null，并且为进行非空校验处理
  * @author xueyikang
  * @since 1.0
  **/
@@ -16,12 +17,13 @@ public class NotNullWrapperRegulation implements Regulation {
 
     @Override
     public ListBuffer<JCTree.JCStatement> handle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
-                                                 String fieldName, JCTree.JCExpression self, JCTree.JCExpression rival,
-                                                 JCTree.JCStatement action) {
-
+                                                 String fieldName, JCTree.JCExpression self, JCTree.JCStatement action) {
         TreeMaker treeMaker = makerContext.getTreeMaker();
-        JCTree.JCExpression condition;
-        condition = CTreeUtil.newExpression(treeMaker, TypeTag.NE, self, rival);
+
+        // 对象不为空判断
+        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.NE, self, makerContext.nullNode);
+
+        // 包裹当前语句构建
         JCTree.JCIf exec = treeMaker.If(condition, treeMaker.Block(0, statements.toList()), null);
 
         ListBuffer<JCTree.JCStatement> jcStatements = CTreeUtil.newStatement();

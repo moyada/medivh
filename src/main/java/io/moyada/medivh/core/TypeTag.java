@@ -7,7 +7,6 @@ package io.moyada.medivh.core;
  **/
 public enum TypeTag {
 
-    BOT,
     BOOLEAN,
     BYTE,
     SHORT,
@@ -16,11 +15,12 @@ public enum TypeTag {
     FLOAT,
     DOUBLE,
     CHAR,
-    NE,
-    EQ,
-    GT,
-    LT,
-    PLUS,
-    CLASS,
+    NE, // 不等于
+    EQ, // 等于
+    GT, // 大于
+    LT, // 小于
+    PLUS, // + 操作
+    BOT, // null
+    CLASS, // 对象
     ;
 }

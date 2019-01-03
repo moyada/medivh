@@ -3,6 +3,7 @@ package io.moyada.medivh.annotation;
 import java.lang.annotation.*;
 
 /**
+ * 校验 String 对象不可为空白字符串
  * @author xueyikang
  * @since 1.0
  **/

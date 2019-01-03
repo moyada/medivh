@@ -11,7 +11,15 @@ import io.moyada.medivh.core.MakerContext;
  **/
 public interface Regulation {
 
+    /**
+     * 处理规则事件
+     * @param makerContext
+     * @param statements
+     * @param fieldName
+     * @param self
+     * @param action
+     * @return
+     */
     ListBuffer<JCTree.JCStatement> handle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
-                                          String fieldName, JCTree.JCExpression self, JCTree.JCExpression rival,
-                                          JCTree.JCStatement action);
+                                          String fieldName, JCTree.JCExpression self, JCTree.JCStatement action);
 }

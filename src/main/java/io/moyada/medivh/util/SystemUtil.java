@@ -1,9 +1,7 @@
 package io.moyada.medivh.util;
 
-import io.moyada.medivh.annotation.Variable;
-import io.moyada.medivh.core.Element;
-
 /**
+ * 系统参数工具
  * @author xueyikang
  * @since 1.0
  **/
@@ -27,22 +25,36 @@ public class SystemUtil {
     }
 
     /**
-     * 获取临时变量名
-     * @param verify
+     * 解析类名和方法
+     * @param methodInfo
+     * @param defaultValue
      * @return
      */
-    public static String getTmpVar(Variable verify) {
-        if (null == verify) {
-            return Element.LOCAL_VARIABLE;
+    public static String[] getClassAndMethod(String methodInfo, String[] defaultValue) {
+        if (null == methodInfo) {
+            return defaultValue;
         }
-        String var = verify.value();
-        if (var.isEmpty()) {
-            return Element.LOCAL_VARIABLE;
+        int index = methodInfo.lastIndexOf(".");
+        if (index < 1) {
+            return defaultValue;
         }
-        var = var.trim();
-        if (var.isEmpty()) {
-            return Element.LOCAL_VARIABLE;
+
+        String clazz = methodInfo.substring(0, index);
+        String method = methodInfo.substring(index + 1);
+        return new String[]{clazz, method};
+    }
+
+    /**
+     * 解析类路径包名
+     * @param className
+     * @return
+     */
+    public static String getPackage(String className) {
+        int index = className.lastIndexOf(".");
+        if (index < 0) {
+            return "";
         }
-        return var;
+
+        return className.substring(0, index);
     }
 }

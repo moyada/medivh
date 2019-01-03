@@ -193,7 +193,7 @@ public class ValidationProcessor extends AbstractProcessor {
         rules.addAll(ElementFilter.methodsIn(elements));
 
         try {
-            StringUtil.createFile(processingEnv.getFiler(), StringUtil.class.getName());
+            StringUtil.createFile(processingEnv.getFiler(), io.moyada.medivh.core.Element.BLANK_METHOD[0]);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

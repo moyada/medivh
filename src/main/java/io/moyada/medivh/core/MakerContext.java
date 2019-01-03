@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
+ * 语法树工具
  * @author xueyikang
  * @since 1.0
  **/
@@ -55,6 +56,29 @@ public class MakerContext {
 
     public JCTree.JCReturn returnStr(String info) {
         return treeMaker.Return(CTreeUtil.newElement(treeMaker, TypeTag.CLASS, info));
+    }
+
+    /**
+     * 拼接信息
+     * @param info
+     * @param message
+     * @return
+     */
+    public JCTree.JCExpression concatStatement(JCTree.JCExpression info, String message) {
+        JCTree.JCExpression args = treeMaker.Literal(message);
+        return CTreeUtil.newExpression(treeMaker, TypeTag.PLUS, args, info);
+    }
+
+    /**
+     * 创建异常语句
+     * @param message
+     * @param exceptionTypeName
+     * @return
+     */
+    public JCTree.JCStatement newMsgThrow(JCTree.JCExpression message, String exceptionTypeName) {
+        JCTree.JCExpression exceptionType = findClass(exceptionTypeName);
+        JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, CTreeUtil.emptyParam(), exceptionType, List.of(message), null);
+        return CTreeUtil.newThrow(treeMaker, exceptionInstance);
     }
 
     /**

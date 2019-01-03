@@ -6,11 +6,14 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.MakerContext;
-import io.moyada.medivh.regulation.Regulation;
-import io.moyada.medivh.core.RegulationBuilder;
-import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.annotation.Variable;
 import io.moyada.medivh.core.Element;
+import io.moyada.medivh.core.MakerContext;
+import io.moyada.medivh.core.RegulationBuilder;
+import io.moyada.medivh.regulation.NotNullWrapperRegulation;
+import io.moyada.medivh.regulation.NullCheckRegulation;
+import io.moyada.medivh.regulation.Regulation;
+import io.moyada.medivh.util.CTreeUtil;
 
 import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic;
@@ -40,9 +43,12 @@ public class ValidationTranslator extends BaseTranslator {
         boolean isInterface = (jcClassDecl.mods.flags & Flags.INTERFACE) != 0;
         // 过滤jdk8以下接口无法创建校验方法
         if (isInterface && !CTreeUtil.isDefaultInterface()) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "cannot use interface type param in less than jdk8 version.");
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Param Error] cannot use interface type param in less than jdk8 version.");
             return;
         }
+
+        Variable annotation = CTreeUtil.getAnnotation(jcClassDecl.sym, Variable.class);
+        String methodName = Element.getTmpMethod(annotation);
 
         // 解析所有参数规则
         Map<JCTree.JCExpression, java.util.List<Regulation>> rules = new HashMap<JCTree.JCExpression, java.util.List<Regulation>>();
@@ -52,7 +58,7 @@ public class ValidationTranslator extends BaseTranslator {
             String className;
             JCTree.JCExpression self;
 
-            // 过滤变量以外
+            // 变量
             if (var.getKind() == Tree.Kind.VARIABLE) {
                 JCTree.JCVariableDecl jcVariableDecl = (JCTree.JCVariableDecl) var;
                 // 排除枚举
@@ -88,11 +94,19 @@ public class ValidationTranslator extends BaseTranslator {
 
             byte classType = getClassType(className);
             java.util.List<Regulation> regulations =
-                    RegulationBuilder.createInvalid(symbol, className, classType);
+                    RegulationBuilder.findBasicRule(symbol, className, classType);
 
-            Boolean checkNull = RegulationBuilder.checkNullOrNotNull(symbol, classType);
+            Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType);
+            // 非原始类型
             if (null != checkNull) {
-                appendNullCheck(regulations, checkNull);
+                if (checkNull) {
+                    regulations.add(new NullCheckRegulation());
+                } else {
+                    // 无规则不使用非空包装
+                    if (!regulations.isEmpty()) {
+                        regulations.add(new NotNullWrapperRegulation());
+                    }
+                }
             }
 
             if (regulations.isEmpty()) {
@@ -104,11 +118,11 @@ public class ValidationTranslator extends BaseTranslator {
             return;
         }
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + Element.METHOD_NAME
-                + " method in " + jcClassDecl.sym.className());
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + methodName + " method in " + jcClassDecl.sym.className());
 
         JCTree.JCBlock body = createBody(rules);
-        JCTree.JCMethodDecl method = createMethod(body, isInterface);
+        JCTree.JCMethodDecl method = createMethod(body, methodName, isInterface);
+        Element.putName(CTreeUtil.getOriginalTypeName(jcClassDecl.sym), methodName);
         // 刷新类信息
         jcClassDecl.defs = jcClassDecl.defs.append(method);
         this.result = jcClassDecl;
@@ -131,8 +145,7 @@ public class ValidationTranslator extends BaseTranslator {
 
             String name = self.toString();
             for (Regulation rule : rules) {
-                thisStatements = rule.handle(makerContext, thisStatements, name,
-                        self, makerContext.nullNode, null);
+                thisStatements = rule.handle(makerContext, thisStatements, name, self,null);
             }
             statements.append(getBlock(thisStatements));
         }
@@ -148,12 +161,12 @@ public class ValidationTranslator extends BaseTranslator {
      * @param body
      * @return
      */
-    private JCTree.JCMethodDecl createMethod(JCTree.JCBlock body, boolean isInterface) {
+    private JCTree.JCMethodDecl createMethod(JCTree.JCBlock body, String methodName, boolean isInterface) {
         List<JCTree.JCTypeParameter> param = List.nil();
         List<JCTree.JCVariableDecl> var = List.nil();
         List<JCTree.JCExpression> thrown = List.nil();
         return treeMaker.MethodDef(treeMaker.Modifiers(CTreeUtil.getNewMethodFlag(isInterface)),
-                CTreeUtil.getName(namesInstance, Element.METHOD_NAME),
+                CTreeUtil.getName(namesInstance, methodName),
                 makerContext.findClass(String.class.getName()),
                 param, var, thrown,
                 body, null);

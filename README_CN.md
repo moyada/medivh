@@ -6,7 +6,7 @@
 [![Maven Central](https://img.shields.io/badge/maven%20central-1.1.0-brightgreen.svg)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
 [![license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/moyada/medivh/blob/master/LICENSE)
 
-简体中文 | [English](README.md)
+[English](README.md) | 简体中文
 
 Java 的注解处理器，根据配置规则生成方法的入参校验逻辑。
 
@@ -69,12 +69,12 @@ dependencies {
 | :---- | :----- | :---- |
 | io.moyada.medivh.annotation.Nullable | 类字段、无参方法、方法参数 | 设置非基础类型字段可以为空，优先于 NotNull。 |
 | io.moyada.medivh.annotation.NotNull | 类字段、无参方法 | 设置非基础类型字段不可为空，当使用任意 Rule 时默认设置。 |
-| io.moyada.medivh.annotation.NotBlank | 类字段、无参方法、方法参数 | 定义 String 字段不可为空白字符串。 |
+| io.moyada.medivh.annotation.NotBlank | 类字段、无参方法、方法参数 | 定义 String 类型不可为空白字符串。 |
 | io.moyada.medivh.annotation.SizeRule | 类字段、无参方法、方法参数 | 为类提供长度或容量类型字段校验规则。 |
-| io.moyada.medivh.annotation.NumberRule | 类字段、无参方法 | 为类提供数字类型字段校验规则。 |
+| io.moyada.medivh.annotation.NumberRule | 类字段、无参方法、方法参数 | 为类提供数字类型字段校验规则。 |
 | io.moyada.medivh.annotation.Throw | 方法参数 | 配置参数的校验逻辑，校验失败抛出异常，基础类型无效。 |
 | io.moyada.medivh.annotation.Return | 方法参数 | 配置参数的校验逻辑，校验失败返回数据，基础类型无效。 |
-| io.moyada.medivh.annotation.Variable | 非静态方法 | 修改当前方法临时变量名。 |
+| io.moyada.medivh.annotation.Variable | 非静态方法、类 | 修改当前方法临时变量名。 |
 
 属性说明
 

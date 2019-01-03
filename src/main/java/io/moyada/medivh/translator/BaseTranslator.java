@@ -9,12 +9,11 @@ import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.core.MakerContext;
+import io.moyada.medivh.core.TypeTag;
 import io.moyada.medivh.regulation.NotNullWrapperRegulation;
 import io.moyada.medivh.regulation.NullCheckRegulation;
 import io.moyada.medivh.regulation.Regulation;
 import io.moyada.medivh.util.CTreeUtil;
-import io.moyada.medivh.core.Element;
-import io.moyada.medivh.core.TypeTag;
 import io.moyada.medivh.util.TypeUtil;
 
 import javax.annotation.processing.Messager;
@@ -218,8 +217,8 @@ class BaseTranslator extends TreeTranslator {
         return treeMaker.Exec(expression);
     }
 
-    JCTree.JCExpressionStatement assignCallback(JCTree.JCIdent giver, JCTree.JCExpression accepter) {
-        JCTree.JCExpression expression = makerContext.getMethod(giver, Element.METHOD_NAME, CTreeUtil.emptyParam());
+    JCTree.JCExpressionStatement assignCallback(JCTree.JCIdent giver, String methodName, JCTree.JCExpression accepter) {
+        JCTree.JCExpression expression = makerContext.getMethod(giver, methodName, CTreeUtil.emptyParam());
         return execMethod(treeMaker.Assign(accepter, expression));
     }
 
@@ -231,9 +230,7 @@ class BaseTranslator extends TreeTranslator {
      */
     JCTree.JCStatement newMsgThrow(JCTree.JCExpression message, String exceptionTypeName) {
         JCTree.JCExpression exceptionType = makerContext.findClass(exceptionTypeName);
-
         JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, CTreeUtil.emptyParam(), exceptionType, List.of(message), null);
-
         return CTreeUtil.newThrow(treeMaker, exceptionInstance);
     }
 
@@ -244,7 +241,7 @@ class BaseTranslator extends TreeTranslator {
      */
     JCTree.JCExpression getEmptyType(String returnTypeName) {
         if (null != TypeUtil.getBaseType(returnTypeName)) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "cannot find return value to " + returnTypeName);
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot find return value to " + returnTypeName);
         }
         JCTree.JCExpression returnType = makerContext.findClass(returnTypeName);
         return treeMaker.NewClass(null, CTreeUtil.emptyParam(), returnType, CTreeUtil.emptyParam(), null);
@@ -267,6 +264,7 @@ class BaseTranslator extends TreeTranslator {
             if (element.isConstructor()) { // && (element.flags() & Flags.PUBLIC) != 0) {
                 Symbol.MethodSymbol methodSymbol = (Symbol.MethodSymbol) element;
                 List<Symbol.VarSymbol> parameters = methodSymbol.getParameters();
+                // 参数个数一致
                 if (parameters.size() != values.length) {
                     continue;
                 }
@@ -277,6 +275,7 @@ class BaseTranslator extends TreeTranslator {
                     String typeName = CTreeUtil.getOriginalTypeName(varSymbol);
 
                     TypeTag baseType = TypeUtil.getBaseType(typeName);
+                    // 不支持复杂对象
                     if (null == baseType) {
                         param = null;
                         findParam = false;
@@ -284,6 +283,7 @@ class BaseTranslator extends TreeTranslator {
                     }
 
                     Object value = CTreeUtil.getValue(baseType, values[i]);
+                    // 数据与类型不匹配
                     if (null == value) {
                         param = null;
                         findParam = false;

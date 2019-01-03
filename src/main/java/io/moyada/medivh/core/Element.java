@@ -1,6 +1,11 @@
 package io.moyada.medivh.core;
 
+import io.moyada.medivh.annotation.Variable;
+import io.moyada.medivh.util.StringUtil;
 import io.moyada.medivh.util.SystemUtil;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 构造元素
@@ -21,13 +26,15 @@ public class Element {
     // 临时变量名配置
     private static final String VARIABLE_KEY = "medivh.var";
     private static final String DEFAULT_VARIABLE_NAME = "mvar_0";
-    public final static String LOCAL_VARIABLE = SystemUtil.getProperty(VARIABLE_KEY, DEFAULT_VARIABLE_NAME);
+    private final static String LOCAL_VARIABLE = SystemUtil.getProperty(VARIABLE_KEY, DEFAULT_VARIABLE_NAME);
 
 
     // 异常信息头配置
     private static final String MESSAGE_KEY = "medivh.message";
     private static final String DEFAULT_MESSAGE = "Invalid input parameter";
     public final static String MESSAGE = SystemUtil.getProperty(MESSAGE_KEY, DEFAULT_MESSAGE);
+
+    public static final String ACTION_INFO = ", cause ";
 
     // 非空信息配置
     private static final String NULL_KEY = "medivh.info.null";
@@ -54,7 +61,69 @@ public class Element {
     private static final String DEFAULT_BLANK_INFO = "is blank";
     public final static String BLANK_INFO = SystemUtil.getProperty(BLANK_KEY, DEFAULT_BLANK_INFO);
 
-    public static final String ACTION_INFO = ", cause ";
+    // 非空白字符串方法
+    private static final String BLANK_METHOD_KEY = "medivh.method.blank";
+    private static final String[] DEFAULT_BLANK_METHOD = new String[] {StringUtil.class.getName(), "isBlank"};
+    public final static String[] BLANK_METHOD = SystemUtil.getClassAndMethod(
+            SystemUtil.getProperty(BLANK_METHOD_KEY, null), DEFAULT_BLANK_METHOD);
+
+    private static final Map<String, String> methodNameMap = new HashMap<String, String>();
+
+    public static void putName(String className, String methodName) {
+        methodNameMap.put(className, methodName);
+    }
+
+    public static String getName(String className) {
+        String methodName = methodNameMap.get(className);
+        if (null == methodName) {
+            throw new NullPointerException("cannot find " + className + " invalid method.");
+        }
+        System.out.println(className + " -> " + methodName);
+        return methodName;
+    }
+
+    /**
+     * 获取临时变量名
+     * @param verify
+     * @return
+     */
+    public static String getTmpVar(Variable verify) {
+        return getValue(verify, LOCAL_VARIABLE);
+    }
+
+    /**
+     * 获取校验方法名
+     * @param verify
+     * @return
+     */
+    public static String getTmpMethod(Variable verify) {
+        return getValue(verify, METHOD_NAME);
+    }
+
+    /**
+     * 获取变量值，无效则返回默认值
+     * @param verify
+     * @param defaultValue
+     * @return
+     */
+    private static String getValue(Variable verify, String defaultValue) {
+        if (null == verify) {
+            return defaultValue;
+        }
+        String var = verify.value();
+        if (var.isEmpty()) {
+            return defaultValue;
+        }
+        var = var.trim();
+        if (var.isEmpty()) {
+            return defaultValue;
+        }
+        var = StringUtil.fixName(var);
+        if (null == var) {
+            var = defaultValue;
+        }
+        return var;
+    }
 
     /**
      * 是否标记返回空值

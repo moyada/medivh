@@ -11,6 +11,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import io.moyada.medivh.core.TypeTag;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -24,10 +25,18 @@ public final class CTreeUtil {
     private CTreeUtil() {
     }
 
+    /**
+     * 空参数
+     * @return
+     */
     public static List<JCTree.JCExpression> emptyParam(){
         return List.nil();
     }
 
+    /**
+     * 空语句
+     * @return
+     */
     public static ListBuffer<JCTree.JCStatement> newStatement(){
         return new ListBuffer<JCTree.JCStatement>();
     }
@@ -50,7 +59,7 @@ public final class CTreeUtil {
     }
 
     /**
-     * 获取注解参数
+     * 获取注解参数值
      * @param annotationAttr
      * @param key
      * @return
@@ -66,6 +75,17 @@ public final class CTreeUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * 获取注解数据
+     * @param symbol
+     * @param anno
+     * @param <T>
+     * @return
+     */
+    public static <T extends Annotation> T getAnnotation(Symbol symbol, Class<T> anno) {
+        return symbol.getAnnotation(anno);
     }
 
     /**

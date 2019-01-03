@@ -3,12 +3,12 @@ package io.moyada.medivh.annotation;
 import java.lang.annotation.*;
 
 /**
- * 属性规则
+ * 数字规则
  * @author xueyikang
  * @since 1.0
  **/
 @Documented
-@Target({ElementType.FIELD, ElementType.METHOD})
+@Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD})
 @Retention(RetentionPolicy.SOURCE)
 public @interface NumberRule {
 

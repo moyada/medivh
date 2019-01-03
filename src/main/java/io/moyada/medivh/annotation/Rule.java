@@ -6,7 +6,7 @@ import java.lang.annotation.*;
  * 属性规则
  * @author xueyikang
  * @since 1.0
- * @deprecated use {@link NumberRule} or {@link SizeRule} or {@link Nullable} or {@link NotNull}
+ * @deprecated use {@link NumberRule} or {@link SizeRule} or {@link Nullable} or {@link NotNull} or {@link NotBlank}
  **/
 @Deprecated
 @Documented

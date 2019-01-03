@@ -19,11 +19,12 @@ public class Example {
 
     public static SuperClass test2(@Throw(IllegalStateException.class) ParamB a,
                                    @Throw(message = "size is bound") @SizeRule(max = 20) List<String> b,
-                                   @Nullable Integer c) {
+                                   @Nullable @NumberRule(max = "4000") Integer c) {
         System.out.println("test2");
         return null;
     }
 
+    @Variable(value = "tmp0")
     public static AbstractClass test3(@Throw(IllegalStateException.class) ParamC a,
                                       String b,
                                       @Throw(message = "something error")
