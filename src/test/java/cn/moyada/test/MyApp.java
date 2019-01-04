@@ -11,13 +11,16 @@ import java.util.List;
  **/
 public class MyApp {
 
-    public static Info go(@Throw(RuntimeException.class) Args args,
-                          @Throw(message = "something error") @Nullable Info info,
-                          @Return({"test", "0.5"}) String name,
-                          int num) {
+    @Throw
+    public Info go(@Throw(value = RuntimeException.class, message = "something error") Args args,
+                          @Nullable Info info,
+                          @Return({"test", "0.5"}) @NotBlank String name,
+                          @SizeRule(max = 10) @Exclusive List<String> params,
+                          @NumberRule(min = "0") int num) {
         System.out.println(args);
         System.out.println(info);
         System.out.println(name);
+        System.out.println(params);
         System.out.println(num);
         return null;
     }
@@ -35,6 +38,7 @@ public class MyApp {
         boolean[] value;
     }
 
+    @Variable("check0")
     static class Info {
 
         public Info(String name, Double price) {

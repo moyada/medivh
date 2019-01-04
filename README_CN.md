@@ -28,6 +28,8 @@ Java 的注解处理器，根据配置规则生成方法的入参校验逻辑。
 
 JDK 1.6 及以上版本。
 
+对接口类型配置校验规则需要 JDK 1.8 及以上版本。
+
 ## 快速开始
 
 ### 添加依赖
@@ -72,9 +74,10 @@ dependencies {
 | io.moyada.medivh.annotation.NotBlank | 类字段、无参方法、方法参数 | 定义 String 类型不可为空白字符串。 |
 | io.moyada.medivh.annotation.SizeRule | 类字段、无参方法、方法参数 | 为类提供长度或容量类型字段校验规则。 |
 | io.moyada.medivh.annotation.NumberRule | 类字段、无参方法、方法参数 | 为类提供数字类型字段校验规则。 |
-| io.moyada.medivh.annotation.Throw | 方法参数 | 配置参数的校验逻辑，校验失败抛出异常，基础类型无效。 |
-| io.moyada.medivh.annotation.Return | 方法参数 | 配置参数的校验逻辑，校验失败返回数据，基础类型无效。 |
-| io.moyada.medivh.annotation.Variable | 非静态方法、类 | 修改当前方法临时变量名。 |
+| io.moyada.medivh.annotation.Throw | 类、非静态方法、方法参数 | 配置参数的校验逻辑，校验失败抛出异常，基础类型无效。 |
+| io.moyada.medivh.annotation.Return | 非静态方法、方法参数 | 配置参数的校验逻辑，校验失败返回数据，基础类型无效。 |
+| io.moyada.medivh.annotation.Exclusive | 方法、方法参数 | 配置参数的校验逻辑，校验失败返回数据，基础类型无效。 |
+| io.moyada.medivh.annotation.Variable | 非静态方法、类 | 修改校验逻辑缠身的临时变量名和方法名。 |
 
 属性说明
 
@@ -102,13 +105,15 @@ dependencies {
 
 | 参数 | 作用 |
 | :--- | :--- |
-| -Dmedivh.method | 配置校验方法名，默认为 `invalid0` 。 |
-| -Dmedivh.var | 配置默认临时变量名称，默认为 `mvar_0` 。 |
-| -Dmedivh.message | 配置默认异常信息头，默认为 `Invalid input parameter` 。 |
-| -Dmedivh.info.null | 配置默认非空校验信息，默认为 `is null` 。 |
-| -Dmedivh.info.equals | 配置默认相等校验信息，默认为 `cannot equals` 。 |
-| -Dmedivh.info.less | 配置默认小于校验信息，默认为 `less than` 。 |
-| -Dmedivh.info.great | 配置默认大于校验信息，默认为 `great than` 。 |
+| -J-Dmedivh.method | 配置校验方法名，默认为 `invalid0` 。 |
+| -J-Dmedivh.var | 配置默认临时变量名称，默认为 `mvar_0` 。 |
+| -J-Dmedivh.message | 配置默认异常信息头，默认为 `Invalid input parameter` 。 |
+| -J-Dmedivh.info.null | 配置默认非空校验信息，默认为 `is null` 。 |
+| -J-Dmedivh.info.equals | 配置默认相等校验信息，默认为 `cannot equals` 。 |
+| -J-Dmedivh.info.less | 配置默认小于校验信息，默认为 `less than` 。 |
+| -J-Dmedivh.info.great | 配置默认大于校验信息，默认为 `great than` 。 |
+| -J-Dmedivh.info.blank | 配置默认空白字符串校验信息，默认为 `is blank` 。 |
+| -J-Dmedivh.method.blank | 指定默认空白字符串校验方法，格式为 `<package>.<className>.<methodName>` ，不指定将创建 `io.moyada.medivh.support.Util` 。 |
 
 经过编译期后，即可生成校验逻辑。
 

@@ -17,6 +17,7 @@ public class Example {
         return null;
     }
 
+    @Throw
     public static SuperClass test2(@Throw(IllegalStateException.class) ParamB a,
                                    @Throw(message = "size is bound") @SizeRule(max = 20) List<String> b,
                                    @Nullable @NumberRule(max = "4000") Integer c) {
@@ -34,11 +35,12 @@ public class Example {
     }
 
     public static void test4(@Throw @Nullable AbstractClass a,
-                             @Return @Nullable ParamA b,
+                             @Exclusive @Return @Nullable ParamA b,
                              @Throw @SizeRule(min = 1, max = 10) int[] c) {
         System.out.println("test4");
     }
 
+    @Return("0")
     public static int test5(@Throw @Nullable Integer a,
                             @Return("-1") InterfaceA b,
                             @Throw AbstractClass c) {

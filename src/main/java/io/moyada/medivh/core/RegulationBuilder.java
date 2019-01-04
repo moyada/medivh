@@ -141,7 +141,7 @@ public final class RegulationBuilder {
         if (null == sizeRule) {
             return null;
         }
-        if (type == TypeUtil.PRIMITIVE) {
+        if (type < TypeUtil.STRING || type > TypeUtil.COLLECTION) {
             return null;
         }
 

@@ -1,6 +1,9 @@
 package io.moyada.medivh.core;
 
+import com.sun.tools.javac.code.Symbol;
+import io.moyada.medivh.annotation.Exclusive;
 import io.moyada.medivh.annotation.Variable;
+import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.util.StringUtil;
 import io.moyada.medivh.util.SystemUtil;
 
@@ -63,23 +66,50 @@ public class Element {
 
     // 非空白字符串方法
     private static final String BLANK_METHOD_KEY = "medivh.method.blank";
-    private static final String[] DEFAULT_BLANK_METHOD = new String[] {StringUtil.class.getName(), "isBlank"};
-    public final static String[] BLANK_METHOD = SystemUtil.getClassAndMethod(
-            SystemUtil.getProperty(BLANK_METHOD_KEY, null), DEFAULT_BLANK_METHOD);
+    public static final String[] DEFAULT_BLANK_METHOD = new String[] {"io.moyada.medivh.support.Util", "isBlank"};
+    public final static String[] BLANK_METHOD = SystemUtil.getClassAndMethod(System.getProperty(BLANK_METHOD_KEY), DEFAULT_BLANK_METHOD);
 
+    // 类校验方法信息, 类名 - 方法名
     private static final Map<String, String> methodNameMap = new HashMap<String, String>();
 
-    public static void putName(String className, String methodName) {
+    /**
+     * 存储类校验方法
+     * @param className
+     * @param methodName
+     */
+    public static void setCheckMethod(String className, String methodName) {
         methodNameMap.put(className, methodName);
     }
 
-    public static String getName(String className) {
+    /**
+     * 是否自定规则类
+     * @param className
+     * @return
+     */
+    public static boolean isRegulable(String className) {
+        return methodNameMap.containsKey(className);
+    }
+
+    /**
+     * 获取定义规则类所创建的校验方法名
+     * @param className
+     * @return
+     */
+    public static String getCheckMethod(String className) {
         String methodName = methodNameMap.get(className);
         if (null == methodName) {
             throw new NullPointerException("cannot find " + className + " invalid method.");
         }
-        System.out.println(className + " -> " + methodName);
         return methodName;
+    }
+
+    /**
+     * 是否排除校验
+     * @param symbol
+     * @return
+     */
+    public static boolean isExclusive(Symbol symbol) {
+        return null != CTreeUtil.getAnnotation(symbol, Exclusive.class);
     }
 
     /**

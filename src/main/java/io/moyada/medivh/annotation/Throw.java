@@ -8,7 +8,7 @@ import java.lang.annotation.*;
  * @since 1.0
  **/
 @Documented
-@Target(ElementType.PARAMETER)
+@Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.SOURCE)
 public @interface Throw {
 

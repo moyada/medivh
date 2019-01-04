@@ -43,8 +43,13 @@ public class SizeRangeRegulation extends TypeRegulation implements Regulation {
             // 创建对比语句
             JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.LT, getLength, minField);
 
-            String msg = info + Element.LESS_INFO + " " + min;
-            JCTree.JCStatement lessAction = createActionIfNotExist(action, makerContext, msg);
+            JCTree.JCStatement lessAction;
+            if (null == info) {
+                lessAction = action;
+            } else {
+                String msg = info + Element.LESS_INFO + " " + min;
+                lessAction = createAction(makerContext, msg);
+            }
 
             expression = treeMaker.If(condition, lessAction, expression);
         }
@@ -56,8 +61,13 @@ public class SizeRangeRegulation extends TypeRegulation implements Regulation {
             // 创建对比语句
             JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, getLength, minField);
 
-            String msg = info + Element.GREAT_INFO + " " + max;
-            JCTree.JCStatement greatAction = createActionIfNotExist(action, makerContext, msg);
+            JCTree.JCStatement greatAction;
+            if (null == info) {
+                greatAction = action;
+            } else {
+                String msg = info + Element.GREAT_INFO + " " + max;
+                greatAction = createAction(makerContext, msg);
+            }
 
             expression = treeMaker.If(condition, greatAction, expression);
         }

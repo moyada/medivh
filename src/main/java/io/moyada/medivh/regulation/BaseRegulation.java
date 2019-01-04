@@ -14,13 +14,17 @@ import io.moyada.medivh.util.CTreeUtil;
  **/
 public abstract class BaseRegulation implements Regulation {
 
-    // 执行动作模式
-    private byte actionMode = RETURN_STR;
+    // 新动作模式
+    private byte newActionMode = RETURN_STR;
+
+    // 新动作的信息
+    protected String info;
+
+    // 新动作的数据
     private ActionData actionData;
 
     // 返回字符串
     public static final byte RETURN_STR = 0;
-
     // 抛出异常
     public static final byte THROW = 1;
 
@@ -28,17 +32,14 @@ public abstract class BaseRegulation implements Regulation {
         if (null == actionData) {
             return;
         }
-        this.actionMode = actionData.getActionMode();
+        this.newActionMode = actionData.getActionMode();
         this.actionData = actionData;
     }
-
-    protected String info;
 
     @Override
     public ListBuffer<JCTree.JCStatement> handle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
                                                  String fieldName, JCTree.JCExpression self, JCTree.JCStatement action) {
-        info = buildInfo(fieldName);
-        action = createActionIfNotExist(action, makerContext, info);
+        action = createActionIfNull(action, makerContext, fieldName);
         JCTree.JCStatement exec = doHandle(makerContext, statements, self, action);
         statements.append(exec);
         return statements;
@@ -69,11 +70,12 @@ public abstract class BaseRegulation implements Regulation {
      * @param info
      * @return
      */
-    JCTree.JCStatement createActionIfNotExist(JCTree.JCStatement action, MakerContext makerContext, String info) {
+    JCTree.JCStatement createActionIfNull(JCTree.JCStatement action, MakerContext makerContext, String info) {
         if (null != action) {
             return action;
         }
-        return createAction(makerContext, info);
+        this.info = buildInfo(info);
+        return createAction(makerContext, this.info);
     }
 
     /**
@@ -84,7 +86,7 @@ public abstract class BaseRegulation implements Regulation {
      */
     JCTree.JCStatement createAction(MakerContext makerContext, String info) {
         JCTree.JCStatement action;
-        switch (actionMode) {
+        switch (newActionMode) {
             case THROW:
                 JCTree.JCLiteral message = CTreeUtil.newElement(makerContext.getTreeMaker(),
                         TypeTag.CLASS,actionData.getInfo() + info);

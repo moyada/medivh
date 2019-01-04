@@ -43,7 +43,7 @@ public class ValidationTranslator extends BaseTranslator {
         boolean isInterface = (jcClassDecl.mods.flags & Flags.INTERFACE) != 0;
         // 过滤jdk8以下接口无法创建校验方法
         if (isInterface && !CTreeUtil.isDefaultInterface()) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "[Param Error] cannot use interface type param in less than jdk8 version.");
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Param Error] unable to use interface type param before JDK8 version.");
             return;
         }
 
@@ -122,7 +122,7 @@ public class ValidationTranslator extends BaseTranslator {
 
         JCTree.JCBlock body = createBody(rules);
         JCTree.JCMethodDecl method = createMethod(body, methodName, isInterface);
-        Element.putName(CTreeUtil.getOriginalTypeName(jcClassDecl.sym), methodName);
+        Element.setCheckMethod(CTreeUtil.getOriginalTypeName(jcClassDecl.sym), methodName);
         // 刷新类信息
         jcClassDecl.defs = jcClassDecl.defs.append(method);
         this.result = jcClassDecl;

@@ -11,7 +11,7 @@ import io.moyada.medivh.annotation.*;
 import io.moyada.medivh.core.MakerContext;
 import io.moyada.medivh.translator.ValidationTranslator;
 import io.moyada.medivh.translator.VerificationTranslator;
-import io.moyada.medivh.util.StringUtil;
+import io.moyada.medivh.util.SystemUtil;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
@@ -57,9 +57,6 @@ public class ValidationProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         // 获取校验方法
-//        Set<? extends Element> methods = ElementFilter.methodsIn(
-//                roundEnv.getElementsAnnotatedWith(Verify.class));
-
         Collection<? extends Element> methods = getMethods(roundEnv.getRootElements(),
                 Throw.class.getName(), Return.class.getName(), Nullable.class.getName());
 
@@ -91,7 +88,7 @@ public class ValidationProcessor extends AbstractProcessor {
         }
 
         // 校验逻辑生成器
-        translator = new VerificationTranslator(makerContext, ruleClass, messager);
+        translator = new VerificationTranslator(makerContext, messager);
         for (Element element : methods) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
@@ -193,7 +190,7 @@ public class ValidationProcessor extends AbstractProcessor {
         rules.addAll(ElementFilter.methodsIn(elements));
 
         try {
-            StringUtil.createFile(processingEnv.getFiler(), io.moyada.medivh.core.Element.BLANK_METHOD[0]);
+            SystemUtil.createFile(processingEnv.getFiler(), io.moyada.medivh.core.Element.BLANK_METHOD[0]);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

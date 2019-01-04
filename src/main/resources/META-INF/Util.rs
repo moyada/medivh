@@ -1,4 +1,7 @@
-public class StringUtil {
+public class Util {
+
+    private Util() {
+    }
 
     public static boolean isBlank(String str) {
         int length = str.length();

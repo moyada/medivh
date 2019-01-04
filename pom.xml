@@ -40,7 +40,7 @@
         <maven.source.version>3.0.1</maven.source.version>
         <maven.javadoc.version>3.0.1</maven.javadoc.version>
         <maven.gpg.version>1.6</maven.gpg.version>
-        <gpg.skip>true</gpg.skip>
+        <gpg.skip>false</gpg.skip>
     </properties>
 
     <dependencies>

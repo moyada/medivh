@@ -42,8 +42,13 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
             JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, typeTag, min);
             JCTree.JCExpression minCondition = CTreeUtil.newExpression(treeMaker, TypeTag.LT, self, minField);
 
-            String msg = info + " " + Element.LESS_INFO + " " + min;
-            JCTree.JCStatement lessAction = createActionIfNotExist(action, makerContext, msg);
+            JCTree.JCStatement lessAction;
+            if (null == info) {
+                lessAction = action;
+            } else {
+                String msg = info + Element.LESS_INFO + " " + min;
+                lessAction = createAction(makerContext, msg);
+            }
 
             expression = treeMaker.If(minCondition, lessAction, expression);
         }
@@ -53,8 +58,13 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
             JCTree.JCLiteral maxField = CTreeUtil.newElement(treeMaker, typeTag, max);
             JCTree.JCExpression maxCondition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, self, maxField);
 
-            String msg = info + " " + Element.GREAT_INFO + " " + max;
-            JCTree.JCStatement greatAction = createActionIfNotExist(action, makerContext, msg);
+            JCTree.JCStatement greatAction;
+            if (null == info) {
+                greatAction = action;
+            } else {
+                String msg = info + Element.GREAT_INFO + " " + max;
+                greatAction = createAction(makerContext, msg);
+            }
 
             expression = treeMaker.If(maxCondition, greatAction, expression);
         }
@@ -64,6 +74,6 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
 
     @Override
     String buildInfo(String fieldName) {
-        return fieldName;
+        return fieldName + " ";
     }
 }

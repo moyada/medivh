@@ -106,6 +106,18 @@ public class MakerContext {
     }
 
     /**
+     * 方法调用结果赋值
+     * @param giver 调用对象
+     * @param methodName 调用方法
+     * @param accepter 赋值对象
+     * @return
+     */
+    public JCTree.JCExpressionStatement assignCallback(JCTree.JCIdent giver, String methodName, JCTree.JCExpression accepter) {
+        JCTree.JCExpression expression = getMethod(giver, methodName, CTreeUtil.emptyParam());
+        return treeMaker.Exec(treeMaker.Assign(accepter, expression));
+    }
+
+    /**
      * 查询类引用
      * @param className
      * @return

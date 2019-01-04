@@ -10,15 +10,11 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.core.MakerContext;
 import io.moyada.medivh.core.TypeTag;
-import io.moyada.medivh.regulation.NotNullWrapperRegulation;
-import io.moyada.medivh.regulation.NullCheckRegulation;
-import io.moyada.medivh.regulation.Regulation;
 import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.util.TypeUtil;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
-import javax.tools.Diagnostic;
 
 /**
  * @author xueyikang
@@ -41,22 +37,6 @@ class BaseTranslator extends TreeTranslator {
         this.treeMaker = makerContext.getTreeMaker();
         this.namesInstance = makerContext.getNamesInstance();
         this.javacElements = makerContext.getJavacElements();
-    }
-
-    /**
-     * 增加非原始类型校验
-     * @param regulations
-     * @param checkNull
-     */
-    void appendNullCheck(java.util.List<Regulation> regulations, boolean checkNull) {
-        if (checkNull) {
-            regulations.add(new NullCheckRegulation());
-        } else {
-            // 无规则不使用非空包装
-            if (!regulations.isEmpty()) {
-                regulations.add(new NotNullWrapperRegulation());
-            }
-        }
     }
 
     /**
@@ -195,6 +175,22 @@ class BaseTranslator extends TreeTranslator {
     }
 
     /**
+     * 替换方法内容
+     * @param methodDecl
+     * @param body
+     * @return
+     */
+    JCTree.JCMethodDecl replaceMethod(JCTree.JCMethodDecl methodDecl, JCTree.JCBlock body) {
+        return treeMaker.MethodDef(methodDecl.mods,
+                methodDecl.name,
+                methodDecl.restype,
+                methodDecl.typarams,
+                methodDecl.params,
+                methodDecl.thrown,
+                body, methodDecl.defaultValue);
+    }
+
+    /**
      * 创建新变量
      * @param name
      * @param flags
@@ -206,45 +202,6 @@ class BaseTranslator extends TreeTranslator {
         return treeMaker.VarDef(treeMaker.Modifiers(flags),
                 CTreeUtil.getName(namesInstance, name),
                 makerContext.findClass(type), init);
-    }
-
-    /**
-     * 执行调用
-     * @param expression
-     * @return
-     */
-    JCTree.JCExpressionStatement execMethod(JCTree.JCExpression expression) {
-        return treeMaker.Exec(expression);
-    }
-
-    JCTree.JCExpressionStatement assignCallback(JCTree.JCIdent giver, String methodName, JCTree.JCExpression accepter) {
-        JCTree.JCExpression expression = makerContext.getMethod(giver, methodName, CTreeUtil.emptyParam());
-        return execMethod(treeMaker.Assign(accepter, expression));
-    }
-
-    /**
-     * 创建异常语句
-     * @param message
-     * @param exceptionTypeName
-     * @return
-     */
-    JCTree.JCStatement newMsgThrow(JCTree.JCExpression message, String exceptionTypeName) {
-        JCTree.JCExpression exceptionType = makerContext.findClass(exceptionTypeName);
-        JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, CTreeUtil.emptyParam(), exceptionType, List.of(message), null);
-        return CTreeUtil.newThrow(treeMaker, exceptionInstance);
-    }
-
-    /**
-     * 返回空构造方法语句
-     * @param returnTypeName
-     * @return
-     */
-    JCTree.JCExpression getEmptyType(String returnTypeName) {
-        if (null != TypeUtil.getBaseType(returnTypeName)) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot find return value to " + returnTypeName);
-        }
-        JCTree.JCExpression returnType = makerContext.findClass(returnTypeName);
-        return treeMaker.NewClass(null, CTreeUtil.emptyParam(), returnType, CTreeUtil.emptyParam(), null);
     }
 
     /**
