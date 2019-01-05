@@ -7,10 +7,10 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.annotation.Return;
 import io.moyada.medivh.annotation.Throw;
-import io.moyada.medivh.annotation.Variable;
 import io.moyada.medivh.core.*;
 import io.moyada.medivh.regulation.*;
 import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.CheckUtil;
 import io.moyada.medivh.util.TypeUtil;
 
 import javax.annotation.processing.Messager;
@@ -38,19 +38,18 @@ public class VerificationTranslator extends BaseTranslator {
         super.visitMethodDef(methodDecl);
 
         Symbol.MethodSymbol methodSymbol = methodDecl.sym;
-        if (Element.isExclusive(methodSymbol)) {
+        if (CheckUtil.isExclusive(methodSymbol)) {
             return;
         }
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build Verify logic for "
-                + methodSymbol.getEnclosingElement().asType().toString() + "." + methodDecl.name.toString() + "()");
+        String fullName = CTreeUtil.getFullName(methodSymbol);
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build Verify logic for " + fullName + "()");
 
         // 返回类型
         String returnTypeName = CTreeUtil.getReturnTypeName(methodDecl);
 
         // 创建临时变量提取引用
-        JCTree.JCVariableDecl msg = newVar(Element.getTmpVar(CTreeUtil.getAnnotation(methodSymbol, Variable.class)),
-                0L, String.class.getName(), null);
+        JCTree.JCVariableDecl msg = newVar(CheckUtil.getTmpVar(methodSymbol), 0L, String.class.getName(), null);
         JCTree.JCIdent ident = treeMaker.Ident(msg.name);
 
         // 方法域校验信息
@@ -138,6 +137,23 @@ public class VerificationTranslator extends BaseTranslator {
     }
 
     /**
+     * 获取配置异常
+     * @param annotationAttr
+     * @return
+     */
+    private String getException(Attribute.Compound annotationAttr) {
+        String exception = CTreeUtil.getAnnotationValue(annotationAttr, "value()");
+        if (null == exception) {
+            exception = IllegalArgumentException.class.getName();
+        } else {
+            if (!checkException(exception)) {
+                messager.printMessage(Diagnostic.Kind.ERROR, "[Exception Error] " + exception + " must be provide a String constructor!");
+            }
+        }
+        return exception;
+    }
+
+    /**
      * 获取方法校验返回信息
      * @param symbol
      * @param returnTypeName
@@ -150,7 +166,7 @@ public class VerificationTranslator extends BaseTranslator {
         }
         // 无效的返回类型，void
         if (returnTypeName == null) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot return any data to void type");
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot mark Return annotation on void return method.");
             return null;
         }
 
@@ -192,7 +208,7 @@ public class VerificationTranslator extends BaseTranslator {
             errorType = CTreeUtil.isAbsOrInter(classSymbol.flags());
         }
 
-        if (Element.isReturnNull(values)) {
+        if (CheckUtil.isReturnNull(values)) {
             // 返回空对象
             if (TypeUtil.isPrimitive(classType)) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot return <nulltype> value to " + classType);
@@ -243,28 +259,11 @@ public class VerificationTranslator extends BaseTranslator {
     }
 
     /**
-     * 获取配置异常
-     * @param annotationAttr
-     * @return
-     */
-    private String getException(Attribute.Compound annotationAttr) {
-        String exception = CTreeUtil.getAnnotationValue(annotationAttr, "value()");
-        if (null == exception) {
-            exception = IllegalArgumentException.class.getName();
-        } else {
-            if (!checkException(exception)) {
-                messager.printMessage(Diagnostic.Kind.ERROR, "[Exception Error] " + exception + " must be provide a String constructor!");
-            }
-        }
-        return exception;
-    }
-
-    /**
      * 返回空构造方法语句
      * @param returnTypeName
      * @return
      */
-    JCTree.JCExpression getEmptyType(String returnTypeName) {
+    private JCTree.JCExpression getEmptyType(String returnTypeName) {
         if (null != TypeUtil.getBaseType(returnTypeName)) {
             messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot find return value to " + returnTypeName);
         }
@@ -281,7 +280,7 @@ public class VerificationTranslator extends BaseTranslator {
      * @param msgField
      * @return
      */
-    public ListBuffer<JCTree.JCStatement> buildLogic(CheckData defaultCheck, List<JCTree.JCVariableDecl> params,
+    private ListBuffer<JCTree.JCStatement> buildLogic(CheckData defaultCheck, List<JCTree.JCVariableDecl> params,
                                                      String returnTypeName, JCTree.JCIdent msgField) {
 
         // 建立校验逻辑
@@ -309,9 +308,9 @@ public class VerificationTranslator extends BaseTranslator {
      */
     private JCTree.JCStatement getParamStatement(CheckData defaultCheck, JCTree.JCVariableDecl param, String returnTypeName, JCTree.JCIdent msgField) {
         Symbol.VarSymbol symbol = param.sym;
-        if (Element.isExclusive(symbol)) {
-            return null;
-        }
+//        if (CheckUtil.isExclusive(symbol)) {
+//            return null;
+//        }
 
         // 字段域校验信息
         CheckData checkData = getCheckData(symbol, returnTypeName);
@@ -322,27 +321,31 @@ public class VerificationTranslator extends BaseTranslator {
             checkData = defaultCheck;
         }
 
+        // 获取参数类型
         String paramTypeName = CTreeUtil.getOriginalTypeName(symbol);
         byte classType = getClassType(paramTypeName);
 
+        // 参数标识
         JCTree.JCIdent self = treeMaker.Ident(param.name);
+        // 参数名
         String varName = param.name.toString();
 
+        // 获取校验动作
         ActionData actionData = checkData.buildActionData();
-
-        ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
 
         // 获取基础类型规则
         java.util.List<Regulation> regulations = RegulationBuilder.findBasicRule(symbol, paramTypeName, classType, actionData);
-
         boolean isEmpty = regulations.isEmpty();
+
+        ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
+
         // 无基础类型规则则检测自定义规则
-        if (isEmpty && Element.isRegulable(paramTypeName)) {
+        if (isEmpty && CheckUtil.isRegulable(paramTypeName)) {
             // 将校验结果赋值给临时变量
             JCTree.JCStatement action = checkData.getAction(msgField);
             EqualsRegulation equalsRegulation = new EqualsRegulation(TypeUtil.OBJECT, false);
 
-            statements.append(makerContext.assignCallback(self, Element.getCheckMethod(paramTypeName), msgField));
+            statements.append(makerContext.assignCallback(self, CheckUtil.getCheckMethod(paramTypeName), msgField));
             statements = equalsRegulation.handle(makerContext, statements, varName, msgField, action);
 
             isEmpty = false;
@@ -369,6 +372,7 @@ public class VerificationTranslator extends BaseTranslator {
             return null;
         }
 
+        // 当 checkData.returnValue 为 null 时使用 actionData 创建校验处理动作
         for (Regulation regulation : regulations) {
             statements = regulation.handle(makerContext, statements, varName, self, checkData.returnValue);
         }

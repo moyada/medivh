@@ -367,9 +367,19 @@ public final class TypeUtil {
             case LONG:
                 return m1.longValue() < m2.longValue() ? -1 : m1.longValue() > m2.longValue() ? 1 : 0;
             case FLOAT:
-                return Float.compare(m1.floatValue(), Math.abs(m2.floatValue()));
+                float floatValue = m2.floatValue();
+                if (floatValue == 0) {
+                    floatValue += 0.000000001F;
+                }
+                return Float.compare(m1.floatValue(), floatValue);
+//                return Float.compare(m1.floatValue(), Math.abs(m2.floatValue()));
             case DOUBLE:
-                return Double.compare(m1.doubleValue(), Math.abs(m2.doubleValue()));
+                double doubleValue = m2.doubleValue();
+                if (doubleValue == 0) {
+                    doubleValue += 0.000000000000001D;
+                }
+                return Double.compare(m1.doubleValue(), doubleValue);
+//                return Double.compare(m1.doubleValue(), Math.abs(m2.doubleValue()));
         }
         return 0;
     }

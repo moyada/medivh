@@ -17,7 +17,7 @@ import java.util.zip.ZipEntry;
  * @author xueyikang
  * @since 1.0
  **/
-public class SystemUtil {
+public final class SystemUtil {
 
     private SystemUtil() {
     }

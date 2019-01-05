@@ -1,5 +1,6 @@
 package cn.moyada.test;
 
+import com.sun.jdi.InternalException;
 import io.moyada.medivh.annotation.*;
 
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.List;
  * @author xueyikang
  * @since 1.0
  **/
+@Throw
 public class Example {
 
     public static InterfaceA test1(@Throw(IllegalStateException.class) ParamA a,
@@ -17,8 +19,7 @@ public class Example {
         return null;
     }
 
-    @Throw
-    public static SuperClass test2(@Throw(IllegalStateException.class) ParamB a,
+    public static SuperClass test2(ParamB a,
                                    @Throw(message = "size is bound") @SizeRule(max = 20) List<String> b,
                                    @Nullable @NumberRule(max = "4000") Integer c) {
         System.out.println("test2");
@@ -34,9 +35,9 @@ public class Example {
         return null;
     }
 
-    public static void test4(@Throw @Nullable AbstractClass a,
-                             @Exclusive @Return @Nullable ParamA b,
-                             @Throw @SizeRule(min = 1, max = 10) int[] c) {
+    public static void test4(@Throw(InternalException.class) @Nullable AbstractClass a,
+                             @Exclusive ParamA b,
+                             @SizeRule(min = 1, max = 10) int[] c) {
         System.out.println("test4");
     }
 
@@ -44,6 +45,14 @@ public class Example {
     public static int test5(@Throw @Nullable Integer a,
                             @Return("-1") InterfaceA b,
                             @Throw AbstractClass c) {
+        System.out.println("test4");
+        return 0;
+    }
+
+    @Exclusive
+    public static int test6(Integer a,
+                            @NotBlank String b,
+                            @Return("0") ParamC c) {
         System.out.println("test4");
         return 0;
     }

@@ -8,7 +8,7 @@ import java.lang.annotation.*;
  * @since 1.0
  **/
 @Documented
-@Target({ElementType.FIELD, ElementType.METHOD})
+@Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD})
 @Retention(RetentionPolicy.SOURCE)
 public @interface NotNull {
 

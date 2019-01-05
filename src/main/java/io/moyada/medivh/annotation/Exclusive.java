@@ -5,7 +5,7 @@ import java.lang.annotation.*;
 /**
  * 排除规则校验
  * @author xueyikang
- * @since 1.0
+ * @since 1.1.0
  **/
 @Documented
 @Target({ElementType.METHOD, ElementType.PARAMETER})

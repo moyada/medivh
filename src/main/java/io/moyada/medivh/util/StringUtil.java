@@ -5,7 +5,7 @@ package io.moyada.medivh.util;
  * @author xueyikang
  * @since 1.0
  **/
-public class StringUtil {
+public final class StringUtil {
 
     private StringUtil() {
     }

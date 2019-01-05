@@ -111,6 +111,12 @@ public final class CTreeUtil {
         return returnTypeName;
     }
 
+    public static String getFullName(Symbol methodSymbol) {
+        String className = methodSymbol.getEnclosingElement().asType().toString();
+        String methodName = methodSymbol.name.toString();
+        return className + "." + methodName;
+    }
+
     /**
      * 是否是抽象或接口
      * @param flags

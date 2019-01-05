@@ -143,7 +143,7 @@ public final class ClassUtil {
      * @param className
      * @return
      */
-    public final static Class<?> getClass(String className) {
+    final static Class<?> getClass(String className) {
         Class<?> clazz = getReference(classMap, className);
         if (null != clazz) {
             return clazz;
@@ -165,7 +165,7 @@ public final class ClassUtil {
      * @param parameterTypes
      * @return
      */
-    public final static Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
+    final static Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
         Method method = getReference(methodMap, name);
         if (null != method) {
             return method;
@@ -182,7 +182,7 @@ public final class ClassUtil {
         return method;
     }
 
-    public final static <T> T invoke(Method method, Object target, Object... args) {
+    final static <T> T invoke(Method method, Object target, Object... args) {
         try {
             @SuppressWarnings("unchecked")
             T m = (T) method.invoke(target, args);
@@ -200,7 +200,7 @@ public final class ClassUtil {
      * @param file
      * @return
      */
-    public final static Object getStaticField(Class<?> clazz, String file) {
+    final static Object getStaticField(Class<?> clazz, String file) {
         return getField(clazz, null, file);
     }
 
@@ -211,7 +211,7 @@ public final class ClassUtil {
      * @param file
      * @return
      */
-    public final static Object getField(Class<?> clazz, Object target, String file) {
+    final static Object getField(Class<?> clazz, Object target, String file) {
         String fileName = clazz.getName() + file;
         Field field = getReference(fieldMap, fileName);
         if (null != field) {

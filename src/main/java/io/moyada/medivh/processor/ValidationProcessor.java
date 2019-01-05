@@ -11,6 +11,7 @@ import io.moyada.medivh.annotation.*;
 import io.moyada.medivh.core.MakerContext;
 import io.moyada.medivh.translator.ValidationTranslator;
 import io.moyada.medivh.translator.VerificationTranslator;
+import io.moyada.medivh.util.CheckUtil;
 import io.moyada.medivh.util.SystemUtil;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -58,7 +59,7 @@ public class ValidationProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         // 获取校验方法
         Collection<? extends Element> methods = getMethods(roundEnv.getRootElements(),
-                Throw.class.getName(), Return.class.getName(), Nullable.class.getName());
+                Throw.class.getName(), Return.class.getName());
 
         if (methods.isEmpty()) {
             return true;
@@ -111,6 +112,8 @@ public class ValidationProcessor extends AbstractProcessor {
             if (rootElement.getKind() == ElementKind.INTERFACE) {
                 continue;
             }
+            JCTree.JCClassDecl classDecl = (JCTree.JCClassDecl) trees.getTree(rootElement);
+            boolean checkClass = CheckUtil.isCheckClass(classDecl);
 
             List<? extends Element> elements = rootElement.getEnclosedElements();
             for (Element element : elements) {
@@ -122,9 +125,20 @@ public class ValidationProcessor extends AbstractProcessor {
                 if (isJump(methodDecl)) {
                     continue;
                 }
-
+                // 无参数方法
                 com.sun.tools.javac.util.List<JCTree.JCVariableDecl> parameters = methodDecl.getParameters();
                 if (parameters.isEmpty()) {
+                    continue;
+                }
+
+                // 标记排除
+                if (CheckUtil.isExclusive(methodDecl.sym)) {
+                    continue;
+                }
+
+                // 类上或方法上标记校验处理
+                if (checkClass || CheckUtil.isCheckMethod(methodDecl)) {
+                    methods.add(element);
                     continue;
                 }
 

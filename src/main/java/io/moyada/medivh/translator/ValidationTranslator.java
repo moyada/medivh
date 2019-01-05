@@ -6,14 +6,13 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.annotation.Variable;
-import io.moyada.medivh.core.Element;
 import io.moyada.medivh.core.MakerContext;
 import io.moyada.medivh.core.RegulationBuilder;
 import io.moyada.medivh.regulation.NotNullWrapperRegulation;
 import io.moyada.medivh.regulation.NullCheckRegulation;
 import io.moyada.medivh.regulation.Regulation;
 import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.CheckUtil;
 
 import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic;
@@ -47,85 +46,95 @@ public class ValidationTranslator extends BaseTranslator {
             return;
         }
 
-        Variable annotation = CTreeUtil.getAnnotation(jcClassDecl.sym, Variable.class);
-        String methodName = Element.getTmpMethod(annotation);
+        Symbol.ClassSymbol classSymbol = jcClassDecl.sym;
+        String methodName = CheckUtil.getTmpMethod(classSymbol);
 
         // 解析所有参数规则
         Map<JCTree.JCExpression, java.util.List<Regulation>> rules = new HashMap<JCTree.JCExpression, java.util.List<Regulation>>();
 
         for (JCTree var : jcClassDecl.defs) {
-            Symbol symbol;
-            String className;
-            JCTree.JCExpression self;
-
-            // 变量
-            if (var.getKind() == Tree.Kind.VARIABLE) {
-                JCTree.JCVariableDecl jcVariableDecl = (JCTree.JCVariableDecl) var;
-                // 排除枚举
-                if ((jcVariableDecl.mods.flags & Flags.ENUM) != 0) {
-                    continue;
-                }
-
-                symbol = jcVariableDecl.sym;
-                className = CTreeUtil.getOriginalTypeName(symbol);
-                self = treeMaker.Ident(jcVariableDecl.name);
-            }
-            // 方法
-            else if (var.getKind() == Tree.Kind.METHOD) {
-                JCTree.JCMethodDecl methodDecl = (JCTree.JCMethodDecl) var;
-                // 过滤带参方法
-                if (!methodDecl.getParameters().isEmpty()) {
-                    continue;
-                }
-
-                className = CTreeUtil.getReturnTypeName(methodDecl);
-                // 过滤无返回值方法
-                if (null == className) {
-                    continue;
-                }
-
-                symbol = methodDecl.sym;
-
-                JCTree.JCIdent ident = treeMaker.Ident(methodDecl.name);
-                self = treeMaker.Apply(CTreeUtil.emptyParam(), ident, CTreeUtil.emptyParam());
-            } else {
-                continue;
-            }
-
-            byte classType = getClassType(className);
-            java.util.List<Regulation> regulations =
-                    RegulationBuilder.findBasicRule(symbol, className, classType);
-
-            Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType);
-            // 非原始类型
-            if (null != checkNull) {
-                if (checkNull) {
-                    regulations.add(new NullCheckRegulation());
-                } else {
-                    // 无规则不使用非空包装
-                    if (!regulations.isEmpty()) {
-                        regulations.add(new NotNullWrapperRegulation());
-                    }
-                }
-            }
-
-            if (regulations.isEmpty()) {
-                continue;
-            }
-            rules.put(self, regulations);
+            joinVarRules(rules, var);
         }
         if (rules.isEmpty()) {
             return;
         }
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + methodName + " method in " + jcClassDecl.sym.className());
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + methodName + " method in " + classSymbol.className());
 
         JCTree.JCBlock body = createBody(rules);
         JCTree.JCMethodDecl method = createMethod(body, methodName, isInterface);
-        Element.setCheckMethod(CTreeUtil.getOriginalTypeName(jcClassDecl.sym), methodName);
+
+        CheckUtil.addCheckMethod(CTreeUtil.getOriginalTypeName(classSymbol), methodName);
         // 刷新类信息
         jcClassDecl.defs = jcClassDecl.defs.append(method);
         this.result = jcClassDecl;
+    }
+
+    /**
+     * 加入字段规则
+     * @param rules
+     * @param var
+     */
+    private void joinVarRules(Map<JCTree.JCExpression, java.util.List<Regulation>> rules, JCTree var) {
+        Symbol symbol;
+        String className;
+        JCTree.JCExpression self;
+
+        // 变量
+        if (var.getKind() == Tree.Kind.VARIABLE) {
+            JCTree.JCVariableDecl jcVariableDecl = (JCTree.JCVariableDecl) var;
+            // 排除枚举
+            if ((jcVariableDecl.mods.flags & Flags.ENUM) != 0) {
+                return;
+            }
+
+            symbol = jcVariableDecl.sym;
+            className = CTreeUtil.getOriginalTypeName(symbol);
+            self = treeMaker.Ident(jcVariableDecl.name);
+        }
+        // 方法
+        else if (var.getKind() == Tree.Kind.METHOD) {
+            JCTree.JCMethodDecl methodDecl = (JCTree.JCMethodDecl) var;
+            // 过滤带参方法
+            if (!methodDecl.getParameters().isEmpty()) {
+                return;
+            }
+
+            className = CTreeUtil.getReturnTypeName(methodDecl);
+            // 过滤无返回值方法
+            if (null == className) {
+                return;
+            }
+
+            symbol = methodDecl.sym;
+
+            JCTree.JCIdent ident = treeMaker.Ident(methodDecl.name);
+            self = treeMaker.Apply(CTreeUtil.emptyParam(), ident, CTreeUtil.emptyParam());
+        } else {
+            return;
+        }
+
+        byte classType = getClassType(className);
+        java.util.List<Regulation> regulations = RegulationBuilder.findBasicRule(symbol, className, classType);
+
+        Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType);
+        // 非原始类型
+        if (null != checkNull) {
+            if (checkNull) {
+                regulations.add(new NullCheckRegulation());
+            } else {
+                // 无规则不使用非空包装
+                if (!regulations.isEmpty()) {
+                    regulations.add(new NotNullWrapperRegulation());
+                }
+            }
+        }
+
+        if (regulations.isEmpty()) {
+            return;
+        }
+
+        rules.put(self, regulations);
     }
 
     /**
