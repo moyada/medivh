@@ -19,11 +19,15 @@ This tool can save time and effort in this respect, modify the syntax tree at `c
 
 * Support null check for Object type.
 
-* Support range check for byte, short, int, long, float and double.
+* Support size check for byte, short, int, long, float and double.
+
+* Support blank string check.
 
 * Support length check for String and array.
 
 * Support capacity check for Collection and Map.
+
+* Can choose to throw an exception or return data when the verification fails.
 
 ## Requirements
 
