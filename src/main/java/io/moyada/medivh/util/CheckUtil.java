@@ -164,4 +164,14 @@ public final class CheckUtil {
         }
         return false;
     }
+
+    public final static boolean isNull(String value) {
+        if (value.isEmpty()) {
+            return true;
+        }
+        if (value.equalsIgnoreCase("null")) {
+            return true;
+        }
+        return false;
+    }
 }

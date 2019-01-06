@@ -25,7 +25,7 @@ public class CaseReturn {
     }
 
     public Capacity get(@Return("null") @NotBlank String name,
-                        @Return({"test", "true"}) @NumberRule(min = "0") byte type) {
+                        @Return({"null", "true"}) @NumberRule(min = "0") byte type) {
         return new Capacity();
     }
 

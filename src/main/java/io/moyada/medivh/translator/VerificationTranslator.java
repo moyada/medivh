@@ -208,9 +208,11 @@ public class VerificationTranslator extends BaseTranslator {
             errorType = CTreeUtil.isAbsOrInter(classSymbol.flags());
         }
 
+        boolean primitive = TypeUtil.isPrimitive(classType);
+
         if (CheckUtil.isReturnNull(values)) {
             // 返回空对象
-            if (TypeUtil.isPrimitive(classType)) {
+            if (primitive) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot return <nulltype> value to " + classType);
             }
             returnValue = makerContext.nullNode;

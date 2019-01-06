@@ -11,6 +11,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.core.MakerContext;
 import io.moyada.medivh.core.TypeTag;
 import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.CheckUtil;
 import io.moyada.medivh.util.TypeUtil;
 
 import javax.annotation.processing.Messager;
@@ -229,25 +230,38 @@ class BaseTranslator extends TreeTranslator {
                 findParam = true;
                 for (int i = 0; findParam && i < length; i++) {
                     Symbol.VarSymbol varSymbol = parameters.get(i);
+                    String value = values[i];
+
+                    JCTree.JCExpression argsVal;
+
                     String typeName = CTreeUtil.getOriginalTypeName(varSymbol);
-
                     TypeTag baseType = TypeUtil.getBaseType(typeName);
-                    // 不支持复杂对象
-                    if (null == baseType) {
-                        param = null;
-                        findParam = false;
-                        continue;
+
+                    if (CheckUtil.isNull(value)) {
+                        if (TypeUtil.isPrimitive(typeName)) {
+                            param = null;
+                            findParam = false;
+                            continue;
+                        }
+                        argsVal = makerContext.nullNode;
+                    } else {
+                        // 不支持复杂对象
+                        if (null == baseType) {
+                            param = null;
+                            findParam = false;
+                            continue;
+                        }
+
+                        Object data = CTreeUtil.getValue(baseType, value);
+                        // 数据与类型不匹配
+                        if (null == data) {
+                            param = null;
+                            findParam = false;
+                            continue;
+                        }
+                        argsVal = CTreeUtil.newElement(treeMaker, baseType, data);
                     }
 
-                    Object value = CTreeUtil.getValue(baseType, values[i]);
-                    // 数据与类型不匹配
-                    if (null == value) {
-                        param = null;
-                        findParam = false;
-                        continue;
-                    }
-
-                    JCTree.JCExpression argsVal = CTreeUtil.newElement(treeMaker, baseType, value);
                     if (null == param) {
                         param = List.of(argsVal);
                     } else {
