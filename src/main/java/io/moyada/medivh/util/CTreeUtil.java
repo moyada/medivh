@@ -231,6 +231,42 @@ public final class CTreeUtil {
         }
     }
 
+    private static Object getTypeTag(TypeTag typeTag) {
+        String target;
+        switch (ClassUtil.VERSION) {
+            case ClassUtil.VERSION_6:
+            case ClassUtil.VERSION_7:
+                target = "com.sun.tools.javac.code.TypeTags";
+                break;
+            default:
+                target = "com.sun.tools.javac.code.TypeTag";
+                break;
+        }
+        Class<?> targetClass = ClassUtil.getClass(target);
+        return ClassUtil.getStaticField(targetClass, typeTag.name());
+    }
+
+    /**
+     * 获取原始类型
+     * @param treeMaker
+     * @param typeTag
+     * @return
+     */
+    public static JCTree.JCPrimitiveTypeTree getPrimitiveType(TreeMaker treeMaker, TypeTag typeTag) {
+        Method method;
+        switch (ClassUtil.VERSION) {
+            case ClassUtil.VERSION_6:
+            case ClassUtil.VERSION_7:
+                method = ClassUtil.getMethod(TreeMaker.class, "TypeIdent", int.class);
+                break;
+            default:
+                Class<?> param = ClassUtil.getClass("com.sun.tools.javac.code.TypeTag");
+                method = ClassUtil.getMethod(TreeMaker.class, "TypeIdent", param);
+                break;
+        }
+        return ClassUtil.invoke(method, treeMaker, getTypeTag(typeTag));
+    }
+
     /**
      * 获取类型对象
      * @param treeMaker
@@ -239,23 +275,18 @@ public final class CTreeUtil {
      * @return
      */
     public static JCTree.JCLiteral newElement(TreeMaker treeMaker, TypeTag typeTag, Object value) {
-        String target;
         Method method;
         switch (ClassUtil.VERSION) {
             case ClassUtil.VERSION_6:
             case ClassUtil.VERSION_7:
                 method = ClassUtil.getMethod(TreeMaker.class, "Literal", int.class, Object.class);
-                target = "com.sun.tools.javac.code.TypeTags";
                 break;
             default:
                 Class<?> param = ClassUtil.getClass("com.sun.tools.javac.code.TypeTag");
                 method = ClassUtil.getMethod(TreeMaker.class, "Literal", param, Object.class);
-                target = "com.sun.tools.javac.code.TypeTag";
                 break;
         }
-        Class<?> targetClass = ClassUtil.getClass(target);
-        Object field = ClassUtil.getStaticField(targetClass, typeTag.name());
-        return ClassUtil.invoke(method, treeMaker, field, value);
+        return ClassUtil.invoke(method, treeMaker, getTypeTag(typeTag), value);
     }
 
     /**
@@ -266,8 +297,8 @@ public final class CTreeUtil {
      * @param right
      * @return
      */
-    public static JCTree.JCExpression newExpression(TreeMaker treeMaker, TypeTag typeTag,
-                                                    JCTree.JCExpression left, JCTree.JCExpression right) {
+    public static JCTree.JCExpression newBinary(TreeMaker treeMaker, TypeTag typeTag,
+                                                JCTree.JCExpression left, JCTree.JCExpression right) {
         String target;
         Method method;
         switch (ClassUtil.VERSION) {

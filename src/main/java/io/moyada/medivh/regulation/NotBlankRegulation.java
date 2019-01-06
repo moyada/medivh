@@ -26,7 +26,7 @@ public class NotBlankRegulation extends BaseRegulation implements Regulation {
         JCTree.JCMethodInvocation isBlank = makerContext.getMethod(aClass, Element.BLANK_METHOD[1], List.of(self));
 
         // 返回值为 true 执行动作语句
-        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, isBlank, makerContext.trueNode);
+        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.EQ, isBlank, makerContext.trueNode);
         JCTree.JCIf anIf = treeMaker.If(condition, action, null);
         return anIf;
     }

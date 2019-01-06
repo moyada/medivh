@@ -347,7 +347,7 @@ public class VerificationTranslator extends BaseTranslator {
             JCTree.JCStatement action = checkData.getAction(msgField);
             EqualsRegulation equalsRegulation = new EqualsRegulation(TypeUtil.OBJECT, false);
 
-            statements.append(makerContext.assignCallback(self, CheckUtil.getCheckMethod(paramTypeName), msgField));
+            statements.append(makerContext.assignCallback(self, msgField, CheckUtil.getCheckMethod(paramTypeName), CTreeUtil.emptyParam()));
             statements = equalsRegulation.handle(makerContext, statements, varName, msgField, action);
 
             isEmpty = false;

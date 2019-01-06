@@ -41,7 +41,7 @@ public class SizeRangeRegulation extends TypeRegulation implements Regulation {
             JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, TypeTag.INT, min);
 
             // 创建对比语句
-            JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.LT, getLength, minField);
+            JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.LT, getLength, minField);
 
             JCTree.JCStatement lessAction;
             if (null == info) {
@@ -59,7 +59,7 @@ public class SizeRangeRegulation extends TypeRegulation implements Regulation {
             JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, TypeTag.INT, max);
 
             // 创建对比语句
-            JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, getLength, minField);
+            JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.GT, getLength, minField);
 
             JCTree.JCStatement greatAction;
             if (null == info) {

@@ -33,7 +33,7 @@ public class NullCheckRegulation extends BaseRegulation implements Regulation {
                          JCTree.JCExpression self, JCTree.JCStatement action) {
         TreeMaker treeMaker = makerContext.getTreeMaker();
         // 等于 null 执行动作
-        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.EQ, self, makerContext.nullNode);
+        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.EQ, self, makerContext.nullNode);
         return treeMaker.If(condition, action, null);
     }
 

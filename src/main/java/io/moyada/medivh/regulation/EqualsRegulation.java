@@ -49,7 +49,7 @@ public class EqualsRegulation extends TypeRegulation implements Regulation {
         // 使用固定值比较
         JCTree.JCExpression rival = getValue(treeMaker);
 
-        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, compareTag,
+        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, compareTag,
                 getExpr(makerContext, self), rival);
         return treeMaker.If(condition, action, null);
     }

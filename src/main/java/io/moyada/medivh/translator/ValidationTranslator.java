@@ -42,7 +42,8 @@ public class ValidationTranslator extends BaseTranslator {
         boolean isInterface = (jcClassDecl.mods.flags & Flags.INTERFACE) != 0;
         // 过滤jdk8以下接口无法创建校验方法
         if (isInterface && !CTreeUtil.isDefaultInterface()) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "[Param Error] unable to use interface type param before JDK8 version.");
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Param Error] unable to use " +
+                    CTreeUtil.getOriginalTypeName(jcClassDecl.sym) + " (interface type) as parameter before JDK8 version.");
             return;
         }
 

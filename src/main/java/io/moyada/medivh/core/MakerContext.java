@@ -28,11 +28,17 @@ public class MakerContext {
     // null 表达式
     public final JCTree.JCLiteral nullNode;
 
+    // int 0 表达式
+    public final JCTree.JCLiteral zeroIntNode;
+
     // true 表达式
     public final JCTree.JCLiteral trueNode;
 
     // false 表达式
     public final JCTree.JCLiteral falseNode;
+
+    // ' ' 表达式
+    public final JCTree.JCLiteral emptyCh;
 
     // collection
     final Symbol.ClassSymbol collectionSymbol;
@@ -49,6 +55,8 @@ public class MakerContext {
         this.nullNode = CTreeUtil.newElement(treeMaker, TypeTag.BOT, null);
         this.trueNode = CTreeUtil.newElement(treeMaker, TypeTag.BOOLEAN, 1);
         this.falseNode = CTreeUtil.newElement(treeMaker, TypeTag.BOOLEAN, 0);
+        this.zeroIntNode = CTreeUtil.newElement(treeMaker, TypeTag.INT, 0);
+        this.emptyCh = CTreeUtil.newElement(treeMaker, TypeTag.CHAR, (int) ' ');
 
         collectionSymbol = javacElements.getTypeElement(Collection.class.getName());
         mapSymbol = javacElements.getTypeElement(Map.class.getName());
@@ -66,7 +74,7 @@ public class MakerContext {
      */
     public JCTree.JCExpression concatStatement(JCTree.JCExpression info, String message) {
         JCTree.JCExpression args = treeMaker.Literal(message);
-        return CTreeUtil.newExpression(treeMaker, TypeTag.PLUS, args, info);
+        return CTreeUtil.newBinary(treeMaker, TypeTag.PLUS, args, info);
     }
 
     /**
@@ -95,14 +103,12 @@ public class MakerContext {
      * 获取方法
      * @param field
      * @param method
-     * @param param
+//     * @param paramType
+     * @param paramArgs
      * @return
      */
-    public JCTree.JCMethodInvocation getMethod(JCTree.JCExpression field, String method, List<JCTree.JCExpression> param) {
-        return treeMaker.Apply(CTreeUtil.emptyParam(),
-                getField(field, method),
-                param
-        );
+    public JCTree.JCMethodInvocation getMethod(JCTree.JCExpression field, String method, List<JCTree.JCExpression> paramArgs) {
+        return treeMaker.Apply(null, getField(field, method), paramArgs);
     }
 
     /**
@@ -112,8 +118,8 @@ public class MakerContext {
      * @param accepter 赋值对象
      * @return
      */
-    public JCTree.JCExpressionStatement assignCallback(JCTree.JCIdent giver, String methodName, JCTree.JCExpression accepter) {
-        JCTree.JCExpression expression = getMethod(giver, methodName, CTreeUtil.emptyParam());
+    public JCTree.JCExpressionStatement assignCallback(JCTree.JCIdent giver, JCTree.JCExpression accepter, String methodName, List<JCTree.JCExpression> paramArgs) {
+        JCTree.JCExpression expression = getMethod(giver, methodName, paramArgs);
         return treeMaker.Exec(treeMaker.Assign(accepter, expression));
     }
 

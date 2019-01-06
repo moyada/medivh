@@ -59,6 +59,16 @@ public class Element {
     // 非空白字符串方法
     private static final String BLANK_METHOD_KEY = "medivh.method.blank";
     public static final String[] DEFAULT_BLANK_METHOD = new String[] {"io.moyada.medivh.support.Util", "isBlank"};
-    public final static String[] BLANK_METHOD = SystemUtil.getClassAndMethod(System.getProperty(BLANK_METHOD_KEY), DEFAULT_BLANK_METHOD);
+    public static String[] BLANK_METHOD = SystemUtil.getClassAndMethod(System.getProperty(BLANK_METHOD_KEY), null);
 
+
+    // 默认布尔值返回
+    private static final String RETURN_BOOLEAN_KEY = "medivh.return.boolean";
+    public final static String RETURN_BOOLEAN = System.getProperty(RETURN_BOOLEAN_KEY);
+    // 默认数字值返回
+    private static final String RETURN_NUMBER_KEY = "medivh.return.number";
+    public final static String RETURN_NUMBER = System.getProperty(RETURN_NUMBER_KEY);
+    // 默认字符值返回
+    private static final String RETURN_CHAR_KEY = "medivh.return.char";
+    public final static String RETURN_CHAR = System.getProperty(RETURN_CHAR_KEY);
 }

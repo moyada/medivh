@@ -21,7 +21,7 @@ public class NotNullWrapperRegulation implements Regulation {
         TreeMaker treeMaker = makerContext.getTreeMaker();
 
         // 对象不为空判断
-        JCTree.JCExpression condition = CTreeUtil.newExpression(treeMaker, TypeTag.NE, self, makerContext.nullNode);
+        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.NE, self, makerContext.nullNode);
 
         // 包裹当前语句构建
         JCTree.JCIf exec = treeMaker.If(condition, treeMaker.Block(0, statements.toList()), null);

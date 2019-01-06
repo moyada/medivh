@@ -40,7 +40,7 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
         // min logic
         if (null != min) {
             JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, typeTag, min);
-            JCTree.JCExpression minCondition = CTreeUtil.newExpression(treeMaker, TypeTag.LT, self, minField);
+            JCTree.JCExpression minCondition = CTreeUtil.newBinary(treeMaker, TypeTag.LT, self, minField);
 
             JCTree.JCStatement lessAction;
             if (null == info) {
@@ -56,7 +56,7 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
         // max logic
         if (null != max) {
             JCTree.JCLiteral maxField = CTreeUtil.newElement(treeMaker, typeTag, max);
-            JCTree.JCExpression maxCondition = CTreeUtil.newExpression(treeMaker, TypeTag.GT, self, maxField);
+            JCTree.JCExpression maxCondition = CTreeUtil.newBinary(treeMaker, TypeTag.GT, self, maxField);
 
             JCTree.JCStatement greatAction;
             if (null == info) {

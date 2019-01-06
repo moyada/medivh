@@ -205,6 +205,12 @@ class BaseTranslator extends TreeTranslator {
                 makerContext.findClass(type), init);
     }
 
+    JCTree.JCVariableDecl newVar(String name, long flags, TypeTag typeTag, JCTree.JCExpression init) {
+        return treeMaker.VarDef(treeMaker.Modifiers(flags),
+                CTreeUtil.getName(namesInstance, name),
+                CTreeUtil.getPrimitiveType(treeMaker, typeTag), init);
+    }
+
     /**
      * 参数转换
      * @param classSymbol

@@ -9,23 +9,19 @@ import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
 import io.moyada.medivh.annotation.*;
 import io.moyada.medivh.core.MakerContext;
+import io.moyada.medivh.translator.UtilMethodTranslator;
 import io.moyada.medivh.translator.ValidationTranslator;
 import io.moyada.medivh.translator.VerificationTranslator;
 import io.moyada.medivh.util.CheckUtil;
-import io.moyada.medivh.util.SystemUtil;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashSet;
@@ -57,8 +53,9 @@ public class ValidationProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        Set<? extends Element> rootElements = roundEnv.getRootElements();
         // 获取校验方法
-        Collection<? extends Element> methods = getMethods(roundEnv.getRootElements(),
+        Collection<? extends Element> methods = getMethods(rootElements,
                 Throw.class.getName(), Return.class.getName());
 
         if (methods.isEmpty()) {
@@ -68,21 +65,15 @@ public class ValidationProcessor extends AbstractProcessor {
         // 获取对象规则
         Collection<? extends Element> rules = getRules(roundEnv,
                 Nullable.class, NotNull.class, NumberRule.class, SizeRule.class);
-
         // 解析聚合类
         Collection<? extends Element> ruleClass = getClass(rules);
-        if (ruleClass == null || ruleClass.isEmpty()) {
-            return true;
-        }
-
-        if (rules.isEmpty()) {
-            return true;
-        }
 
         MakerContext makerContext = MakerContext.newInstance(context);
 
+        createUtilMethod(rootElements, makerContext);
+
         // 校验方法生成器
-                TreeTranslator translator = new ValidationTranslator(makerContext, messager);
+        TreeTranslator translator = new ValidationTranslator(makerContext, messager);
         for (Element element : ruleClass) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
@@ -167,6 +158,58 @@ public class ValidationProcessor extends AbstractProcessor {
     }
 
     /**
+     * 创建工具方法
+     * @param elements
+     * @param makerContext
+     */
+    private void createUtilMethod(Collection<? extends Element> elements, MakerContext makerContext) {
+        List<TypeElement> typeElements = ElementFilter.typesIn(elements);
+        if (typeElements.isEmpty()) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "cannot find any class type");
+            return;
+        }
+        TypeElement classElement = null;
+        for (TypeElement element : typeElements) {
+            ElementKind kind = element.getKind();
+            if (kind != ElementKind.CLASS) {
+                continue;
+            }
+            if (element.getEnclosingElement().getKind() != ElementKind.PACKAGE) {
+                continue;
+            }
+            if (!isPublic(element)) {
+                continue;
+            }
+
+            classElement = element;
+        }
+
+        if (classElement == null) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "cannot find any public class");
+            return;
+        }
+
+        JCTree tree = (JCTree) trees.getTree(classElement);
+        tree.accept(new UtilMethodTranslator(makerContext, messager, classElement.toString()));
+    }
+
+    /**
+     * 是否是public类型
+     * @param element
+     * @return
+     */
+    private boolean isPublic(Element element) {
+        Set<Modifier> modifiers = element.getModifiers();
+        for (Modifier modifier : modifiers) {
+            if (modifier == Modifier.PUBLIC) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * 跳过 接口、抽象、无注解 方法
      * @param methodDecl
      * @return
@@ -203,11 +246,11 @@ public class ValidationProcessor extends AbstractProcessor {
         rules.addAll(ElementFilter.fieldsIn(elements));
         rules.addAll(ElementFilter.methodsIn(elements));
 
-        try {
-            SystemUtil.createFile(processingEnv.getFiler(), io.moyada.medivh.core.Element.BLANK_METHOD[0]);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            SystemUtil.createFile(processingEnv.getFiler(), io.moyada.medivh.core.Element.BLANK_METHOD[0]);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
 
         return rules;
     }
@@ -223,14 +266,6 @@ public class ValidationProcessor extends AbstractProcessor {
         for (Element element : rules) {
             classRule.add( element.getEnclosingElement());
         }
-
-//        // 过滤接口
-//        Iterator<Symbol.ClassSymbol> iterator = classRule.iterator();
-//        while (iterator.hasNext()) {
-//            if (iterator.next().isInterface()) {
-//                iterator.remove();
-//            }
-//        }
         return classRule;
     }
 
