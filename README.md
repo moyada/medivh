@@ -8,7 +8,7 @@ A simple, automatic, and flexible method parameter check library for the Java pl
 
 ## Documentation
 
-* [Getting Started] (https://moyada.github.io/medivh/)
+* [Getting Started](https://moyada.github.io/medivh/)
 
 ## Motivation
 
