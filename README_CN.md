@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/moyada/medivh.svg?branch=master)](https://travis-ci.org/moyada/medivh)
 ![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compilation-red.svg)
-[![Maven Central](https://img.shields.io/badge/maven%20central-1.2.1-brightgreen.svg)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh)
 [![license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/moyada/medivh/blob/master/LICENSE)
 
 [English](README.md) | 简体中文
@@ -56,15 +56,13 @@ JDK 1.6 及以上版本。
 ```
 dependencies {
   compileOnly 'io.github.moyada:medivh:1.2.1'
-  // 2.12版本以前
-  // provided 'io.github.moyada:medivh:1.2.1'
 }
 ```
 
 普通工程可以通过
 [![release](https://img.shields.io/badge/release-v1.2.1-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
 或
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.moyada/medivh.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh)
 下载最新 jar 包。
 
 ### 2. 在程序中配置注解

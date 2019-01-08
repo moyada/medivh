@@ -1,4 +1,4 @@
-package io.moyada.medivh.core;
+package io.moyada.medivh.support;
 
 import com.sun.tools.javac.code.Symbol;
 import io.moyada.medivh.annotation.*;
@@ -20,8 +20,8 @@ public final class RegulationBuilder {
 
     /**
      * 获取非空校验处理方式
-     * @param symbol
-     * @param classType
+     * @param symbol 元素
+     * @param classType 类型
      * @return null 为不需，true 为进行非空校验，false 需要保证其他操作不抛出 NPE
      */
     public static Boolean checkNotNull(Symbol symbol, byte classType) {
@@ -50,19 +50,27 @@ public final class RegulationBuilder {
 
     /**
      * 获取校验方法规则链
-     * @param symbol
-     * @param className
-     * @param type
-     * @return
+     * @param symbol 元素
+     * @param className 类名
+     * @param type 类型
+     * @return 执行规则链
      */
     public static List<Regulation> findBasicRule(Symbol symbol, String className, byte type) {
         return findBasicRule(symbol, className, type, null);
     }
 
+    /**
+     * 获取校验方法规则链
+     * @param symbol 元素
+     * @param className 类名
+     * @param type 类型
+     * @param actionData 执行数据，当接收处理语句为空时由此构造
+     * @return 执行规则链
+     */
     public static List<Regulation> findBasicRule(Symbol symbol, String className, byte type, ActionData actionData) {
         List<Regulation> regulations = new ArrayList<Regulation>();
 
-        if (isNotBlank(symbol, className)) {
+        if (needNotBlank(symbol, className)) {
             NotBlankRegulation notBlankRegulation = new NotBlankRegulation();
             notBlankRegulation.setActionData(actionData);
             regulations.add(notBlankRegulation);
@@ -84,20 +92,22 @@ public final class RegulationBuilder {
     }
 
     /**
-     * 是否非空字符串校验
-     * @param symbol
-     * @param className
-     * @return
+     * 是否需要非空字符串校验
+     * @param symbol 元素
+     * @param className 类名
+     * @return 布尔值
      */
-    private static boolean isNotBlank(Symbol symbol, String className) {
+    private static boolean needNotBlank(Symbol symbol, String className) {
         return null != CTreeUtil.getAnnotation(symbol, NotBlank.class) && TypeUtil.isStr(className);
     }
     
     /**
-     * 构建数字规则
-     * @param symbol
-     * @param className
-     * @return
+     * 构建数字处理规则
+     * 获取数值规则信息创建
+     * 当最小值与最大值相同时返回 {@link EqualsRegulation}，最小值大于最大值返回 null，否则返回 {@link NumberRegulation}
+     * @param symbol 元素
+     * @param className 类名
+     * @return 基础处理规则
      */
     private static BaseRegulation buildNumber(Symbol symbol, String className) {
         NumberRule numberRule = CTreeUtil.getAnnotation(symbol, NumberRule.class);
@@ -131,10 +141,12 @@ public final class RegulationBuilder {
     }
 
     /**
-     * 构建大小规则
-     * @param symbol
-     * @param type
-     * @return
+     * 获取空间处理规则
+     * 获得空间规则数据创建
+     * 当类型不属于 String 或 Collection, Map 的类型或实现类将返回 null
+     * @param symbol 元素
+     * @param type 类型
+     * @return 基础处理规则
      */
     public static BaseRegulation buildSize(Symbol symbol, byte type) {
         SizeRule sizeRule = CTreeUtil.getAnnotation(symbol, SizeRule.class);
@@ -145,12 +157,8 @@ public final class RegulationBuilder {
             return null;
         }
 
-        return getSizeRule(sizeRule, type);
-    }
-
-    private static BaseRegulation getSizeRule(SizeRule rule, byte type) {
-        Integer minLength = getLength(rule.min());
-        Integer maxLength = getLength(rule.max());
+        Integer minLength = getLength(sizeRule.min());
+        Integer maxLength = getLength(sizeRule.max());
 
         if (!isInvalid(minLength, maxLength)) {
             if (isEquals(minLength, maxLength)) {
@@ -163,10 +171,10 @@ public final class RegulationBuilder {
     }
 
     /**
-     * 范围是否无效
-     * @param min
-     * @param max
-     * @return
+     * 数值范围是否无效
+     * @param min 最大值
+     * @param max 最小值
+     * @return 无效则返回 true
      */
     private static boolean isInvalid(Integer min, Integer max) {
         if (null == min && null == max) {
@@ -180,10 +188,21 @@ public final class RegulationBuilder {
         return false;
     }
 
+    /**
+     * 获取长度信息，小于 0 则返回 null
+     * @param length 长度值
+     * @return 长度对象
+     */
     private static Integer getLength(int length) {
         return length < 0 ? null : length;
     }
 
+    /**
+     * 数值是否相等
+     * @param min 最小值
+     * @param max 最大值
+     * @return 非空且相等则返回 true
+     */
     private static boolean isEquals(Integer min, Integer max) {
         return null != min && null != max && min.intValue() == max.intValue();
     }

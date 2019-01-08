@@ -3,10 +3,10 @@ package io.moyada.medivh.regulation;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.Element;
-import io.moyada.medivh.core.LocalVarSupport;
-import io.moyada.medivh.core.MakerContext;
-import io.moyada.medivh.core.TypeTag;
+import io.moyada.medivh.support.ElementOptions;
+import io.moyada.medivh.support.LocalVarSupport;
+import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.TypeTag;
 import io.moyada.medivh.util.CTreeUtil;
 
 /**
@@ -26,6 +26,7 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
     // 最大值
     private final Object max;
 
+    // 临时变量支持
     private final LocalVarSupport localVarSupport;
 
     public NumberRegulation(TypeTag typeTag, Object min, Object max) {
@@ -37,12 +38,12 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
     }
 
     @Override
-    JCTree.JCStatement doHandle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
+    JCTree.JCStatement doHandle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
                                 JCTree.JCExpression self, JCTree.JCStatement action) {
-        TreeMaker treeMaker = makerContext.getTreeMaker();
+        TreeMaker treeMaker = expressionMaker.getTreeMaker();
 
         if (null != min && null != max) {
-            self = localVarSupport.getValue(makerContext, statements, self);
+            self = localVarSupport.getValue(expressionMaker, statements, self);
         }
 
         JCTree.JCIf expression = null;
@@ -56,8 +57,8 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
             if (null == info) {
                 lessAction = action;
             } else {
-                String msg = info + Element.LESS_INFO + " " + min;
-                lessAction = createAction(makerContext, msg);
+                String msg = info + ElementOptions.LESS_INFO + " " + min;
+                lessAction = createAction(expressionMaker, msg);
             }
 
             expression = treeMaker.If(minCondition, lessAction, expression);
@@ -72,8 +73,8 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
             if (null == info) {
                 greatAction = action;
             } else {
-                String msg = info + Element.GREAT_INFO + " " + max;
-                greatAction = createAction(makerContext, msg);
+                String msg = info + ElementOptions.GREAT_INFO + " " + max;
+                greatAction = createAction(expressionMaker, msg);
             }
 
             expression = treeMaker.If(maxCondition, greatAction, expression);

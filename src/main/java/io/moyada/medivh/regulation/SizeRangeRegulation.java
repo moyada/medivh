@@ -3,22 +3,25 @@ package io.moyada.medivh.regulation;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.*;
+import io.moyada.medivh.support.*;
 import io.moyada.medivh.util.CTreeUtil;
 
 /**
  * 空间范围校验规则
- * 使用固定范围，不于外界因素做比较
  * @author xueyikang
  * @since 1.0
  **/
 public class SizeRangeRegulation extends BaseRegulation implements Regulation {
 
+    // 最小值
     private final Integer min;
+    // 最大值
     private final Integer max;
 
-    private TypeGetSupport typeGetSupport;
+    // 类型数据获取支持
+    private final TypeGetSupport typeGetSupport;
 
+    // 临时变量支持
     private final LocalVarSupport localVarSupport;
 
     public SizeRangeRegulation(Integer min, Integer max, byte type) {
@@ -29,19 +32,19 @@ public class SizeRangeRegulation extends BaseRegulation implements Regulation {
     }
 
     @Override
-    JCTree.JCStatement doHandle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
+    JCTree.JCStatement doHandle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
                                 JCTree.JCExpression self, JCTree.JCStatement action) {
 
-        TreeMaker treeMaker = makerContext.getTreeMaker();
+        TreeMaker treeMaker = expressionMaker.getTreeMaker();
 
         // 获取大小信息
         JCTree.JCExpression getLength;
 
         if (null != min && null != max) {
-            getLength = typeGetSupport.getExpr(makerContext, self);
-            getLength = localVarSupport.getValue(makerContext, statements, getLength);
+            getLength = typeGetSupport.getExpr(expressionMaker, self);
+            getLength = localVarSupport.getValue(expressionMaker, statements, getLength);
         } else {
-            getLength = typeGetSupport.getExpr(makerContext, self);
+            getLength = typeGetSupport.getExpr(expressionMaker, self);
         }
 
         JCTree.JCIf expression = null;
@@ -57,8 +60,8 @@ public class SizeRangeRegulation extends BaseRegulation implements Regulation {
             if (null == info) {
                 lessAction = action;
             } else {
-                String msg = info + Element.LESS_INFO + " " + min;
-                lessAction = createAction(makerContext, msg);
+                String msg = info + ElementOptions.LESS_INFO + " " + min;
+                lessAction = createAction(expressionMaker, msg);
             }
 
             expression = treeMaker.If(condition, lessAction, expression);
@@ -75,8 +78,8 @@ public class SizeRangeRegulation extends BaseRegulation implements Regulation {
             if (null == info) {
                 greatAction = action;
             } else {
-                String msg = info + Element.GREAT_INFO + " " + max;
-                greatAction = createAction(makerContext, msg);
+                String msg = info + ElementOptions.GREAT_INFO + " " + max;
+                greatAction = createAction(expressionMaker, msg);
             }
 
             expression = treeMaker.If(condition, greatAction, expression);

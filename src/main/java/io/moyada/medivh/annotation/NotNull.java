@@ -3,7 +3,7 @@ package io.moyada.medivh.annotation;
 import java.lang.annotation.*;
 
 /**
- * 是否允许为空，基础类型无效
+ * 不允许对象为空，在存在配置规则时候默认启动
  * @author xueyikang
  * @since 1.0
  **/

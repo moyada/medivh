@@ -1,4 +1,4 @@
-package io.moyada.medivh.core;
+package io.moyada.medivh.support;
 
 import io.moyada.medivh.util.SystemUtil;
 
@@ -7,9 +7,9 @@ import io.moyada.medivh.util.SystemUtil;
  * @author xueyikang
  * @since 1.0
  **/
-public class Element {
+public class ElementOptions {
 
-    private Element() {
+    private ElementOptions() {
     }
 
     // 校验方法名配置
@@ -65,9 +65,11 @@ public class Element {
     // 默认布尔值返回
     private static final String RETURN_BOOLEAN_KEY = "medivh.return.boolean";
     public final static String RETURN_BOOLEAN = System.getProperty(RETURN_BOOLEAN_KEY);
+
     // 默认数字值返回
     private static final String RETURN_NUMBER_KEY = "medivh.return.number";
     public final static String RETURN_NUMBER = System.getProperty(RETURN_NUMBER_KEY);
+
     // 默认字符值返回
     private static final String RETURN_CHAR_KEY = "medivh.return.char";
     public final static String RETURN_CHAR = System.getProperty(RETURN_CHAR_KEY);

@@ -6,7 +6,7 @@ import io.moyada.medivh.annotation.Exclusive;
 import io.moyada.medivh.annotation.Return;
 import io.moyada.medivh.annotation.Throw;
 import io.moyada.medivh.annotation.Variable;
-import io.moyada.medivh.core.Element;
+import io.moyada.medivh.support.ElementOptions;
 
 import javax.lang.model.element.AnnotationMirror;
 import java.util.HashMap;
@@ -28,8 +28,8 @@ public final class CheckUtil {
 
     /**
      * 存储类校验方法
-     * @param className
-     * @param methodName
+     * @param className 类名
+     * @param methodName 方法名
      */
     public static void addCheckMethod(String className, String methodName) {
         methodNameMap.put(className, methodName);
@@ -37,8 +37,8 @@ public final class CheckUtil {
 
     /**
      * 是否自定规则类
-     * @param className
-     * @return
+     * @param className 类名
+     * @return 存在返回 true
      */
     public static boolean isRegulable(String className) {
         return methodNameMap.containsKey(className);
@@ -46,8 +46,8 @@ public final class CheckUtil {
 
     /**
      * 获取定义规则类所创建的校验方法名
-     * @param className
-     * @return
+     * @param className 类名
+     * @return 方法名
      */
     public static String getCheckMethod(String className) {
         String methodName = methodNameMap.get(className);
@@ -58,9 +58,9 @@ public final class CheckUtil {
     }
 
     /**
-     * 是否存在校验
-     * @param classDecl
-     * @return
+     * 是否存在校验标识
+     * @param classDecl 类元素
+     * @return 存在校验标识返回 true
      */
     public static boolean isCheckClass(JCTree.JCClassDecl classDecl) {
         if (null == classDecl) {
@@ -69,6 +69,11 @@ public final class CheckUtil {
         return isCheckSymbol(classDecl.sym);
     }
 
+    /**
+     * 是否存在校验标识
+     * @param methodDecl 方法元素
+     * @return 存在校验标识返回 true
+     */
     public static boolean isCheckMethod(JCTree.JCMethodDecl methodDecl) {
         if (null == methodDecl) {
             return false;
@@ -76,6 +81,11 @@ public final class CheckUtil {
         return isCheckSymbol(methodDecl.sym);
     }
 
+    /**
+     * 是否存在校验标识
+     * @param symbol 元素
+     * @@return 存在校验标识返回 true
+     */
     private static boolean isCheckSymbol(Symbol symbol) {
         List<? extends AnnotationMirror> mirrors = symbol.getAnnotationMirrors();
         if (mirrors.isEmpty()) {
@@ -94,9 +104,9 @@ public final class CheckUtil {
     }
 
     /**
-     * 是否排除校验
-     * @param symbol
-     * @return
+     * 是否排除校验标识
+     * @param symbol 元素
+     * @return 存在排除标识返回 true
      */
     public static boolean isExclusive(Symbol symbol) {
         return null != CTreeUtil.getAnnotation(symbol, Exclusive.class);
@@ -104,29 +114,29 @@ public final class CheckUtil {
 
     /**
      * 获取临时变量名
-     * @param symbol
-     * @return
+     * @param symbol 元素
+     * @return 名称
      */
     public static String getTmpVar(Symbol symbol) {
         Variable variable = CTreeUtil.getAnnotation(symbol, Variable.class);
-        return getValue(variable, Element.LOCAL_VARIABLE);
+        return getValue(variable, ElementOptions.LOCAL_VARIABLE);
     }
 
     /**
      * 获取校验方法名
-     * @param symbol
-     * @return
+     * @param symbol 元素
+     * @return 名称
      */
     public static String getTmpMethod(Symbol symbol) {
         Variable variable = CTreeUtil.getAnnotation(symbol, Variable.class);
-        return getValue(variable, Element.METHOD_NAME);
+        return getValue(variable, ElementOptions.METHOD_NAME);
     }
 
     /**
      * 获取变量值，无效则返回默认值
-     * @param variable
-     * @param defaultValue
-     * @return
+     * @param variable 名称注解
+     * @param defaultValue 默认名称
+     * @return 名称
      */
     private static String getValue(Variable variable, String defaultValue) {
         if (null == variable) {
@@ -149,8 +159,8 @@ public final class CheckUtil {
 
     /**
      * 是否标记返回空值
-     * @param values
-     * @return
+     * @param values 数据
+     * @return 数据有且只有一个 null 则返回 true
      */
     public final static boolean isReturnNull(String[] values) {
         if (values.length == 0) {
@@ -165,6 +175,11 @@ public final class CheckUtil {
         return false;
     }
 
+    /**
+     * 字符串是否属于 null 标识
+     * @param value 输入字符
+     * @return 是否是 null 属性
+     */
     public final static boolean isNull(String value) {
         if (value.isEmpty()) {
             return true;

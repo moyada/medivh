@@ -3,9 +3,9 @@ package io.moyada.medivh.regulation;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.MakerContext;
+import io.moyada.medivh.support.ExpressionMaker;
 import io.moyada.medivh.util.CTreeUtil;
-import io.moyada.medivh.core.TypeTag;
+import io.moyada.medivh.support.TypeTag;
 
 /**
  * 非空包装规则
@@ -16,12 +16,12 @@ import io.moyada.medivh.core.TypeTag;
 public class NotNullWrapperRegulation implements Regulation {
 
     @Override
-    public ListBuffer<JCTree.JCStatement> handle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
+    public ListBuffer<JCTree.JCStatement> handle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
                                                  String fieldName, JCTree.JCExpression self, JCTree.JCStatement action) {
-        TreeMaker treeMaker = makerContext.getTreeMaker();
+        TreeMaker treeMaker = expressionMaker.getTreeMaker();
 
         // 对象不为空判断
-        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.NE, self, makerContext.nullNode);
+        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.NE, self, expressionMaker.nullNode);
 
         // 包裹当前语句构建
         JCTree.JCIf exec = treeMaker.If(condition, treeMaker.Block(0, statements.toList()), null);

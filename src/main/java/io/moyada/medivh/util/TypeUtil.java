@@ -1,6 +1,6 @@
 package io.moyada.medivh.util;
 
-import io.moyada.medivh.core.TypeTag;
+import io.moyada.medivh.support.TypeTag;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,9 +55,9 @@ public final class TypeUtil {
     }
 
     /**
-     * 是否原始类型
-     * @param name
-     * @return
+     * 检查是否原生类型
+     * @param name 类名
+     * @return 是则返回 true
      */
     public static boolean isPrimitive(String name) {
         if (name.equals(getName(byte.class))) {
@@ -89,8 +89,8 @@ public final class TypeUtil {
 
     /**
      * 获取包装类型
-     * @param name
-     * @return
+     * @param name 类名称
+     * @return 是原生类型则返回包装类名，否则返回愿类型
      */
     public static String getWrapperType(String name) {
         if (name.equals(getName(byte.class))) {
@@ -120,59 +120,22 @@ public final class TypeUtil {
         return name;
     }
 
-    /**
-     * 获取类名
-     * @param clazz
-     * @return
-     */
     private static String getName(Class<?> clazz) {
         return clazz.getName();
     }
 
-    /**
-     * 是否字符串
-     * @param name
-     * @return
-     */
     public static boolean isStr(String name) {
         return name.equals(getName(String.class));
     }
 
-    /**
-     * 是否数组
-     * @param name
-     * @return
-     */
     public static boolean isArr(String name) {
         return name.equals("Array") || name.endsWith("[]");
     }
 
     /**
-     * 取值方式
-     * @return
-     */
-    public static String getMode(byte type) {
-        String mode;
-        switch (type) {
-            case TypeUtil.STRING:
-                mode = ".length()";
-                break;
-            case TypeUtil.ARRAY:
-                mode = ".length";
-                break;
-            case TypeUtil.COLLECTION:
-                mode = ".size()";
-                break;
-            default:
-                mode = "";
-        }
-        return mode;
-    }
-
-    /**
      * 返回数字类型标记
-     * @param name
-     * @return
+     * @param name 类名
+     * @return 符合映射则返回对应标记，否则返回未知标记
      */
     public static char getNumType(String name) {
         if (name.equals(getName(byte.class)) || name.equals(getName(Byte.class))) {
@@ -198,8 +161,8 @@ public final class TypeUtil {
 
     /**
      * 返回基本类型标签
-     * @param name
-     * @return
+     * @param name 类名
+     * @return 符合映射则返回对应标签，否则返回 null
      */
     public static TypeTag getBaseType(String name) {
         if (name.equals(getName(byte.class)) || name.equals(getName(Byte.class))) {
@@ -234,8 +197,8 @@ public final class TypeUtil {
 
     /**
      * 根据标记获取标签
-     * @param type
-     * @return
+     * @param type 类型
+     * @return 符合映射则返回对应标签，否则返回 null
      */
     public static TypeTag getTypeTag(char type) {
         TypeTag typeTag;
@@ -266,10 +229,50 @@ public final class TypeUtil {
     }
 
     /**
+     * 获取最小数
+     * @param type 类型
+     * @param input 输入数据
+     * @return 获取返回数值，输入数据有误则返回 null
+     */
+    public static Object getMin(char type, String input) {
+        Object value = getNumberValue(type, input);
+        if (null == value) {
+            return null;
+        }
+
+        Object min = MIN.get(type);
+        int result = compare(type, min, value);
+        if (result == -1) {
+            return value;
+        }
+        return null;
+    }
+
+    /**
+     * 获取最大数
+     * @param type 类型
+     * @param input 输入数据
+     * @return 获取返回数值，输入数据有误则返回 null
+     */
+    public static Object getMax(char type, String input) {
+        Object value = getNumberValue(type, input);
+        if (null == value) {
+            return null;
+        }
+
+        Object max = MAX.get(type);
+        int result = compare(type, value, max);
+        if (result == -1) {
+            return value;
+        }
+        return null;
+    }
+
+    /**
      * 转换数值
-     * @param type
-     * @param input
-     * @return
+     * @param type 类型
+     * @param input 输入
+     * @return 当输入有误则返回 null，则否返回解析数值
      */
     static Object getNumberValue(char type, String input) {
         if (null == input) {
@@ -308,51 +311,11 @@ public final class TypeUtil {
     }
 
     /**
-     * 获取最小数
-     * @param type
-     * @param input
-     * @return
-     */
-    public static Object getMin(char type, String input) {
-        Object value = getNumberValue(type, input);
-        if (null == value) {
-            return null;
-        }
-
-        Object min = MIN.get(type);
-        int result = compare(type, min, value);
-        if (result == -1) {
-            return value;
-        }
-        return null;
-    }
-
-    /**
-     * 获取最大数
-     * @param type
-     * @param input
-     * @return
-     */
-    public static Object getMax(char type, String input) {
-        Object value = getNumberValue(type, input);
-        if (null == value) {
-            return null;
-        }
-
-        Object max = MAX.get(type);
-        int result = compare(type, value, max);
-        if (result == -1) {
-            return value;
-        }
-        return null;
-    }
-
-    /**
      * 比较转换数值
-     * @param type
-     * @param o1
-     * @param o2
-     * @return
+     * @param type 类型
+     * @param o1 数据1
+     * @param o2 数据2
+     * @return 比较结果，0 为相等，-1 为 1比2小，1 为 1比2大
      */
     public static int compare(char type, Object o1, Object o2) {
         Number m1 = (Number) o1;

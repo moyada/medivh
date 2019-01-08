@@ -4,9 +4,9 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.Element;
-import io.moyada.medivh.core.MakerContext;
-import io.moyada.medivh.core.TypeTag;
+import io.moyada.medivh.support.ElementOptions;
+import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.TypeTag;
 import io.moyada.medivh.util.CTreeUtil;
 
 /**
@@ -17,22 +17,21 @@ import io.moyada.medivh.util.CTreeUtil;
 public class NotBlankRegulation extends BaseRegulation implements Regulation {
 
     @Override
-    JCTree.JCStatement doHandle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
+    JCTree.JCStatement doHandle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
                                 JCTree.JCExpression self, JCTree.JCStatement action) {
-        TreeMaker treeMaker = makerContext.getTreeMaker();
+        TreeMaker treeMaker = expressionMaker.getTreeMaker();
 
         // 调用方法进行校验
-        JCTree.JCExpression aClass = makerContext.findClass(Element.BLANK_METHOD[0]);
-        JCTree.JCMethodInvocation isBlank = makerContext.getMethod(aClass, Element.BLANK_METHOD[1], List.of(self));
+        JCTree.JCExpression aClass = expressionMaker.findClass(ElementOptions.BLANK_METHOD[0]);
+        JCTree.JCMethodInvocation isBlank = expressionMaker.getMethod(aClass, ElementOptions.BLANK_METHOD[1], List.of(self));
 
         // 返回值为 true 执行动作语句
-        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.EQ, isBlank, makerContext.trueNode);
-        JCTree.JCIf anIf = treeMaker.If(condition, action, null);
-        return anIf;
+        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.EQ, isBlank, expressionMaker.trueNode);
+        return treeMaker.If(condition, action, null);
     }
 
     @Override
     String buildInfo(String fieldName) {
-        return fieldName + " " + Element.BLANK_INFO;
+        return fieldName + " " + ElementOptions.BLANK_INFO;
     }
 }

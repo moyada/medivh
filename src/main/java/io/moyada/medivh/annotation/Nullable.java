@@ -3,7 +3,7 @@ package io.moyada.medivh.annotation;
 import java.lang.annotation.*;
 
 /**
- * 是否允许为空，基础类型无效
+ * 允许对象为空
  * @author xueyikang
  * @since 1.0
  **/

@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/moyada/medivh.svg?branch=master)](https://travis-ci.org/moyada/medivh)
 ![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compilation-red.svg)
-[![Maven Central](https://img.shields.io/badge/maven%20central-1.2.1-brightgreen.svg)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh)
 [![license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/moyada/medivh/blob/master/LICENSE)
 
 English | [简体中文](README_CN.md)
@@ -12,7 +12,7 @@ Medivh is a Java annotation processor for automatically generate method paramete
 ## Motivation
 
 We often need to check the method parameters, especially in remote invocation.
-this library can save time and effort in this respect, modify the syntax tree at `compilation phase` by configure annotations, add parameter validation to method.
+This library can save time and effort in this respect, modify the syntax tree at `compilation phase` by configure annotations, add parameter validation to method.
 
 ## Features
 
@@ -32,7 +32,7 @@ this library can save time and effort in this respect, modify the syntax tree at
 
 JDK 1.6 or higher.
 
-JDK 1.8 or higher if validate parameter is an interface. 
+JDK 1.8 or higher if validate target is an interface. 
 
 ## Quick start
 
@@ -56,15 +56,13 @@ Using Gradle
 ```
 dependencies {
   compileOnly 'io.github.moyada:medivh:1.2.1'
-  // before 2.12 version
-  // provided 'io.github.moyada:medivh:1.2.1'
 }
 ```
 
 Without build tool, you can download last jar from 
 [![release](https://img.shields.io/badge/release-v1.2.1-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
 or
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.moyada/medivh.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh)
 .
 
 ### 2. Configure annotation in you program

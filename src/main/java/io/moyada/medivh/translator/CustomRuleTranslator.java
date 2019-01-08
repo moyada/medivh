@@ -6,8 +6,8 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.MakerContext;
-import io.moyada.medivh.core.RegulationBuilder;
+import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.RegulationBuilder;
 import io.moyada.medivh.regulation.LocalVariableRegulation;
 import io.moyada.medivh.regulation.NotNullWrapperRegulation;
 import io.moyada.medivh.regulation.NullCheckRegulation;
@@ -28,8 +28,8 @@ import java.util.Map;
  **/
 public class CustomRuleTranslator extends BaseTranslator {
 
-    public CustomRuleTranslator(MakerContext makerContext, Messager messager) {
-        super(makerContext, messager);
+    public CustomRuleTranslator(ExpressionMaker expressionMaker, Messager messager) {
+        super(expressionMaker, messager);
     }
 
     /**
@@ -65,7 +65,7 @@ public class CustomRuleTranslator extends BaseTranslator {
         messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + methodName + " method in " + className);
 
         JCTree.JCBlock body = createBody(rules);
-        JCTree.JCMethodDecl method = createMethod(body, methodName, isInterface);
+        JCTree.JCMethodDecl method = createMethod(methodName, body, isInterface);
 
         CheckUtil.addCheckMethod(className, methodName);
 
@@ -76,8 +76,8 @@ public class CustomRuleTranslator extends BaseTranslator {
 
     /**
      * 加入字段规则
-     * @param rules
-     * @param var
+     * @param rules 规则集合
+     * @param var 当前元素节点
      */
     private void joinVarRules(Map<JCTree.JCExpression, java.util.List<Regulation>> rules, JCTree var) {
         Symbol symbol;
@@ -153,7 +153,8 @@ public class CustomRuleTranslator extends BaseTranslator {
 
     /**
      * 创建代码块
-     * @return
+     * @param ruleMap 规则集合
+     * @return 代码块
      */
     private JCTree.JCBlock createBody(Map<JCTree.JCExpression, java.util.List<Regulation>> ruleMap) {
         ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
@@ -168,29 +169,31 @@ public class CustomRuleTranslator extends BaseTranslator {
 
             String name = self.toString();
             for (Regulation rule : rules) {
-                thisStatements = rule.handle(makerContext, thisStatements, name, self,null);
+                thisStatements = rule.handle(expressionMaker, thisStatements, name, self,null);
             }
             statements.append(getBlock(thisStatements));
         }
 
         // 校验通过返回 null
-        JCTree.JCReturn returnStatement = treeMaker.Return(makerContext.nullNode);
+        JCTree.JCReturn returnStatement = treeMaker.Return(expressionMaker.nullNode);
         statements.append(returnStatement);
         return getBlock(statements);
     }
 
     /**
      * 创建校验方法
-     * @param body
-     * @return
+     * @param methodName 方法名
+     * @param body 方法体
+     * @param isInterface 是否接口类型
+     * @return 方法元素
      */
-    private JCTree.JCMethodDecl createMethod(JCTree.JCBlock body, String methodName, boolean isInterface) {
+    private JCTree.JCMethodDecl createMethod(String methodName, JCTree.JCBlock body, boolean isInterface) {
         List<JCTree.JCTypeParameter> param = List.nil();
         List<JCTree.JCVariableDecl> var = List.nil();
         List<JCTree.JCExpression> thrown = List.nil();
         return treeMaker.MethodDef(treeMaker.Modifiers(CTreeUtil.getNewMethodFlag(isInterface)),
                 CTreeUtil.getName(namesInstance, methodName),
-                makerContext.findClass(String.class.getName()),
+                expressionMaker.findClass(String.class.getName()),
                 param, var, thrown,
                 body, null);
     }

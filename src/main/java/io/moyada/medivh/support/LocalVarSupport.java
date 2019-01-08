@@ -1,4 +1,4 @@
-package io.moyada.medivh.core;
+package io.moyada.medivh.support;
 
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -20,22 +20,32 @@ public class LocalVarSupport {
     private JCTree.JCIdent localValue;
 
     public LocalVarSupport(TypeTag typeTag) {
-        this.name = "var$" + typeTag.ordinal();
+        this.name = generateName(typeTag);
         this.typeTag = typeTag;
         this.localValue = null;
     }
 
     /**
-     * 使用临时变量保存取值
-     * @param makerContext
-     * @param origin
-     * @return
+     * 创建临时变量名称
+     * @param typeTag 原生类型
+     * @return 名称
      */
-    public final JCTree.JCExpression getValue(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements, JCTree.JCExpression origin) {
-        if (null == localValue) {
-            TreeMaker treeMaker = makerContext.getTreeMaker();
+    private String generateName(TypeTag typeTag) {
+        return "var$" + typeTag.ordinal();
+    }
 
-            JCTree.JCVariableDecl localVar = makerContext.newLocalVar(name, typeTag, origin);
+    /**
+     * 使用临时变量保存取值
+     * @param expressionMaker 语句创建器
+     * @param statements 语句链
+     * @param origin 取值方法
+     * @return 临时变量语句
+     */
+    public final JCTree.JCExpression getValue(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements, JCTree.JCExpression origin) {
+        if (null == localValue) {
+            TreeMaker treeMaker = expressionMaker.getTreeMaker();
+
+            JCTree.JCVariableDecl localVar = expressionMaker.newLocalVar(name, typeTag, origin);
             localValue = treeMaker.Ident(localVar.name);
 
             statements.append(localVar);

@@ -12,8 +12,8 @@ public final class StringUtil {
 
     /**
      * 规则名称，包含非法字符则返回 null
-     * @param name
-     * @return
+     * @param name 名称
+     * @return 规则名称
      */
     public static String fixName(String name) {
         int length = name.length();
@@ -35,8 +35,8 @@ public final class StringUtil {
 
     /**
      * 是否是数字
-     * @param ch
-     * @return
+     * @param ch 字符
+     * @return 是则返回 true
      */
     private static boolean isDigital(char ch) {
         return '0' <= ch && ch <= '9';
@@ -44,8 +44,8 @@ public final class StringUtil {
 
     /**
      * 是否是字母
-     * @param ch
-     * @return
+     * @param ch 字符
+     * @return 是则返回 true
      */
     private static boolean isLetter(char ch) {
         return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z');
@@ -53,8 +53,8 @@ public final class StringUtil {
 
     /**
      * 是否合法字符
-     * @param ch
-     * @return
+     * @param ch 字符
+     * @return 是则返回 true
      */
     private static boolean isRule(char ch) {
         return '_' == ch || ch == '$';

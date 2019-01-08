@@ -1,6 +1,6 @@
 package io.moyada.medivh.util;
 
-import io.moyada.medivh.core.Element;
+import io.moyada.medivh.support.ElementOptions;
 
 import javax.annotation.processing.Filer;
 import javax.tools.JavaFileObject;
@@ -24,9 +24,9 @@ public final class SystemUtil {
 
     /**
      * 获取参数
-     * @param key
-     * @param defaultValue
-     * @return
+     * @param key 参数名
+     * @param defaultValue 默认值
+     * @return 返回参数值
      */
     public static String getProperty(String key, String defaultValue) {
         String value = System.getProperty(key);
@@ -38,9 +38,9 @@ public final class SystemUtil {
 
     /**
      * 解析类名和方法
-     * @param methodInfo
-     * @param defaultValue
-     * @return
+     * @param methodInfo 方法信息
+     * @param defaultValue 默认值
+     * @return 类与方法的数组
      */
     public static String[] getClassAndMethod(String methodInfo, String[] defaultValue) {
         if (null == methodInfo) {
@@ -58,8 +58,8 @@ public final class SystemUtil {
 
     /**
      * 解析类路径包名
-     * @param className
-     * @return
+     * @param className 类名
+     * @return 包名
      */
     public static String getPackage(String className) {
         int index = className.lastIndexOf(".");
@@ -72,12 +72,12 @@ public final class SystemUtil {
 
     /**
      * 创建工具类
-     * @param filer
-     * @param name
-     * @throws IOException
+     * @param filer 文件创建器
+     * @param name 文见名
+     * @throws IOException 资源获取失败异常
      */
     public static void createFile(Filer filer, String name) throws IOException {
-        if (!Element.BLANK_METHOD[0].equals(Element.DEFAULT_BLANK_METHOD[0])) {
+        if (!ElementOptions.BLANK_METHOD[0].equals(ElementOptions.DEFAULT_BLANK_METHOD[0])) {
             return;
         }
 
@@ -94,9 +94,9 @@ public final class SystemUtil {
 
     /**
      * 获取 jar 包内容
-     * @param url
-     * @return
-     * @throws IOException
+     * @param url 包链接
+     * @return 返回内容信息
+     * @throws IOException 资源获取失败异常
      */
     private static String getUtilContent(String url) throws IOException {
         URL resource = StringUtil.class.getResource("");

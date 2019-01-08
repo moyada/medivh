@@ -40,4 +40,9 @@ public class CaseInherit {
     public int count(Product product) {
         return 1000;
     }
+
+    public int check(@NotNull String name,
+                     @Exclusive Product product) {
+        return 1000;
+    }
 }

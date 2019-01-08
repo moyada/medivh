@@ -2,13 +2,13 @@ package io.moyada.medivh.regulation;
 
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.ActionData;
-import io.moyada.medivh.core.MakerContext;
-import io.moyada.medivh.core.TypeTag;
+import io.moyada.medivh.support.ActionData;
+import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.TypeTag;
 import io.moyada.medivh.util.CTreeUtil;
 
 /**
- * 校验规则
+ * 基础处理规则
  * @author xueyikang
  * @since 1.0
  **/
@@ -28,6 +28,10 @@ public abstract class BaseRegulation implements Regulation {
     // 抛出异常
     public static final byte THROW = 1;
 
+    /**
+     * 设置处理数据
+     * @param actionData 处理数据
+     */
     public void setActionData(ActionData actionData) {
         if (null == actionData) {
             return;
@@ -37,63 +41,63 @@ public abstract class BaseRegulation implements Regulation {
     }
 
     @Override
-    public ListBuffer<JCTree.JCStatement> handle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
+    public ListBuffer<JCTree.JCStatement> handle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
                                                  String fieldName, JCTree.JCExpression self, JCTree.JCStatement action) {
-        action = createActionIfNull(action, makerContext, fieldName);
-        JCTree.JCStatement exec = doHandle(makerContext, statements, self, action);
+        action = createActionIfNull(action, expressionMaker, fieldName);
+        JCTree.JCStatement exec = doHandle(expressionMaker, statements, self, action);
         statements.append(exec);
         return statements;
     }
 
     /**
      * 处理规则事件，返回构建语句
-     * @param makerContext
-     * @param statements
-     * @param self
-     * @param action
-     * @return
+     * @param expressionMaker 语句构造器
+     * @param statements 语句链
+     * @param self 处理元素
+     * @param action 执行事件
+     * @return 处理语句
      */
-    abstract JCTree.JCStatement doHandle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
-                                  JCTree.JCExpression self, JCTree.JCStatement action);
+    abstract JCTree.JCStatement doHandle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
+                                         JCTree.JCExpression self, JCTree.JCStatement action);
 
     /**
      * 构建输出信息
-     * @param fieldName
-     * @return
+     * @param fieldName 元素名称
+     * @return 构建信息
      */
     abstract String buildInfo(String fieldName);
 
     /**
-     * 无提供执行则创建
-     * @param action
-     * @param makerContext
-     * @param info
-     * @return
+     * 无提供执行则创建处理方式
+     * @param action 处理方式
+     * @param expressionMaker 语句构造器
+     * @param info 信息
+     * @return 处理语句
      */
-    JCTree.JCStatement createActionIfNull(JCTree.JCStatement action, MakerContext makerContext, String info) {
+    JCTree.JCStatement createActionIfNull(JCTree.JCStatement action, ExpressionMaker expressionMaker, String info) {
         if (null != action) {
             return action;
         }
         this.info = buildInfo(info);
-        return createAction(makerContext, this.info);
+        return createAction(expressionMaker, this.info);
     }
 
     /**
-     * 获取执行语句
-     * @param makerContext
-     * @param info
-     * @return
+     * 创建执行语句
+     * @param expressionMaker 语句构造器
+     * @param info 信息
+     * @return 处理语句
      */
-    JCTree.JCStatement createAction(MakerContext makerContext, String info) {
+    JCTree.JCStatement createAction(ExpressionMaker expressionMaker, String info) {
         JCTree.JCStatement action;
         switch (newActionMode) {
             case THROW:
-                JCTree.JCLiteral message = CTreeUtil.newElement(makerContext.getTreeMaker(),
+                JCTree.JCLiteral message = CTreeUtil.newElement(expressionMaker.getTreeMaker(),
                         TypeTag.CLASS,actionData.getInfo() + info);
-                action = makerContext.newMsgThrow(message, actionData.getClassName());
+                action = expressionMaker.newMsgThrow(actionData.getClassName(), message);
                 break;
             default:
-                action = makerContext.Return(TypeTag.CLASS, info);
+                action = expressionMaker.Return(TypeTag.CLASS, info);
         }
         return action;
     }

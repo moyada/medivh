@@ -8,8 +8,8 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.MakerContext;
-import io.moyada.medivh.core.TypeTag;
+import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.TypeTag;
 import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.util.CheckUtil;
 import io.moyada.medivh.util.TypeUtil;
@@ -21,29 +21,29 @@ import javax.lang.model.element.ElementKind;
  * @author xueyikang
  * @since 1.0
  **/
-class BaseTranslator extends TreeTranslator {
+abstract class BaseTranslator extends TreeTranslator {
 
-    protected final Messager messager;
+    final Messager messager;
 
-    protected final MakerContext makerContext;
+    protected final ExpressionMaker expressionMaker;
 
     final TreeMaker treeMaker;
     final JavacElements javacElements;
     final Object namesInstance ;
 
-    BaseTranslator(MakerContext makerContext, Messager messager) {
-        this.makerContext = makerContext;
+    BaseTranslator(ExpressionMaker expressionMaker, Messager messager) {
+        this.expressionMaker = expressionMaker;
         this.messager = messager;
 
-        this.treeMaker = makerContext.getTreeMaker();
-        this.namesInstance = makerContext.getNamesInstance();
-        this.javacElements = makerContext.getJavacElements();
+        this.treeMaker = expressionMaker.getTreeMaker();
+        this.namesInstance = expressionMaker.getNamesInstance();
+        this.javacElements = expressionMaker.getJavacElements();
     }
 
     /**
      * 检测异常类是否包含 String 构造函数
-     * @param exceptionTypeName
-     * @return
+     * @param exceptionTypeName 异常类名
+     * @return 无字符串构造函数则返回 false
      */
     boolean checkException(String exceptionTypeName) {
         Symbol.ClassSymbol typeElement = javacElements.getTypeElement(exceptionTypeName);
@@ -64,8 +64,8 @@ class BaseTranslator extends TreeTranslator {
 
     /**
      * 获取类型
-     * @param className
-     * @return
+     * @param className 类型名称
+     * @return 类型
      */
     byte getClassType(String className) {
         // 字符串逻辑
@@ -89,10 +89,10 @@ class BaseTranslator extends TreeTranslator {
 
     /**
      * 是否属于集合或子类
-     * @param className
-     * @return
+     * @param className 类型名称
+     * @return 是否属于集合
      */
-    boolean isCollection(String className) {
+    private boolean isCollection(String className) {
         Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(className);
         // primitive 类型
         if (null == classSymbol) {
@@ -121,9 +121,9 @@ class BaseTranslator extends TreeTranslator {
 
     /**
      * 是否是目标类或子类或实现类
-     * @param className
-     * @param targetClass
-     * @return
+     * @param className 类型名称
+     * @param targetClass 目标类型
+     * @return 类型是否相似
      */
     boolean isSubClass(String className, String targetClass) {
         if (className.equals(targetClass)) {
@@ -149,27 +149,27 @@ class BaseTranslator extends TreeTranslator {
 
     /**
      * 判断类型是否为集合
-     * @param typeSymbol
-     * @return
+     * @param typeSymbol 类型元素
+     * @return 是否属于 Collection 或 Map
      */
     private boolean isCollection(Symbol typeSymbol) {
-        return isInstanceOf(typeSymbol, makerContext.getCollectionSymbol()) || isInstanceOf(typeSymbol, makerContext.getMapSymbol());
+        return isInstanceOf(typeSymbol, expressionMaker.getCollectionSymbol()) || isInstanceOf(typeSymbol, expressionMaker.getMapSymbol());
     }
 
     /**
      * 判断是否为类型的子类
-     * @param typeSymbol
-     * @param classSymbol
-     * @return
+     * @param typeSymbol 类型元素
+     * @param classSymbol 类元素
+     * @return 是否相似类型
      */
-    boolean isInstanceOf(Symbol typeSymbol, Symbol.ClassSymbol classSymbol) {
-        return typeSymbol.isSubClass(classSymbol, makerContext.getTypes());
+    private boolean isInstanceOf(Symbol typeSymbol, Symbol.ClassSymbol classSymbol) {
+        return typeSymbol.isSubClass(classSymbol, expressionMaker.getTypes());
     }
 
     /**
      * 获取表达式的代码块
-     * @param statements
-     * @return
+     * @param statements 表达式语句链
+     * @return 代码块
      */
     JCTree.JCBlock getBlock(ListBuffer<JCTree.JCStatement> statements) {
         return treeMaker.Block(0, statements.toList());
@@ -177,9 +177,9 @@ class BaseTranslator extends TreeTranslator {
 
     /**
      * 替换方法内容
-     * @param methodDecl
-     * @param body
-     * @return
+     * @param methodDecl 方法节点
+     * @param body 方法体
+     * @return 替换方法
      */
     JCTree.JCMethodDecl replaceMethod(JCTree.JCMethodDecl methodDecl, JCTree.JCBlock body) {
         return treeMaker.MethodDef(methodDecl.mods,
@@ -192,38 +192,11 @@ class BaseTranslator extends TreeTranslator {
     }
 
     /**
-     * 创建新字段
-     * @param name
-     * @param flags
-     * @param type
-     * @param init
-     * @return
-     */
-    JCTree.JCVariableDecl newVar(String name, long flags, String type, JCTree.JCExpression init) {
-        return treeMaker.VarDef(treeMaker.Modifiers(flags),
-                CTreeUtil.getName(namesInstance, name),
-                makerContext.findClass(type), init);
-    }
-
-    /**
-     * 创建原始类型字段
-     * @param name
-     * @param flags
-     * @param typeTag
-     * @param init
-     * @return
-     */
-    JCTree.JCVariableDecl newVar(String name, long flags, TypeTag typeTag, JCTree.JCExpression init) {
-        return treeMaker.VarDef(treeMaker.Modifiers(flags),
-                CTreeUtil.getName(namesInstance, name),
-                CTreeUtil.getPrimitiveType(treeMaker, typeTag), init);
-    }
-
-    /**
      * 参数转换
-     * @param classSymbol
-     * @param values
-     * @return
+     * @param classSymbol 解析类节点
+     * @param isConstruct 解析构造方法还是静态方法
+     * @param values 参数数据
+     * @return 返回对应参数元素
      */
     List<JCTree.JCExpression> getParamType(Symbol.ClassSymbol classSymbol, boolean isConstruct, String[] values) {
         int length = values.length;
@@ -274,7 +247,7 @@ class BaseTranslator extends TreeTranslator {
                         findParam = false;
                         continue;
                     }
-                    argsVal = makerContext.nullNode;
+                    argsVal = expressionMaker.nullNode;
                 } else {
                     // 不支持复杂对象
                     if (null == baseType) {

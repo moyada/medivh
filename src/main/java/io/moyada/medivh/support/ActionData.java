@@ -1,4 +1,4 @@
-package io.moyada.medivh.core;
+package io.moyada.medivh.support;
 
 /**
  * 规则动作信息

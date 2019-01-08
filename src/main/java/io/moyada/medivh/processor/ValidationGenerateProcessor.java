@@ -8,7 +8,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
 import io.moyada.medivh.annotation.*;
-import io.moyada.medivh.core.MakerContext;
+import io.moyada.medivh.support.ExpressionMaker;
 import io.moyada.medivh.translator.CustomRuleTranslator;
 import io.moyada.medivh.translator.UtilMethodTranslator;
 import io.moyada.medivh.translator.ValidationTranslator;
@@ -36,9 +36,12 @@ import java.util.Set;
  **/
 public class ValidationGenerateProcessor extends AbstractProcessor {
 
+    // 信息输出体
     private Messager messager;
 
+    // 处理器上下文
     private Context context;
+    // 语法树
     private Trees trees;
 
     @Override
@@ -66,24 +69,25 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
         }
 
         // 获取对象规则
-        Collection<? extends Element> rules = getRules(roundEnv,
+        Collection<? extends Element> ruleClass = getRuleClass(roundEnv,
                 Nullable.class, NotNull.class, NumberRule.class, SizeRule.class);
-        // 解析聚合类
-        Collection<? extends Element> ruleClass = getClass(rules);
 
-        MakerContext makerContext = MakerContext.newInstance(context);
+        ExpressionMaker expressionMaker = ExpressionMaker.newInstance(context);
 
-        createUtilMethod(rootElements, makerContext);
+        createUtilMethod(rootElements, expressionMaker);
 
         // 校验方法生成器
-        TreeTranslator translator = new CustomRuleTranslator(makerContext, messager);
-        for (Element element : ruleClass) {
-            JCTree tree = (JCTree) trees.getTree(element);
-            tree.accept(translator);
+        TreeTranslator translator = new CustomRuleTranslator(expressionMaker, messager);
+
+        if (null != ruleClass) {
+            for (Element element : ruleClass) {
+                JCTree tree = (JCTree) trees.getTree(element);
+                tree.accept(translator);
+            }
         }
 
         // 校验逻辑生成器
-        translator = new ValidationTranslator(makerContext, messager);
+        translator = new ValidationTranslator(expressionMaker, messager);
         for (Element element : methods) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
@@ -94,9 +98,9 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
 
     /**
      * 获取待增强方法
-     * @param rootElements
-     * @param annoNames
-     * @return
+     * @param rootElements 根元素集合
+     * @param annoNames 注解名称
+     * @return 方法元素集合
      */
     private Collection<? extends Element> getMethods(Set<? extends Element> rootElements, String... annoNames) {
         Set<Element> methods = new HashSet<Element>();
@@ -162,10 +166,11 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
 
     /**
      * 创建工具方法
-     * @param elements
-     * @param makerContext
+     * 选择一个 public class 创建工具方法，如指定方法则不创建
+     * @param elements 元素集合
+     * @param expressionMaker 语句构造器
      */
-    private void createUtilMethod(Collection<? extends Element> elements, MakerContext makerContext) {
+    private void createUtilMethod(Collection<? extends Element> elements, ExpressionMaker expressionMaker) {
         List<TypeElement> typeElements = ElementFilter.typesIn(elements);
         if (typeElements.isEmpty()) {
             messager.printMessage(Diagnostic.Kind.ERROR, "cannot find any class type");
@@ -193,13 +198,13 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
         }
 
         JCTree tree = (JCTree) trees.getTree(classElement);
-        tree.accept(new UtilMethodTranslator(makerContext, messager, classElement.toString()));
+        tree.accept(new UtilMethodTranslator(expressionMaker, messager, classElement.toString()));
     }
 
     /**
      * 是否是public类型
-     * @param element
-     * @return
+     * @param element 元素
+     * @return 存在 Public 标识则返回 true
      */
     private boolean isPublic(Element element) {
         Set<Modifier> modifiers = element.getModifiers();
@@ -213,9 +218,9 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
     }
 
     /**
-     * 跳过 接口、抽象、无注解 方法
-     * @param methodDecl
-     * @return
+     * 跳过 接口、抽象 方法
+     * @param methodDecl 方法节点
+     * @return 合法节点则返回 false
      */
     private boolean isJump(JCTree.JCMethodDecl methodDecl) {
         if (null == methodDecl) {
@@ -230,7 +235,13 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
         return false;
     }
 
-    private Collection<? extends Element> getRules(RoundEnvironment roundEnv, Class<? extends Annotation>... annos) {
+    /**
+     * 获取存在规则元素
+     * @param roundEnv 环境
+     * @param annos 注解类型
+     * @return 规则类元素集合
+     */
+    private Collection<? extends Element> getRuleClass(RoundEnvironment roundEnv, Class<? extends Annotation>... annos) {
         Set<Element> rules = new HashSet<Element>();
 
         Set<? extends Element> elements;
@@ -242,30 +253,24 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
         }
 
         elements = roundEnv.getElementsAnnotatedWith(NotBlank.class);
-        if (elements.isEmpty()) {
-            return rules;
-        }
+//        if (elements.isEmpty()) {
+//            return rules;
+//        }
 
         rules.addAll(ElementFilter.fieldsIn(elements));
         rules.addAll(ElementFilter.methodsIn(elements));
 
 //        try {
-//            SystemUtil.createFile(processingEnv.getFiler(), io.moyada.medivh.core.Element.BLANK_METHOD[0]);
+//            SystemUtil.createFile(processingEnv.getFiler(), io.moyada.medivh.core.ElementOptions.BLANK_METHOD[0]);
 //        } catch (IOException e) {
 //            throw new RuntimeException(e);
 //        }
 
-        return rules;
-    }
+        if (elements.isEmpty()) {
+            return null;
+        }
 
-    /**
-     * 获取规则属性所属的类集合
-     * @param rules
-     * @return
-     */
-    private Collection<? extends Element> getClass(Collection<? extends Element> rules) {
         Set<Element> classRule = new HashSet<Element>();
-
         for (Element element : rules) {
             classRule.add( element.getEnclosingElement());
         }

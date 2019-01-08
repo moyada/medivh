@@ -1,4 +1,4 @@
-package io.moyada.medivh.core;
+package io.moyada.medivh.support;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Types;
@@ -14,15 +14,19 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * 语法树工具
+ * 语句创建工具
  * @author xueyikang
  * @since 1.0
  **/
-public class MakerContext {
+public class ExpressionMaker {
 
+    // 语法树创建器
     private final TreeMaker treeMaker;
+    // 元素获取器
     private final JavacElements javacElements;
+    // Name 构造器
     private final Object namesInstance;
+    // 类型集合
     private final Types types;
 
     // null 表达式
@@ -45,7 +49,7 @@ public class MakerContext {
     // map
     final Symbol.ClassSymbol mapSymbol;
     
-    private MakerContext(Context context) {
+    private ExpressionMaker(Context context) {
         this.treeMaker = TreeMaker.instance(context);
         this.namesInstance = CTreeUtil.newInstanceForName(context);
 
@@ -62,37 +66,73 @@ public class MakerContext {
         mapSymbol = javacElements.getTypeElement(Map.class.getName());
     }
 
+    public static ExpressionMaker newInstance(Context context) {
+        return new ExpressionMaker(context);
+    }
+
     /**
-     * 创建临时变量
-     * @param name
-     * @param type
-     * @param init
-     * @return
+     * 创建对象类型临时变量
+     * @param name 变量名
+     * @param type 类名称
+     * @param init 初始值
+     * @return 变量元素
      */
     public JCTree.JCVariableDecl newLocalVar(String name, String type, JCTree.JCExpression init) {
-        return treeMaker.VarDef(treeMaker.Modifiers(0L),
-                CTreeUtil.getName(namesInstance, name),
-                findClass(type), init);
+        return newVar(name, 0L, type, init);
     }
 
     /**
-     * 创建原始类型临时变量
-     * @param name
-     * @param typeTag
-     * @param init
-     * @return
+     * 创建原生类型临时变量
+     * @param name 变量名
+     * @param typeTag 类型标签
+     * @param init 初始值
+     * @return 变量元素
      */
     public JCTree.JCVariableDecl newLocalVar(String name, TypeTag typeTag, JCTree.JCExpression init) {
-        return treeMaker.VarDef(treeMaker.Modifiers(0L),
-                CTreeUtil.getName(namesInstance, name),
-                CTreeUtil.getPrimitiveType(treeMaker, typeTag), init);
+        return newVar(name, 0L, typeTag, init);
     }
 
     /**
-     * 返回元素
-     * @param typeTag
-     * @param value
+     * 创建新字段
+     * @param name 变量名
+     * @param flags 字段标记
+     * @param type 类名称
+     * @param init 初始值
      * @return
+     */
+    public JCTree.JCVariableDecl newVar(String name, long flags, String type, JCTree.JCExpression init) {
+        return newVar(name, flags, findClass(type), init);
+    }
+
+    /**
+     * 创建原始类型字段
+     * @param name 变量名
+     * @param flags 字段标记
+     * @param typeTag 类型标签
+     * @param init 初始值
+     * @return
+     */
+    public JCTree.JCVariableDecl newVar(String name, long flags, TypeTag typeTag, JCTree.JCExpression init) {
+        return newVar(name, flags, CTreeUtil.getPrimitiveType(treeMaker, typeTag), init);
+    }
+
+    /**
+     * 创建临时变量
+     * @param name 变量名
+     * @param type 类型
+     * @param init 初始值
+     * @return 变量元素
+     */
+    private JCTree.JCVariableDecl newVar(String name, long flags, JCTree.JCExpression type, JCTree.JCExpression init) {
+        return treeMaker.VarDef(treeMaker.Modifiers(flags),
+                CTreeUtil.getName(namesInstance, name), type, init);
+    }
+
+    /**
+     * 创建返回元素
+     * @param typeTag 类型标签
+     * @param value 值
+     * @return 语句
      */
     public JCTree.JCReturn Return(TypeTag typeTag, Object value) {
         return treeMaker.Return(CTreeUtil.newElement(treeMaker, typeTag, value));
@@ -100,22 +140,22 @@ public class MakerContext {
 
     /**
      * 拼接信息
-     * @param info
-     * @param message
-     * @return
+     * @param message 信息头
+     * @param info 信息尾
+     * @return 合并元素
      */
-    public JCTree.JCExpression concatStatement(JCTree.JCExpression info, String message) {
+    public JCTree.JCExpression concatStatement(String message, JCTree.JCExpression info) {
         JCTree.JCExpression args = treeMaker.Literal(message);
         return CTreeUtil.newBinary(treeMaker, TypeTag.PLUS, args, info);
     }
 
     /**
      * 创建异常语句
-     * @param message
-     * @param exceptionTypeName
-     * @return
+     * @param exceptionTypeName 异常类型
+     * @param message 异常信息
+     * @return 异常语句元素
      */
-    public JCTree.JCStatement newMsgThrow(JCTree.JCExpression message, String exceptionTypeName) {
+    public JCTree.JCStatement newMsgThrow(String exceptionTypeName, JCTree.JCExpression message) {
         JCTree.JCExpression exceptionType = findClass(exceptionTypeName);
         JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, CTreeUtil.emptyParam(), exceptionType, List.of(message), null);
         return CTreeUtil.newThrow(treeMaker, exceptionInstance);
@@ -123,9 +163,9 @@ public class MakerContext {
 
     /**
      * 获取属性
-     * @param field
-     * @param name
-     * @return
+     * @param field 源对象
+     * @param name 属性名
+     * @return 属性元素
      */
     public JCTree.JCFieldAccess Select(JCTree.JCExpression field, String name) {
         return treeMaker.Select(field, CTreeUtil.getName(namesInstance, name));
@@ -133,11 +173,10 @@ public class MakerContext {
 
     /**
      * 获取方法
-     * @param field
-     * @param method
-//     * @param paramType
-     * @param paramArgs
-     * @return
+     * @param field 源对象
+     * @param method 方法名
+     * @param paramArgs 参数列表
+     * @return 方法调用元素
      */
     public JCTree.JCMethodInvocation getMethod(JCTree.JCExpression field, String method, List<JCTree.JCExpression> paramArgs) {
         return treeMaker.Apply(null, Select(field, method), paramArgs);
@@ -146,9 +185,10 @@ public class MakerContext {
     /**
      * 方法调用结果赋值
      * @param giver 调用对象
+     * @param accepter 接收对象
      * @param methodName 调用方法
-     * @param accepter 赋值对象
-     * @return
+     * @param accepter paramArgs 参数列表
+     * @return 调用赋值语句
      */
     public JCTree.JCExpressionStatement assignCallback(JCTree.JCIdent giver, JCTree.JCExpression accepter, String methodName, List<JCTree.JCExpression> paramArgs) {
         JCTree.JCExpression expression = getMethod(giver, methodName, paramArgs);
@@ -157,8 +197,8 @@ public class MakerContext {
 
     /**
      * 查询类引用
-     * @param className
-     * @return
+     * @param className 类名
+     * @return 类元素
      */
     public JCTree.JCExpression findClass(String className) {
         String[] elems = className.split("\\.");
@@ -169,12 +209,7 @@ public class MakerContext {
             name = CTreeUtil.getName(namesInstance, elems[i]);
             e = e == null ? treeMaker.Ident(name) : treeMaker.Select(e, name);
         }
-
         return e;
-    }
-
-    public static MakerContext newInstance(Context context) {
-        return new MakerContext(context);
     }
 
     public TreeMaker getTreeMaker() {

@@ -4,9 +4,9 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.Element;
-import io.moyada.medivh.core.MakerContext;
-import io.moyada.medivh.core.TypeTag;
+import io.moyada.medivh.support.ElementOptions;
+import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.TypeTag;
 import io.moyada.medivh.util.CTreeUtil;
 
 import javax.annotation.processing.Messager;
@@ -19,11 +19,11 @@ import javax.tools.Diagnostic;
  **/
 public class UtilMethodTranslator extends BaseTranslator {
 
-    // 父节点类名
+    // 根类名
     private String className;
 
-    public UtilMethodTranslator(MakerContext makerContext, Messager messager, String className) {
-        super(makerContext, messager);
+    public UtilMethodTranslator(ExpressionMaker expressionMaker, Messager messager, String className) {
+        super(expressionMaker, messager);
         this.className = className;
     }
 
@@ -47,59 +47,59 @@ public class UtilMethodTranslator extends BaseTranslator {
 
     /**
      * 设置空白字符串校验方法
-     * @param jcClassDecl
-     * @param methodName
+     * @param jcClassDecl 类节点
+     * @param methodName 方法名
      */
     private void makeIsBlankMethod(JCTree.JCClassDecl jcClassDecl, String methodName) {
         // 已有指定方法
-        if (Element.BLANK_METHOD != null) {
+        if (ElementOptions.BLANK_METHOD != null) {
             return;
         }
 
         if (createIsBlankMethod(jcClassDecl, methodName)) {
-            Element.BLANK_METHOD = new String[]{className, methodName};
+            ElementOptions.BLANK_METHOD = new String[]{className, methodName};
             messager.printMessage(Diagnostic.Kind.NOTE, "Create " + methodName + " method in " + className);
         }
     }
 
     /**
      * 创建空包字符串校验方法
-     * @param jcClassDecl
-     * @param methodName
-     * @return
+     * @param jcClassDecl 类节点
+     * @param methodName 方法名
+     * @return 是否创建成功
      */
     private boolean createIsBlankMethod(JCTree.JCClassDecl jcClassDecl, String methodName) {
-        JCTree.JCReturn returnTrue = treeMaker.Return(makerContext.trueNode);
-        JCTree.JCReturn returnFalse = treeMaker.Return(makerContext.falseNode);
+        JCTree.JCReturn returnTrue = treeMaker.Return(expressionMaker.trueNode);
+        JCTree.JCReturn returnFalse = treeMaker.Return(expressionMaker.falseNode);
 
         // define String str parameter
-        JCTree.JCVariableDecl var = newVar("str", Flags.PARAMETER, String.class.getName(), null);
+        JCTree.JCVariableDecl var = expressionMaker.newVar("str", Flags.PARAMETER, String.class.getName(), null);
         JCTree.JCIdent str = treeMaker.Ident(var.name);
 
         ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
 
         // int length = str.length();
-        JCTree.JCMethodInvocation getLength = makerContext.getMethod(str, "length", CTreeUtil.emptyParam());
-        JCTree.JCVariableDecl newInt = newVar("length", 0L, TypeTag.INT, getLength);
+        JCTree.JCMethodInvocation getLength = expressionMaker.getMethod(str, "length", CTreeUtil.emptyParam());
+        JCTree.JCVariableDecl newInt = expressionMaker.newLocalVar("length", TypeTag.INT, getLength);
         JCTree.JCIdent length = treeMaker.Ident(newInt.name);
 
         statements.append(newInt);
 
         // if (length == 0) { return true; }
-        JCTree.JCExpression isZero = CTreeUtil.newBinary(treeMaker, TypeTag.EQ, length, makerContext.zeroIntNode);
+        JCTree.JCExpression isZero = CTreeUtil.newBinary(treeMaker, TypeTag.EQ, length, expressionMaker.zeroIntNode);
         JCTree.JCIf ifReturn = treeMaker.If(isZero, returnTrue, null);
 
         statements.append(ifReturn);
 
         // char ch;
-        JCTree.JCVariableDecl varChar = newVar("ch", 0L, TypeTag.CHAR, null);
+        JCTree.JCVariableDecl varChar = expressionMaker.newLocalVar("ch", TypeTag.CHAR, null);
 
         statements.append(varChar);
 
         // for (int i = 0; i < length; i++) { body ... }
 
         // int i = 0;
-        JCTree.JCVariableDecl init = newVar("i", 0L, TypeTag.INT, makerContext.zeroIntNode);
+        JCTree.JCVariableDecl init = expressionMaker.newLocalVar("i", TypeTag.INT, expressionMaker.zeroIntNode);
         JCTree.JCExpression vari = treeMaker.Ident(init.name);
         // i < length
         JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.LT, vari, length);
@@ -112,10 +112,10 @@ public class UtilMethodTranslator extends BaseTranslator {
         ListBuffer<JCTree.JCStatement> body = CTreeUtil.newStatement();
         JCTree.JCIdent ch = treeMaker.Ident(varChar.name);
         List<JCTree.JCExpression> paramArgs = List.of(vari);
-        JCTree.JCExpressionStatement charAt = makerContext.assignCallback(str,  ch,"charAt", paramArgs);
+        JCTree.JCExpressionStatement charAt = expressionMaker.assignCallback(str,  ch,"charAt", paramArgs);
 
         // if (ch != ' ') { return false; }
-        JCTree.JCExpression isNotEmtyp = CTreeUtil.newBinary(treeMaker, TypeTag.NE, ch, makerContext.emptyCh);
+        JCTree.JCExpression isNotEmtyp = CTreeUtil.newBinary(treeMaker, TypeTag.NE, ch, expressionMaker.emptyCh);
         JCTree.JCIf notEqualsReturn = treeMaker.If(isNotEmtyp, returnFalse, null);
 
         // body end
@@ -138,8 +138,10 @@ public class UtilMethodTranslator extends BaseTranslator {
 
     /**
      * 创建静态公共方法
-     * @param body
-     * @return
+     * @param methodName 方法名
+     * @param var 方法参数
+     * @param body 方法内容
+     * @return 方法元素
      */
     private JCTree.JCMethodDecl createPublicStaticMethod(String methodName, List<JCTree.JCVariableDecl> var, JCTree.JCBlock body) {
         List<JCTree.JCTypeParameter> param = List.nil();

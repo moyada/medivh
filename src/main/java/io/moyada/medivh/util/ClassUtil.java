@@ -1,6 +1,5 @@
 package io.moyada.medivh.util;
 
-import com.sun.tools.javac.main.JavaCompiler;
 import sun.misc.Unsafe;
 
 import java.lang.ref.SoftReference;
@@ -20,132 +19,6 @@ public final class ClassUtil {
     private ClassUtil() {
     }
 
-    final static byte VERSION;
-    final static byte VERSION_6 = 0;
-    final static byte VERSION_7 = 1;
-    final static byte VERSION_8 = 2;
-    final static byte VERSION_9 = 3;
-
-    /**
-     * 获取编译器版本号
-     */
-    static {
-        String version = JavaCompiler.version();
-        if (null == version) {
-            throw new UnknownError("Can not find available java compiler version.");
-        }
-        int length = version.length();
-        if (length == 0) {
-            throw new UnknownError("Can not find available java compiler version.");
-        }
-
-        int sverion;
-        // 1.xxx
-        if (length > 1 && version.charAt(1) == '.') {
-            if (length < 3) {
-                throw new UnknownError("Unknown java compiler version " + version);
-            }
-
-            // 1.x
-            sverion = getFirstNumber(version, 2);
-
-            // 1.xx
-            if (length > 3) {
-                int number = getIndexNumber(version, 3);
-                if (number >= 0) {
-                    sverion *= 10;
-                    sverion += number;
-                }
-            }
-        } else {
-            // x
-            sverion = getFirstNumber(version, 0);
-
-            // 1x
-            if (sverion < 2 && length > 2) {
-                int number = getIndexNumber(version, 1);
-                if (number >= 0) {
-                    sverion *= 10;
-                    sverion += number;
-                }
-            }
-        }
-
-        VERSION = getSpecialVersion(sverion, version);
-    }
-
-    /**
-     * 获取版本号第一位有效数字，非数字则抛出异常
-     * @param version
-     * @param index
-     * @return
-     */
-    private static int getFirstNumber(String version, int index) {
-        int number = getIndexNumber(version, index);
-        if (number == -1) {
-            throw new UnknownError("Unknown java compiler version " + version);
-        }
-        return number;
-    }
-
-    /**
-     * 获取版本号下标数字
-     * @param version
-     * @param index
-     * @return
-     */
-    private static int getIndexNumber(String version, int index) {
-        char v = version.charAt(index);
-        if (v >= '0' && v <= '9') {
-            return Character.digit(v, 10);
-        } else {
-            return -1;
-        }
-    }
-
-    /**
-     * 检查版本
-     * @param v
-     * @param version
-     * @return
-     */
-    private static byte getSpecialVersion(int v, String version) {
-        if (v < 6) {
-            throw new UnsupportedClassVersionError("Unsupported java compiler version " + version);
-        }
-
-        switch (v) {
-            case 6:
-                return VERSION_6;
-            case 7:
-                return VERSION_7;
-            case 8:
-                return VERSION_8;
-            default:
-                return VERSION_9;
-        }
-    }
-
-    /**
-     * 关闭 JAVA9 使用 Unsafe 警告
-     */
-    public static void disableJava9SillyWarning() {
-        if (VERSION < VERSION_9) {
-            return;
-        }
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            Unsafe u = (Unsafe) theUnsafe.get(null);
-
-            Class<?> cls = Class.forName("jdk.internal.module.IllegalAccessLogger");
-            Field logger = cls.getDeclaredField("logger");
-            u.putObjectVolatile(cls, u.staticFieldOffset(logger), null);
-        } catch (Throwable t) {
-            // ignore it
-        }
-    }
-
     private static Map<String, SoftReference<Class<?>>> classMap = new HashMap<String, SoftReference<Class<?>>>();
     private static Map<String, SoftReference<Method>> methodMap = new HashMap<String, SoftReference<Method>>();
     private static Map<String, SoftReference<Field>> fieldMap = new HashMap<String, SoftReference<Field>>();
@@ -163,11 +36,31 @@ public final class ClassUtil {
     }
 
     /**
-     * 获取类对象
-     * @param className
-     * @return
+     * 关闭 JAVA9 使用 Unsafe 反射警告
      */
-    final static Class<?> getClass(String className) {
+    public static void disableJava9SillyWarning() {
+        if (VersionUtil.VERSION < VersionUtil.VERSION_9) {
+            return;
+        }
+        try {
+            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
+            theUnsafe.setAccessible(true);
+            Unsafe u = (Unsafe) theUnsafe.get(null);
+
+            Class<?> cls = Class.forName("jdk.internal.module.IllegalAccessLogger");
+            Field logger = cls.getDeclaredField("logger");
+            u.putObjectVolatile(cls, u.staticFieldOffset(logger), null);
+        } catch (Throwable t) {
+            // ignore it
+        }
+    }
+
+    /**
+     * 获取类对象
+     * @param className 类名称
+     * @return 类对象
+     */
+    static Class<?> getClass(String className) {
         Class<?> clazz = getReference(classMap, className);
         if (null != clazz) {
             return clazz;
@@ -184,12 +77,12 @@ public final class ClassUtil {
 
     /**
      * 获取类下方法
-     * @param clazz
-     * @param name
-     * @param parameterTypes
-     * @return
+     * @param clazz 类对象
+     * @param name 方法米
+     * @param parameterTypes 方法参数
+     * @return 方法对象
      */
-    final static Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
+    static Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
         Method method = getReference(methodMap, name);
         if (null != method) {
             return method;
@@ -208,13 +101,13 @@ public final class ClassUtil {
 
     /**
      * 方法调用
-     * @param method
-     * @param target
-     * @param args
-     * @param <T>
-     * @return
+     * @param method 方法对象
+     * @param target 调用对象
+     * @param args 参数
+     * @param <T> 返回类型
+     * @return 返回调用数据
      */
-    final static <T> T invoke(Method method, Object target, Object... args) {
+    static <T> T invoke(Method method, Object target, Object... args) {
         try {
             @SuppressWarnings("unchecked")
             T m = (T) method.invoke(target, args);
@@ -228,22 +121,22 @@ public final class ClassUtil {
 
     /**
      * 获取静态属性
-     * @param clazz
-     * @param file
-     * @return
+     * @param clazz 类对象
+     * @param file 静态属性名
+     * @return 属性对象
      */
-    final static Object getStaticField(Class<?> clazz, String file) {
+    static Object getStaticField(Class<?> clazz, String file) {
         return getField(clazz, null, file);
     }
 
     /**
      * 获取对象属性
-     * @param clazz
-     * @param target
-     * @param file
-     * @return
+     * @param clazz 类对象
+     * @param target 调用对象
+     * @param file 属性名
+     * @return 属性对象
      */
-    final static Object getField(Class<?> clazz, Object target, String file) {
+    static Object getField(Class<?> clazz, Object target, String file) {
         String fileName = clazz.getName() + file;
         Field field = getReference(fieldMap, fileName);
         if (null != field) {
@@ -263,11 +156,11 @@ public final class ClassUtil {
 
     /**
      * 获取对象内数据
-     * @param field
-     * @param target
-     * @return
+     * @param field 字段对象
+     * @param target 调用对象
+     * @return 字段数据
      */
-    private final static Object getValue(Field field, Object target) {
+    private static Object getValue(Field field, Object target) {
         try {
             return field.get(target);
         } catch (IllegalAccessException e) {
