@@ -9,40 +9,27 @@ import io.moyada.medivh.annotation.*;
 @Throw
 public class CaseInherit {
 
-    public boolean save(@NotNull String name,
-                        @Throw(NumberFormatException.class) @NumberRule(min = "0.0") double price,
-                        boolean putaway) {
-        System.out.println(name);
-        System.out.println(price);
-        System.out.println(putaway);
+    public boolean customRule(Product product, Capacity capacity) {
+        System.out.println("customRule");
         return true;
     }
 
-    @Return("null")
-    public Capacity get(@NotBlank String name,
-                        @Return({"test", "true"}) @NumberRule(min = "0") byte type) {
-        return new Capacity();
+    @Return({"test", "true"})
+    public Capacity useReturn(@NotBlank String name,
+                              @Throw Counter counter) {
+        System.out.println("useReturn");
+        return null;
     }
 
     @Variable("tmp0")
-    @Throw(value = IllegalStateException.class, message = "price error")
-    public void update(Product product,
-                       @NumberRule(min = "0.0") Double price) {
-        System.out.println(product);
-        System.out.println(price);
-    }
-
-    public boolean exist(Product product) {
-        return true;
+    @Throw(value = UnsupportedOperationException.class)
+    public void excludeParam(@Exclusive Product product,
+                             @SizeRule(min = 5) int[] ids) {
+        System.out.println("excludeParam");
     }
 
     @Exclusive
-    public int count(Product product) {
-        return 1000;
-    }
-
-    public int check(@NotNull String name,
-                     @Exclusive Product product) {
-        return 1000;
+    public int excludeMethod(@Return("-1") Product product) {
+        return 0;
     }
 }

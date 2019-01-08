@@ -9,7 +9,7 @@
     <version>1.2.2-SNAPSHOT</version>
 
     <name>Medivh</name>
-    <description>A processor for add parameter verification to method at compilation phase.</description>
+    <description>A simple, automatic, and flexible method parameter check library.</description>
     <url>https://github.com/moyada/medivh</url>
 
     <licenses>

@@ -1,13 +1,12 @@
 # Medivh
 
 [![Build Status](https://travis-ci.org/moyada/medivh.svg?branch=master)](https://travis-ci.org/moyada/medivh)
-![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compilation-red.svg)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh)
 [![license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/moyada/medivh/blob/master/LICENSE)
 
 [English](/README) | 简体中文
 
-Medivh是一个注解处理器，根据配置规则生成方法的入参校验逻辑。
+简单、自动、灵活的 Java 方法入参校验器。
 
 ## 愿景 
 
@@ -45,7 +44,7 @@ JDK 1.6 及以上版本。
     <dependency>
         <groupId>io.github.moyada</groupId>
         <artifactId>medivh</artifactId>
-        <version>1.2.1</version>
+        <version>1.2.2</version>
         <scope>provided</scope>
     </dependency>
 <dependencies/>
@@ -55,12 +54,12 @@ JDK 1.6 及以上版本。
 
 ```
 dependencies {
-  compileOnly 'io.github.moyada:medivh:1.2.1'
+  compileOnly 'io.github.moyada:medivh:1.2.2'
 }
 ```
 
 普通工程可以通过
-[![release](https://img.shields.io/badge/release-v1.2.1-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
+[![release](https://img.shields.io/badge/release-v1.2.2-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
 或
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh)
 下载最新 jar 包。
@@ -81,10 +80,6 @@ dependencies {
 | @Exclusive | 方法、方法参数 | 禁用校验逻辑。 |
 | @Variable | 类、方法 | 修改当前作用域下校验逻辑产生的变量名和方法名。 |
 
-配置规则注解后的类文件将会创建 `验证` 方法，由方法校验入口调用。
-
-配置参数校验的方法则会在方法体头部添加校验逻辑，根据配置生成异常处理。
-
 具体使用方式见 [示例](#示例)
 
 ### 3. 编译项目
@@ -93,7 +88,7 @@ dependencies {
  
 或者使用 Java 命令进行编译，如 `javac -cp medivh.jar MyApp.java`
 
-经过编译期后，即可生成校验逻辑。
+经过编译期，配置规则注解的类文件将会创建 `验证` 方法，由参数校验逻辑调用，配置参数校验的方法则会在方法体前添加校验逻辑。
 
 ## 系统可选参数
 
@@ -372,16 +367,13 @@ public class CaseThrow {
     public boolean hasReturn(@Throw @NotNull String name,
                              @Throw(NumberFormatException.class) @NumberRule(min = "0.0") double price,
                              boolean putaway) {
-        System.out.println(name);
-        System.out.println(price);
-        System.out.println(putaway);
+        System.out.println("hasReturn");
         return true;
     }
 
-    public void nonReturn(@Throw Product product,
-                          @Throw(message = "price error") @NumberRule(min = "0.0") Double price) {
-        System.out.println(product);
-        System.out.println(price);
+    public void nonReturn(@Throw(value = IllegalStateException.class, message = "unknown error") Product product,
+                          @Throw(message = "price error") @SizeRule(min = 0, max = 20) List<String> param) {
+        System.out.println("nonReturn");
     }
 }
 ```
@@ -395,27 +387,29 @@ public boolean hasReturn(String name, double price, boolean putaway) {
     } else if (price < 0.0D) {
         throw new NumberFormatException("Invalid input parameter, cause price less than 0.0");
     } else {
-        System.out.println(name);
-        System.out.println(price);
-        System.out.println(putaway);
+        System.out.println("hasReturn");
         return true;
     }
 }
 
-public void nonReturn(Product product, Double price) {
+public void nonReturn(Product product, List<String> param) {
     if (product == null) {
-        throw new IllegalArgumentException("Invalid input parameter, cause product is null");
+        throw new IllegalStateException("unknown error, cause product is null");
     } else {
         String mvar_0 = product.invalid0();
         if (mvar_0 != null) {
-            throw new IllegalArgumentException("Invalid input parameter, cause " + mvar_0);
-        } else if (price == null) {
-            throw new IllegalArgumentException("price error, cause price is null");
-        } else if (price < 0.0D) {
-            throw new IllegalArgumentException("price error, cause price less than 0.0");
+            throw new IllegalStateException("unknown error, cause " + mvar_0);
+        } else if (param == null) {
+            throw new IllegalArgumentException("price error, cause param is null");
         } else {
-            System.out.println(product);
-            System.out.println(price);
+            int var$3 = param.size();
+            if (var$3 > 20) {
+                throw new IllegalArgumentException("price error, cause param.size() great than 20");
+            } else if (var$3 < 0) {
+                throw new IllegalArgumentException("price error, cause param.size() less than 0");
+            } else {
+                System.out.println("nonReturn");
+            }
         }
     }
 }
@@ -440,27 +434,32 @@ public void nonReturn(Product product, Double price) {
 public class CaseReturn {
 
     public boolean returnPrimitive(@Return("false") @NotNull String name,
-                                   Double price) {
-        System.out.println(name);
-        System.out.println(price);
+                                   @Return("true") @NumberRule(min = "0.0") double price,
+                                   boolean putaway) {
+        System.out.println("returnPrimitive");
         return true;
     }
 
-    public Integer returnBasic(@Return("0") @NumberRule(min = "0") Double price) {
-        return null;
+    public Integer returnBasic(@Return("0") Product product,
+                               @Throw(message = "null") @SizeRule(min = 0) List<String> param) {
+        System.out.println("returnBasic");
+        return -1;
     }
 
-    public Capacity returnObject(@Return("null") @NotBlank String name,
-                                 @Return({"test", "true"}) @NumberRule(min = "0") byte type) {
+    public Capacity returnObject(@Return({"test", "true"})  @NotNull String name,
+                                 @Return @NumberRule(min = "0") Byte type) {
+        System.out.println("returnObject");
         return new Capacity();
     }
 
     public Product returnInterface(@Return(type = Item.class) @NotBlank String name) {
+        System.out.println("returnInterface");
         return null;
     }
 
-    public Product useStaticMethod(@Return(type = CaseReturn.class, staticMethod = "getProduct") @NotBlank String name,
+    public Product useStaticMethod(@Return(type = CaseReturn.class, staticMethod = "getProduct") @SizeRule(min = 1) String name,
                                    @Return(value = "test", type = CaseReturn.class, staticMethod = "getProduct") @NotNull Integer id) {
+        System.out.println("useStaticMethod");
         return null;
     }
 
@@ -474,29 +473,7 @@ public class CaseReturn {
 
     static class Item implements Product {
 
-        private String name;
-
-        public Item() {
-        }
-
-        public Item(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String getName() {
-            return null;
-        }
-
-        @Override
-        public String getType() {
-            return null;
-        }
-
-        @Override
-        public List<Capacity> getStore() {
-            return null;
-        }
+        ...
     }
 }
 ```
@@ -504,72 +481,87 @@ public class CaseReturn {
 经过编译后的方法如下
 
 ```
-public boolean returnPrimitive(String name, Double price) {
+public boolean returnPrimitive(String name, double price, boolean putaway) {
     if (name == null) {
         return false;
+    } else if (price < 0.0D) {
+        return true;
     } else {
-        System.out.println(name);
-        System.out.println(price);
+        System.out.println("returnPrimitive");
         return true;
     }
 }
 
-public Integer returnBasic(Double price) {
-    if (price == null) {
+public Integer returnBasic(Product product, List<String> param) {
+    if (product == null) {
         return 0;
     } else {
-        return price < 0.0D ? 0 : null;
+        String mvar_0 = product.invalid0();
+        if (mvar_0 != null) {
+            return 0;
+        } else if (param == null) {
+            throw new IllegalArgumentException("null, cause param is null");
+        } else if (param.size() < 0) {
+            throw new IllegalArgumentException("null, cause param.size() less than 0");
+        } else {
+            System.out.println("returnBasic");
+            return -1;
+        }
     }
 }
 
-public Capacity returnObject(String name, byte type) {
+public Capacity returnObject(String name, Byte type) {
     if (name == null) {
-        return null;
-    } else if (Persion.isBlank(name)) {
-        return null;
+        return new Capacity("test", true);
+    } else if (type == null) {
+        return new Capacity();
+    } else if (type < 0) {
+        return new Capacity();
     } else {
-        return type < 0 ? new Capacity("test", true) : new Capacity();
+        System.out.println("returnObject");
+        return new Capacity();
     }
 }
 
 public Product returnInterface(String name) {
     if (name == null) {
         return new CaseReturn.Item();
+    } else if (Param.isBlank(name)) {
+        return new CaseReturn.Item();
     } else {
-        return Persion.isBlank(name) ? new CaseReturn.Item() : null;
+        System.out.println("returnInterface");
+        return null;
     }
 }
 
 public Product useStaticMethod(String name, Integer id) {
     if (name == null) {
         return getProduct();
-    } else if (Persion.isBlank(name)) {
+    } else if (name.length() < 1) {
         return getProduct();
+    } else if (id == null) {
+        return getProduct("test");
     } else {
-        return id == null ? getProduct("test") : null;
+        System.out.println("useStaticMethod");
+        return null;
     }
 }
 ```
 
-#### 组合使用
+#### 混合使用
 ```
 public class CaseCombine {
 
-    public boolean returnPrimitive(@Return("false") @NotNull String name,
-                                   @Throw @NumberRule(min = "0") Double price) {
-        System.out.println(name);
-        System.out.println(price);
+    public boolean returnPrimitive(@Return("false") Product product,
+                                   @Throw Counter price) {
+        System.out.println("returnPrimitive");
         return true;
     }
 
-    public Capacity returnObject(@Return("null") @NotBlank String name,
-                                 @Throw @NumberRule(min = "0") byte type,
-                                 @Return({"null", "false"}) @NotNull Double price) {
-        return new Capacity();
-    }
-
-    public Product useStaticMethod(@Return(type = CaseReturn.class, staticMethod = "getProduct") @NotBlank String name,
-                                   @Throw(value = IllegalStateException.class, message = "id error") @NumberRule(min = "0") Integer id) {
+    public Product returnObject(@Throw Person person,
+                                @Return(type = CaseReturn.Item.class) @NotBlank String name,
+                                @Return(type = CaseReturn.class, staticMethod = "getProduct") Capacity capacity) {
+        System.out.println("returnPrimitive");
         return null;
     }
 }
@@ -578,43 +570,49 @@ public class CaseCombine {
 经过编译后方法的如下
 
 ```
-public boolean returnPrimitive(String name, Double price) {
-    if (name == null) {
+public boolean returnPrimitive(Product product, Counter price) {
+    if (product == null) {
         return false;
-    } else if (price == null) {
-        throw new IllegalArgumentException("Invalid input parameter, cause price is null");
-    } else if (price < 0.0D) {
-        throw new IllegalArgumentException("Invalid input parameter, cause price less than 0.0");
     } else {
-        System.out.println(name);
-        System.out.println(price);
-        return true;
+        String mvar_0 = product.invalid0();
+        if (mvar_0 != null) {
+            return false;
+        } else if (price == null) {
+            throw new IllegalArgumentException("Invalid input parameter, cause price is null");
+        } else {
+            mvar_0 = price.invalid0();
+            if (mvar_0 != null) {
+                throw new IllegalArgumentException("Invalid input parameter, cause " + mvar_0);
+            } else {
+                System.out.println("returnPrimitive");
+                return true;
+            }
+        }
     }
 }
 
-public Capacity returnObject(String name, byte type, Double price) {
-    if (name == null) {
-        return null;
-    } else if (Persion.isBlank(name)) {
-        return null;
-    } else if (type < 0) {
-        throw new IllegalArgumentException("Invalid input parameter, cause type less than 0");
+public Product returnObject(Person person, String name, Capacity capacity) {
+    if (person == null) {
+        throw new IllegalArgumentException("Invalid input parameter, cause person is null");
     } else {
-        return price == null ? new Capacity((String)null, false) : new Capacity();
-    }
-}
-
-public Product useStaticMethod(String name, Integer id) {
-    if (name == null) {
-        return CaseReturn.getProduct();
-    } else if (Persion.isBlank(name)) {
-        return CaseReturn.getProduct();
-    } else if (id == null) {
-        throw new IllegalStateException("id error, cause id is null");
-    } else if (id < 0) {
-        throw new IllegalStateException("id error, cause id less than 0");
-    } else {
-        return null;
+        String mvar_0 = person.invalid0();
+        if (mvar_0 != null) {
+            throw new IllegalArgumentException("Invalid input parameter, cause " + mvar_0);
+        } else if (name == null) {
+            return new Item();
+        } else if (Param.isBlank(name)) {
+            return new Item();
+        } else if (capacity == null) {
+            return CaseReturn.getProduct();
+        } else {
+            mvar_0 = capacity.invalid0();
+            if (mvar_0 != null) {
+                return CaseReturn.getProduct();
+            } else {
+                System.out.println("returnPrimitive");
+                return null;
+            }
+        }
     }
 }
 ```
@@ -625,114 +623,86 @@ public Product useStaticMethod(String name, Integer id) {
 @Throw
 public class CaseInherit {
 
-    public boolean save(@NotNull String name,
-                        @Throw(NumberFormatException.class) @NumberRule(min = "0.0") double price,
-                        boolean putaway) {
-        System.out.println(name);
-        System.out.println(price);
-        System.out.println(putaway);
+    public boolean customRule(Product product, Capacity capacity) {
+        System.out.println("customRule");
         return true;
     }
 
-    @Return("null")
-    public Capacity get(@NotBlank String name,
-                        @Return({"test", "true"}) @NumberRule(min = "0") byte type) {
-        return new Capacity();
+    @Return({"test", "true"})
+    public Capacity useReturn(@NotBlank String name,
+                              @Throw Counter counter) {
+        System.out.println("useReturn");
+        return null;
     }
 
     @Variable("tmp0")
-    @Throw(value = IllegalStateException.class, message = "price error")
-    public void update(Product product,
-                       @NumberRule(min = "0.0") Double price) {
-        System.out.println(product);
-        System.out.println(price);
-    }
-
-    public boolean exist(Product product) {
-        return true;
+    @Throw(value = UnsupportedOperationException.class)
+    public void excludeParam(@Exclusive Product product,
+                             @SizeRule(min = 5) int[] ids) {
+        System.out.println("excludeParam");
     }
 
     @Exclusive
-    public int count(Product product) {
-        return 1000;
-    }
-
-    public int check(@NotNull String name,
-                     @Exclusive Product product) {
-        return 1000;
+    public int excludeMethod(@Return("-1") Product product) {
+        return 0;
     }
 }
 ```
-
 
 经过编译后方法的如下
 
-
 ```
-public boolean save(String name, double price, boolean putaway) {
-    if (name == null) {
-        throw new IllegalArgumentException("Invalid input parameter, cause name is null");
-    } else if (price < 0.0D) {
-        throw new NumberFormatException("Invalid input parameter, cause price less than 0.0");
-    } else {
-        System.out.println(name);
-        System.out.println(price);
-        System.out.println(putaway);
-        return true;
-    }
-}
-
-public Capacity get(String name, byte type) {
-    if (name == null) {
-        return null;
-    } else if (Persion.isBlank(name)) {
-        return null;
-    } else {
-        return type < 0 ? new Capacity("test", true) : new Capacity();
-    }
-}
-
-public void update(Product product, Double price) {
-    if (product == null) {
-        throw new IllegalStateException("price error, cause product is null");
-    } else {
-        String tmp0 = product.invalid0();
-        if (tmp0 != null) {
-            throw new IllegalStateException("price error, cause " + tmp0);
-        } else if (price == null) {
-            throw new IllegalStateException("price error, cause price is null");
-        } else if (price < 0.0D) {
-            throw new IllegalStateException("price error, cause price less than 0.0");
-        } else {
-            System.out.println(product);
-            System.out.println(price);
-        }
-    }
-}
-
-public boolean exist(Product product) {
+public boolean customRule(Product product, Capacity capacity) {
     if (product == null) {
         throw new IllegalArgumentException("Invalid input parameter, cause product is null");
     } else {
         String mvar_0 = product.invalid0();
         if (mvar_0 != null) {
             throw new IllegalArgumentException("Invalid input parameter, cause " + mvar_0);
+        } else if (capacity == null) {
+            throw new IllegalArgumentException("Invalid input parameter, cause capacity is null");
         } else {
-            return true;
+            mvar_0 = capacity.invalid0();
+            if (mvar_0 != null) {
+                throw new IllegalArgumentException("Invalid input parameter, cause " + mvar_0);
+            } else {
+                System.out.println("customRule");
+                return true;
+            }
         }
     }
 }
 
-public int count(Product product) {
-    return 1000;
+public Capacity useReturn(String name, Counter counter) {
+    if (name == null) {
+        return new Capacity("test", true);
+    } else if (Param.isBlank(name)) {
+        return new Capacity("test", true);
+    } else if (counter == null) {
+        throw new IllegalArgumentException("Invalid input parameter, cause counter is null");
+    } else {
+        String mvar_0 = counter.invalid0();
+        if (mvar_0 != null) {
+            throw new IllegalArgumentException("Invalid input parameter, cause " + mvar_0);
+        } else {
+            System.out.println("useReturn");
+            return null;
+        }
+    }
 }
 
-public int check(String name, Product product) {
-    if (name == null) {
-        throw new IllegalArgumentException("Invalid input parameter, cause name is null");
+public void excludeParam(Product product, int[] ids) {
+    if (ids == null) {
+        throw new UnsupportedOperationException("Invalid input parameter, cause ids is null");
+    } else if (ids.length < 5) {
+        throw new UnsupportedOperationException("Invalid input parameter, cause ids.length less than 5");
     } else {
-        return 1000;
+        System.out.println("excludeParam");
     }
+}
+
+public int excludeMethod(Product product) {
+    return 0;
 }
 ```
 

@@ -8,21 +8,16 @@ import io.moyada.medivh.annotation.*;
  **/
 public class CaseCombine {
 
-    public boolean returnPrimitive(@Return("false") @NotNull String name,
-                                   @Throw @NumberRule(min = "0") Double price) {
-        System.out.println(name);
-        System.out.println(price);
+    public boolean returnPrimitive(@Return("false") Product product,
+                                   @Throw Counter price) {
+        System.out.println("returnPrimitive");
         return true;
     }
 
-    public Capacity returnObject(@Return("null") @NotBlank String name,
-                                 @Throw @NumberRule(min = "0") byte type,
-                                 @Return({"null", "false"}) @NotNull Double price) {
-        return new Capacity();
-    }
-
-    public Product useStaticMethod(@Return(type = CaseReturn.class, staticMethod = "getProduct") @NotBlank String name,
-                                   @Throw(value = IllegalStateException.class, message = "id error") @NumberRule(min = "0") Integer id) {
+    public Product returnObject(@Throw Person person,
+                                @Return(type = CaseReturn.Item.class) @NotBlank String name,
+                                @Return(type = CaseReturn.class, staticMethod = "getProduct") Capacity capacity) {
+        System.out.println("returnPrimitive");
         return null;
     }
 }
