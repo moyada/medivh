@@ -7,7 +7,7 @@ import io.moyada.medivh.annotation.*;
  * @since 1.0
  **/
 @Throw
-public class CaseInheritance {
+public class CaseInherit {
 
     public boolean save(@NotNull String name,
                         @Throw(NumberFormatException.class) @NumberRule(min = "0.0") double price,

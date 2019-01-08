@@ -3,10 +3,11 @@ package io.moyada.medivh.regulation;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.MakerContext;
-import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.core.Element;
+import io.moyada.medivh.core.LocalVarSupport;
+import io.moyada.medivh.core.MakerContext;
 import io.moyada.medivh.core.TypeTag;
+import io.moyada.medivh.util.CTreeUtil;
 
 /**
  * 数字范围校验规则
@@ -17,24 +18,33 @@ import io.moyada.medivh.core.TypeTag;
 public class NumberRegulation extends BaseRegulation implements Regulation {
 
     // 数据类型
-    private TypeTag typeTag;
+    private final TypeTag typeTag;
 
     // 最小值
-    private Object min;
+    private final Object min;
 
     // 最大值
-    private Object max;
+    private final Object max;
+
+    private final LocalVarSupport localVarSupport;
 
     public NumberRegulation(TypeTag typeTag, Object min, Object max) {
         this.typeTag = typeTag;
         this.min = min;
         this.max = max;
+
+        this.localVarSupport = new LocalVarSupport(typeTag);
     }
 
     @Override
     JCTree.JCStatement doHandle(MakerContext makerContext, ListBuffer<JCTree.JCStatement> statements,
                                 JCTree.JCExpression self, JCTree.JCStatement action) {
         TreeMaker treeMaker = makerContext.getTreeMaker();
+
+        if (null != min && null != max) {
+            self = localVarSupport.getValue(makerContext, statements, self);
+        }
+
         JCTree.JCIf expression = null;
 
         // min logic

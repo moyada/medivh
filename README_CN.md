@@ -1,12 +1,11 @@
 # Medivh
 
 [![Build Status](https://travis-ci.org/moyada/medivh.svg?branch=master)](https://travis-ci.org/moyada/medivh)
-![version](https://img.shields.io/badge/java-%3E%3D6-red.svg)
-![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compile-yellow.svg)
-[![Maven Central](https://img.shields.io/badge/maven%20central-1.2.0-brightgreen.svg)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
+![java lifecycle](https://img.shields.io/badge/java%20lifecycle-compilation-red.svg)
+[![Maven Central](https://img.shields.io/badge/maven%20central-1.2.1-brightgreen.svg)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
 [![license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/moyada/medivh/blob/master/LICENSE)
 
-[English](README_CN.md) | 简体中文
+[English](README.md) | 简体中文
 
 Medivh是一个注解处理器，根据配置规则生成方法的入参校验逻辑。
 
@@ -17,17 +16,17 @@ Medivh是一个注解处理器，根据配置规则生成方法的入参校验�
 
 ## 特性
 
-* 支持 对象类型的非空校验。
+* 对象类型的非空校验。
 
-* 支持 byte、short、int、long、float、double 的大小校验。
+* 对基础数字类型提供大小范围校验，比如 int 和 Integer。
 
-* 支持空白字符串校验。
+* 检查 String 是否为空白字符串。
 
-* 支持 String、数组的长度校验。
+* 对 String、数组的长度进行校验。
 
-* 支持 集合、Map 的容量校验。
+* 对集合、Map 的容量进行校验。
 
-* 校验失败时可以选择抛出异常或返回数据。
+* 在校验失败时进行抛出异常或返回数据。
 
 ## 要求
 
@@ -46,7 +45,7 @@ JDK 1.6 及以上版本。
     <dependency>
         <groupId>io.github.moyada</groupId>
         <artifactId>medivh</artifactId>
-        <version>1.2.0</version>
+        <version>1.2.1</version>
         <scope>provided</scope>
     </dependency>
 <dependencies/>
@@ -56,14 +55,14 @@ JDK 1.6 及以上版本。
 
 ```
 dependencies {
-  compileOnly 'io.github.moyada:medivh:1.2.0'
+  compileOnly 'io.github.moyada:medivh:1.2.1'
   // 2.12版本以前
-  // provided 'io.github.moyada:medivh:1.2.0'
+  // provided 'io.github.moyada:medivh:1.2.1'
 }
 ```
 
 普通工程可以通过
-[![release](https://img.shields.io/badge/release-v1.2.0-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
+[![release](https://img.shields.io/badge/release-v1.2.1-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
 或
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.moyada/medivh.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.github.moyada%22%20AND%20a:%22medivh%22)
 下载最新 jar 包。
@@ -76,13 +75,13 @@ dependencies {
 | :---- | :----- | :---- |
 | @NotNull | 类字段、无参方法、方法参数 | 为对象类型的字段或返回值提供非空校验，默认定义了规则都会进行非空校验。 |
 | @Nullable | 类字段、无参方法、方法参数 | 不进行非空校验。 |
-| @NotBlank | 类字段、无参方法、方法参数 | 对 String 类型提供不可为空白字符串检测。 |
-| @SizeRule | 类字段、无参方法、方法参数 | 为 String 或 数组 或 集合 类型提供长度或大小校验。 |
-| @NumberRule | 类字段、无参方法、方法参数 | 为基础数字类型提供大小校验。 |
+| @NotBlank | 类字段、无参方法、方法参数 | 对 String 类型提供空白字符串校验规则。 |
+| @SizeRule | 类字段、无参方法、方法参数 | 为 String 或 数组 或 集合 类型提供长度或大小校验规则。 |
+| @NumberRule | 类字段、无参方法、方法参数 | 为基础数字类型提供大小校验规则。 |
 | @Throw | 类、非静态方法、方法参数 | 指定参数校验失败时抛出异常。 |
 | @Return | 非静态方法、方法参数 | 指定参数校验失败时返回数据。 |
 | @Exclusive | 方法、方法参数 | 禁用校验逻辑。 |
-| @Variable | 非静态方法、类 | 修改当前作用域下校验逻辑产生的变量名和方法名。 |
+| @Variable | 类、方法 | 修改当前作用域下校验逻辑产生的变量名和方法名。 |
 
 * 使用示例见 _[这里](#示例)_ 和 _[Wiki](https://github.com/moyada/medivh/wiki)_。
 
@@ -97,6 +96,7 @@ dependencies {
 | Throw.value() | 指定抛出异常类，异常类需要拥有字符串构造方法，默认为 `IllegalArgumentException` 。 |
 | Throw.message() | 修改异常信息头。 |
 | Return.type() | 指定返回数据的类型，需为方法返回类型或子类或实现类。 |
+| Return.staticMethod() | 指定使用静态方法构造返回值。 |
 | Return.value() | 设置返回值，当返回类型为对象时需要有对应构造函数。 |
 
 ### 3. 编译项目
@@ -119,11 +119,11 @@ dependencies {
 | medivh.info.less | 配置小于校验信息，默认为 `less than` 。 |
 | medivh.info.great | 配置大于校验信息，默认为 `great than` 。 |
 | medivh.info.blank | 配置空白字符串校验信息，默认为 `is blank` 。 |
-| medivh.method.blank | 指定空白字符串校验方法，格式为 `<package>.<className>.<methodName>` ，不指定将创建 `io.moyada.medivh.support.Util` 提供校验方法。 |
+| medivh.method.blank | 指定空白字符串校验方法，格式为 `<package>.<className>.<methodName>` ，不指定将随机选取个 public 标识类创建此方法。 |
 
 ## 示例
 
-_[更多用法](https://github.com/moyada/medivh/wiki)_
+更多示例见 _[Wiki](https://github.com/moyada/medivh/wiki)_
 
 ```
 public class MyApp {
@@ -131,9 +131,10 @@ public class MyApp {
     @Throw
     public Info run(Args args,
                     @Nullable Info info,
-                    @Return({"test", "0"}) @NotBlank String name,
+                    @Return({"test", "null"}) @NotBlank String name,
                     @Return("null") @NumberRule(min = "1") int num) {
         // process
+        System.out.println("run");
         return new Info();
     }
 
@@ -188,13 +189,32 @@ public class MyApp {
                 }
 
                 if (name == null) {
-                    return new MyApp.Info("test", 0.0D);
-                } else if (Util.isBlank(name)) {
-                    return new MyApp.Info("test", 0.0D);
+                    return new MyApp.Info("test", (Double)null);
+                } else if (isBlank(name)) {
+                    return new MyApp.Info("test", (Double)null);
+                } else if (num < 1) {
+                    return null;
                 } else {
-                    return num < 1 ? null : new MyApp.Info();
+                    System.out.println("run");
+                    return new MyApp.Info();
                 }
             }
+        }
+    }
+
+    public static boolean isBlank(String str) {
+        int length = str.length();
+        if (length == 0) {
+            return true;
+        } else {
+            for(int i = 0; i < length; ++i) {
+                char ch = str.charAt(i);
+                if (ch != ' ') {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 
@@ -212,16 +232,16 @@ public class MyApp {
         }
 
         public String invalid0() {
-            if (this.name == null) {
-                return "name is null";
-            } else if (this.name.length() < 50) {
-                return "name.length() less than 50";
-            } else if (this.extra == null) {
+            if (this.extra == null) {
                 return "extra is null";
             } else if (this.extra.size() != 10) {
                 return "extra cannot equals 10";
+            } else if (this.price != null && this.price > 200.0D) {
+                return "price great than 200.0";
+            } else if (this.name == null) {
+                return "name is null";
             } else {
-                return this.price != null && this.price > 200.0D ? "price great than 200.0" : null;
+                return this.name.length() < 50 ? "name.length() less than 50" : null;
             }
         }
     }
@@ -235,12 +255,12 @@ public class MyApp {
         }
 
         public String invalid0() {
-            if (this.param == null) {
-                return "param is null";
-            } else if (this.value != null && this.value.length < 5) {
+            if (this.value != null && this.value.length < 5) {
                 return "value.length less than 5";
+            } else if (this.id > 1000) {
+                return "id great than 1000";
             } else {
-                return this.id > 1000 ? "id great than 1000" : null;
+                return this.param == null ? "param is null" : null;
             }
         }
     }

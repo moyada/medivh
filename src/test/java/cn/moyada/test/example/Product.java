@@ -20,5 +20,5 @@ public interface Product {
 
     @Nullable
     @SizeRule(min = 0)
-    List<Capacity> total();
+    List<Capacity> getStore();
 }

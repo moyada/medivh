@@ -13,27 +13,49 @@ import java.util.List;
  **/
 public class CaseReturn {
 
-    public boolean exist(@Return("false") @NotNull String name,
-                         @NumberRule(min = "0") Double price) {
+    public boolean returnPrimitive(@Return("false") @NotNull String name,
+                                   Double price) {
         System.out.println(name);
         System.out.println(price);
         return true;
     }
 
-    public int count(@Return("0") @NumberRule(min = "0") Double price) {
-        return 1000;
-    }
-
-    public Capacity get(@Return("null") @NotBlank String name,
-                        @Return({"null", "true"}) @NumberRule(min = "0") byte type) {
-        return new Capacity();
-    }
-
-    public Product find(@Return(type = Item.class) @NotBlank String name) {
+    public Integer returnBasic(@Return("0") @NumberRule(min = "0") Double price) {
         return null;
     }
 
+    public Capacity returnObject(@Return("null") @NotBlank String name,
+                                 @Return({"test", "true"}) @NumberRule(min = "0") byte type) {
+        return new Capacity();
+    }
+
+    public Product returnInterface(@Return(type = Item.class) @NotBlank String name) {
+        return null;
+    }
+
+    public Product useStaticMethod(@Return(type = CaseReturn.class, staticMethod = "getProduct") @NotBlank String name,
+                                   @Return(value = "test", type = CaseReturn.class, staticMethod = "getProduct") @NotNull Integer id) {
+        return null;
+    }
+
+    public static Product getProduct() {
+        return new Item();
+    }
+
+    public static Product getProduct(String name) {
+        return new Item(name);
+    }
+
     static class Item implements Product {
+
+        private String name;
+
+        public Item() {
+        }
+
+        public Item(String name) {
+            this.name = name;
+        }
 
         @Override
         public String getName() {
@@ -46,7 +68,7 @@ public class CaseReturn {
         }
 
         @Override
-        public List<Capacity> total() {
+        public List<Capacity> getStore() {
             return null;
         }
     }

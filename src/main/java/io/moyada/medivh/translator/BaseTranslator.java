@@ -192,7 +192,7 @@ class BaseTranslator extends TreeTranslator {
     }
 
     /**
-     * 创建新变量
+     * 创建新字段
      * @param name
      * @param flags
      * @param type
@@ -205,6 +205,14 @@ class BaseTranslator extends TreeTranslator {
                 makerContext.findClass(type), init);
     }
 
+    /**
+     * 创建原始类型字段
+     * @param name
+     * @param flags
+     * @param typeTag
+     * @param init
+     * @return
+     */
     JCTree.JCVariableDecl newVar(String name, long flags, TypeTag typeTag, JCTree.JCExpression init) {
         return treeMaker.VarDef(treeMaker.Modifiers(flags),
                 CTreeUtil.getName(namesInstance, name),
@@ -217,67 +225,83 @@ class BaseTranslator extends TreeTranslator {
      * @param values
      * @return
      */
-    List<JCTree.JCExpression> getParamType(Symbol.ClassSymbol classSymbol, String[] values) {
+    List<JCTree.JCExpression> getParamType(Symbol.ClassSymbol classSymbol, boolean isConstruct, String[] values) {
         int length = values.length;
 
         List<JCTree.JCExpression> param = null;
 
         boolean findParam;
         for (Symbol element : classSymbol.getEnclosedElements()) {
+
             // 构造方法
-            if (element.isConstructor()) { // && (element.flags() & Flags.PUBLIC) != 0) {
-                Symbol.MethodSymbol methodSymbol = (Symbol.MethodSymbol) element;
-                List<Symbol.VarSymbol> parameters = methodSymbol.getParameters();
-                // 参数个数一致
-                if (parameters.size() != values.length) {
+            if (isConstruct) {
+                if (!element.isConstructor()) {
                     continue;
                 }
+            } else {
+                if (element.getKind() != ElementKind.METHOD) {
+                    continue;
+                }
+                if (!element.isStatic()) {
+                    continue;
+                }
+//                if ((element.flags() & Flags.PUBLIC) != 0) {
+//                    continue;
+//                }
+            }
 
-                findParam = true;
-                for (int i = 0; findParam && i < length; i++) {
-                    Symbol.VarSymbol varSymbol = parameters.get(i);
-                    String value = values[i];
+            Symbol.MethodSymbol methodSymbol = (Symbol.MethodSymbol) element;
+            List<Symbol.VarSymbol> parameters = methodSymbol.getParameters();
 
-                    JCTree.JCExpression argsVal;
+            // 参数个数一致
+            if (parameters.size() != values.length) {
+                continue;
+            }
 
-                    String typeName = CTreeUtil.getOriginalTypeName(varSymbol);
-                    TypeTag baseType = TypeUtil.getBaseType(typeName);
+            findParam = true;
+            for (int i = 0; findParam && i < length; i++) {
+                Symbol.VarSymbol varSymbol = parameters.get(i);
+                String value = values[i];
 
-                    if (CheckUtil.isNull(value)) {
-                        if (TypeUtil.isPrimitive(typeName)) {
-                            param = null;
-                            findParam = false;
-                            continue;
-                        }
-                        argsVal = makerContext.nullNode;
-                    } else {
-                        // 不支持复杂对象
-                        if (null == baseType) {
-                            param = null;
-                            findParam = false;
-                            continue;
-                        }
+                JCTree.JCExpression argsVal;
 
-                        Object data = CTreeUtil.getValue(baseType, value);
-                        // 数据与类型不匹配
-                        if (null == data) {
-                            param = null;
-                            findParam = false;
-                            continue;
-                        }
-                        argsVal = CTreeUtil.newElement(treeMaker, baseType, data);
+                String typeName = CTreeUtil.getOriginalTypeName(varSymbol);
+                TypeTag baseType = TypeUtil.getBaseType(typeName);
+
+                if (CheckUtil.isNull(value)) {
+                    if (TypeUtil.isPrimitive(typeName)) {
+                        param = null;
+                        findParam = false;
+                        continue;
+                    }
+                    argsVal = makerContext.nullNode;
+                } else {
+                    // 不支持复杂对象
+                    if (null == baseType) {
+                        param = null;
+                        findParam = false;
+                        continue;
                     }
 
-                    if (null == param) {
-                        param = List.of(argsVal);
-                    } else {
-                        param = param.append(argsVal);
+                    Object data = CTreeUtil.getValue(baseType, value);
+                    // 数据与类型不匹配
+                    if (null == data) {
+                        param = null;
+                        findParam = false;
+                        continue;
                     }
+                    argsVal = CTreeUtil.newElement(treeMaker, baseType, data);
                 }
 
-                if (param != null) {
-                    return param;
+                if (null == param) {
+                    param = List.of(argsVal);
+                } else {
+                    param = param.append(argsVal);
                 }
+            }
+
+            if (param != null) {
+                return param;
             }
         }
 

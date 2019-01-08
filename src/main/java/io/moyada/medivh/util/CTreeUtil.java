@@ -42,12 +42,27 @@ public final class CTreeUtil {
     }
 
     /**
+     * 获取注解数据
+     * @param symbol
+     * @param className
+     * @param attrKey
+     * @return
+     */
+    public static String getAnnotationValue(Symbol symbol, String className, String attrKey) {
+        Attribute.Compound annotationAttr = getAnnotationAttr(symbol.getAnnotationMirrors(), className);
+        if (null == annotationAttr) {
+            return null;
+        }
+        return getAnnotationValue(annotationAttr, attrKey);
+    }
+
+    /**
      * 获取注解类型属性
      * @param ms
      * @param className
      * @return
      */
-    public static Attribute.Compound getAnnotationAttr(List<Attribute.Compound> ms, String className) {
+    private static Attribute.Compound getAnnotationAttr(List<Attribute.Compound> ms, String className) {
         for (Attribute.Compound m : ms) {
             if (!m.getAnnotationType().toString().equals(className)) {
                 continue;
@@ -64,7 +79,7 @@ public final class CTreeUtil {
      * @param key
      * @return
      */
-    public static String getAnnotationValue(Attribute.Compound annotationAttr, String key) {
+    private static String getAnnotationValue(Attribute.Compound annotationAttr, String key) {
         if (null == annotationAttr) {
             return null;
         }

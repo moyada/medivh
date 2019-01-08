@@ -124,15 +124,15 @@ public final class CheckUtil {
 
     /**
      * 获取变量值，无效则返回默认值
-     * @param verify
+     * @param variable
      * @param defaultValue
      * @return
      */
-    private static String getValue(Variable verify, String defaultValue) {
-        if (null == verify) {
+    private static String getValue(Variable variable, String defaultValue) {
+        if (null == variable) {
             return defaultValue;
         }
-        String var = verify.value();
+        String var = variable.value();
         if (var.isEmpty()) {
             return defaultValue;
         }

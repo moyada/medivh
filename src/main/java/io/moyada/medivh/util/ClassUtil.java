@@ -1,6 +1,7 @@
 package io.moyada.medivh.util;
 
 import com.sun.tools.javac.main.JavaCompiler;
+import sun.misc.Unsafe;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
@@ -23,6 +24,7 @@ public final class ClassUtil {
     final static byte VERSION_6 = 0;
     final static byte VERSION_7 = 1;
     final static byte VERSION_8 = 2;
+    final static byte VERSION_9 = 3;
 
     /**
      * 获取编译器版本号
@@ -117,8 +119,30 @@ public final class ClassUtil {
                 return VERSION_6;
             case 7:
                 return VERSION_7;
-            default:
+            case 8:
                 return VERSION_8;
+            default:
+                return VERSION_9;
+        }
+    }
+
+    /**
+     * 关闭 JAVA9 使用 Unsafe 警告
+     */
+    public static void disableJava9SillyWarning() {
+        if (VERSION < VERSION_9) {
+            return;
+        }
+        try {
+            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
+            theUnsafe.setAccessible(true);
+            Unsafe u = (Unsafe) theUnsafe.get(null);
+
+            Class<?> cls = Class.forName("jdk.internal.module.IllegalAccessLogger");
+            Field logger = cls.getDeclaredField("logger");
+            u.putObjectVolatile(cls, u.staticFieldOffset(logger), null);
+        } catch (Throwable t) {
+            // ignore it
         }
     }
 
@@ -182,6 +206,14 @@ public final class ClassUtil {
         return method;
     }
 
+    /**
+     * 方法调用
+     * @param method
+     * @param target
+     * @param args
+     * @param <T>
+     * @return
+     */
     final static <T> T invoke(Method method, Object target, Object... args) {
         try {
             @SuppressWarnings("unchecked")
@@ -229,6 +261,12 @@ public final class ClassUtil {
         return getValue(field, target);
     }
 
+    /**
+     * 获取对象内数据
+     * @param field
+     * @param target
+     * @return
+     */
     private final static Object getValue(Field field, Object target) {
         try {
             return field.get(target);

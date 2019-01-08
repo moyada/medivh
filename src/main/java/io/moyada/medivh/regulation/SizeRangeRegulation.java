@@ -3,9 +3,7 @@ package io.moyada.medivh.regulation;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.core.Element;
-import io.moyada.medivh.core.MakerContext;
-import io.moyada.medivh.core.TypeTag;
+import io.moyada.medivh.core.*;
 import io.moyada.medivh.util.CTreeUtil;
 
 /**
@@ -14,15 +12,20 @@ import io.moyada.medivh.util.CTreeUtil;
  * @author xueyikang
  * @since 1.0
  **/
-public class SizeRangeRegulation extends TypeRegulation implements Regulation {
+public class SizeRangeRegulation extends BaseRegulation implements Regulation {
 
-    private Integer min;
-    private Integer max;
+    private final Integer min;
+    private final Integer max;
+
+    private TypeGetSupport typeGetSupport;
+
+    private final LocalVarSupport localVarSupport;
 
     public SizeRangeRegulation(Integer min, Integer max, byte type) {
-        super(type);
         this.min = min;
         this.max = max;
+        this.localVarSupport = new LocalVarSupport(TypeTag.INT);
+        this.typeGetSupport = new TypeGetSupport(type);
     }
 
     @Override
@@ -32,7 +35,14 @@ public class SizeRangeRegulation extends TypeRegulation implements Regulation {
         TreeMaker treeMaker = makerContext.getTreeMaker();
 
         // 获取大小信息
-        JCTree.JCExpression getLength = getExpr(makerContext, self);
+        JCTree.JCExpression getLength;
+
+        if (null != min && null != max) {
+            getLength = typeGetSupport.getExpr(makerContext, self);
+            getLength = localVarSupport.getValue(makerContext, statements, getLength);
+        } else {
+            getLength = typeGetSupport.getExpr(makerContext, self);
+        }
 
         JCTree.JCIf expression = null;
 
@@ -77,6 +87,6 @@ public class SizeRangeRegulation extends TypeRegulation implements Regulation {
 
     @Override
     String buildInfo(String fieldName) {
-        return fieldName + getMode() + " ";
+        return fieldName + typeGetSupport.getMode() + " ";
     }
 }

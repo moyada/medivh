@@ -93,7 +93,7 @@ public abstract class BaseRegulation implements Regulation {
                 action = makerContext.newMsgThrow(message, actionData.getClassName());
                 break;
             default:
-                action = makerContext.returnStr(info);
+                action = makerContext.Return(TypeTag.CLASS, info);
         }
         return action;
     }

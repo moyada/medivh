@@ -62,8 +62,40 @@ public class MakerContext {
         mapSymbol = javacElements.getTypeElement(Map.class.getName());
     }
 
-    public JCTree.JCReturn returnStr(String info) {
-        return treeMaker.Return(CTreeUtil.newElement(treeMaker, TypeTag.CLASS, info));
+    /**
+     * 创建临时变量
+     * @param name
+     * @param type
+     * @param init
+     * @return
+     */
+    public JCTree.JCVariableDecl newLocalVar(String name, String type, JCTree.JCExpression init) {
+        return treeMaker.VarDef(treeMaker.Modifiers(0L),
+                CTreeUtil.getName(namesInstance, name),
+                findClass(type), init);
+    }
+
+    /**
+     * 创建原始类型临时变量
+     * @param name
+     * @param typeTag
+     * @param init
+     * @return
+     */
+    public JCTree.JCVariableDecl newLocalVar(String name, TypeTag typeTag, JCTree.JCExpression init) {
+        return treeMaker.VarDef(treeMaker.Modifiers(0L),
+                CTreeUtil.getName(namesInstance, name),
+                CTreeUtil.getPrimitiveType(treeMaker, typeTag), init);
+    }
+
+    /**
+     * 返回元素
+     * @param typeTag
+     * @param value
+     * @return
+     */
+    public JCTree.JCReturn Return(TypeTag typeTag, Object value) {
+        return treeMaker.Return(CTreeUtil.newElement(treeMaker, typeTag, value));
     }
 
     /**
@@ -95,7 +127,7 @@ public class MakerContext {
      * @param name
      * @return
      */
-    public JCTree.JCFieldAccess getField(JCTree.JCExpression field, String name) {
+    public JCTree.JCFieldAccess Select(JCTree.JCExpression field, String name) {
         return treeMaker.Select(field, CTreeUtil.getName(namesInstance, name));
     }
 
@@ -108,7 +140,7 @@ public class MakerContext {
      * @return
      */
     public JCTree.JCMethodInvocation getMethod(JCTree.JCExpression field, String method, List<JCTree.JCExpression> paramArgs) {
-        return treeMaker.Apply(null, getField(field, method), paramArgs);
+        return treeMaker.Apply(null, Select(field, method), paramArgs);
     }
 
     /**

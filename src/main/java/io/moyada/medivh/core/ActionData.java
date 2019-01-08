@@ -8,13 +8,13 @@ package io.moyada.medivh.core;
 public class ActionData {
 
     // 动作模式
-    private byte actionMode;
+    private final byte actionMode;
 
     // 类名
-    private String className;
+    private final String className;
 
     // 信息
-    private String info;
+    private final String info;
 
     public ActionData(byte actionMode, String className, String info) {
         this.actionMode = actionMode;

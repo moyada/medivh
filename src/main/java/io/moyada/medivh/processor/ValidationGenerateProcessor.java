@@ -9,10 +9,11 @@ import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
 import io.moyada.medivh.annotation.*;
 import io.moyada.medivh.core.MakerContext;
+import io.moyada.medivh.translator.CustomRuleTranslator;
 import io.moyada.medivh.translator.UtilMethodTranslator;
 import io.moyada.medivh.translator.ValidationTranslator;
-import io.moyada.medivh.translator.VerificationTranslator;
 import io.moyada.medivh.util.CheckUtil;
+import io.moyada.medivh.util.ClassUtil;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
@@ -33,7 +34,7 @@ import java.util.Set;
  * @author xueyikang
  * @since 0.0.1
  **/
-public class ValidationProcessor extends AbstractProcessor {
+public class ValidationGenerateProcessor extends AbstractProcessor {
 
     private Messager messager;
 
@@ -44,11 +45,13 @@ public class ValidationProcessor extends AbstractProcessor {
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
 
+        ClassUtil.disableJava9SillyWarning();
+
         this.context = ((JavacProcessingEnvironment) processingEnv).getContext();
         this.trees = Trees.instance(processingEnv);
         this.messager = processingEnv.getMessager();
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "start validate processor");
+        messager.printMessage(Diagnostic.Kind.NOTE, "start generated validation processor");
     }
 
     @Override
@@ -73,14 +76,14 @@ public class ValidationProcessor extends AbstractProcessor {
         createUtilMethod(rootElements, makerContext);
 
         // 校验方法生成器
-        TreeTranslator translator = new ValidationTranslator(makerContext, messager);
+        TreeTranslator translator = new CustomRuleTranslator(makerContext, messager);
         for (Element element : ruleClass) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
         }
 
         // 校验逻辑生成器
-        translator = new VerificationTranslator(makerContext, messager);
+        translator = new ValidationTranslator(makerContext, messager);
         for (Element element : methods) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
@@ -271,7 +274,7 @@ public class ValidationProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        Set<String> annotationTypes = new HashSet<String>(8, 1.0F);
+        Set<String> annotationTypes = new HashSet<String>(16, 1.0F);
         annotationTypes.add(Throw.class.getName());
         annotationTypes.add(Return.class.getName());
         annotationTypes.add(Nullable.class.getName());
@@ -280,6 +283,7 @@ public class ValidationProcessor extends AbstractProcessor {
         annotationTypes.add(NumberRule.class.getName());
         annotationTypes.add(SizeRule.class.getName());
         annotationTypes.add(Variable.class.getName());
+        annotationTypes.add(Exclusive.class.getName());
         return annotationTypes;
     }
 

@@ -4,6 +4,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.core.MakerContext;
+import io.moyada.medivh.core.TypeGetSupport;
 import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.core.Element;
 import io.moyada.medivh.core.TypeTag;
@@ -13,12 +14,14 @@ import io.moyada.medivh.core.TypeTag;
  * @author xueyikang
  * @since 1.0
  **/
-public class EqualsRegulation extends TypeRegulation implements Regulation {
+public class EqualsRegulation extends BaseRegulation implements Regulation {
 
     // 类型
     private TypeTag typeTag;
     // 值对象
     private Object value;
+
+    private TypeGetSupport typeGetSupport;
 
     // 值语句
     private JCTree.JCExpression valueExpr;
@@ -31,7 +34,6 @@ public class EqualsRegulation extends TypeRegulation implements Regulation {
     }
 
     public EqualsRegulation(byte type, TypeTag typeTag, Object value, boolean equals) {
-        super(type);
         this.typeTag = typeTag;
         this.value = value;
         if (equals) {
@@ -39,6 +41,7 @@ public class EqualsRegulation extends TypeRegulation implements Regulation {
         } else {
             this.compareTag = TypeTag.NE;
         }
+        this.typeGetSupport = new TypeGetSupport(type);
     }
 
     @Override
@@ -50,7 +53,7 @@ public class EqualsRegulation extends TypeRegulation implements Regulation {
         JCTree.JCExpression rival = getValue(treeMaker);
 
         JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, compareTag,
-                getExpr(makerContext, self), rival);
+                typeGetSupport.getExpr(makerContext, self), rival);
         return treeMaker.If(condition, action, null);
     }
 

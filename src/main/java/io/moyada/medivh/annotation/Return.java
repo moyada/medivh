@@ -25,4 +25,10 @@ public @interface Return {
      * @return
      */
     Class type() default Object.class;
+
+    /**
+     * 使用静态方法创建返回值
+     * @return
+     */
+    String staticMethod() default "";
 }

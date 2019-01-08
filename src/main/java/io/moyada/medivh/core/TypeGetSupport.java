@@ -1,8 +1,7 @@
-package io.moyada.medivh.regulation;
+package io.moyada.medivh.core;
 
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
-import io.moyada.medivh.core.MakerContext;
 import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.util.TypeUtil;
 
@@ -11,12 +10,12 @@ import io.moyada.medivh.util.TypeUtil;
  * @author xueyikang
  * @since 1.0
  **/
-public abstract class TypeRegulation extends BaseRegulation {
+public class TypeGetSupport {
 
     // 类型
-    private byte type;
+    private final byte type;
 
-    public TypeRegulation(byte type) {
+    public TypeGetSupport(byte type) {
         this.type = type;
     }
 
@@ -24,7 +23,7 @@ public abstract class TypeRegulation extends BaseRegulation {
      * 取值方式
      * @return
      */
-    final String getMode() {
+    public final String getMode() {
         return TypeUtil.getMode(type);
     }
 
@@ -34,9 +33,9 @@ public abstract class TypeRegulation extends BaseRegulation {
      * @param origin
      * @return
      */
-    final JCTree.JCExpression getExpr(MakerContext makerContext, JCTree.JCExpression origin) {
-
+    public final JCTree.JCExpression getExpr(MakerContext makerContext, JCTree.JCExpression origin) {
         TreeMaker treeMaker = makerContext.getTreeMaker();
+
         // 获取大小信息
         JCTree.JCExpression out;
 
@@ -45,15 +44,14 @@ public abstract class TypeRegulation extends BaseRegulation {
                 out = treeMaker.Exec(makerContext.getMethod(origin, "length", CTreeUtil.emptyParam())).getExpression();
                 break;
             case TypeUtil.ARRAY:
-                out = makerContext.getField(origin, "length");
+                out = makerContext.Select(origin, "length");
                 break;
             case TypeUtil.COLLECTION:
                 out = treeMaker.Exec(makerContext.getMethod(origin, "size", CTreeUtil.emptyParam())).getExpression();
                 break;
             default:
-                out = origin;
+                return origin;
         }
-
         return out;
     }
 }
