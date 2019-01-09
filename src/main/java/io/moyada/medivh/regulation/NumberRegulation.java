@@ -4,7 +4,6 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.support.ElementOptions;
-import io.moyada.medivh.support.LocalVarSupport;
 import io.moyada.medivh.support.ExpressionMaker;
 import io.moyada.medivh.support.TypeTag;
 import io.moyada.medivh.util.CTreeUtil;
@@ -26,25 +25,16 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
     // 最大值
     private final Object max;
 
-    // 临时变量支持
-    private final LocalVarSupport localVarSupport;
-
     public NumberRegulation(TypeTag typeTag, Object min, Object max) {
         this.typeTag = typeTag;
         this.min = min;
         this.max = max;
-
-        this.localVarSupport = new LocalVarSupport(typeTag);
     }
 
     @Override
     JCTree.JCStatement doHandle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
                                 JCTree.JCExpression self, JCTree.JCStatement action) {
         TreeMaker treeMaker = expressionMaker.getTreeMaker();
-
-        if (null != min && null != max) {
-            self = localVarSupport.getValue(expressionMaker, statements, self);
-        }
 
         JCTree.JCIf expression = null;
 

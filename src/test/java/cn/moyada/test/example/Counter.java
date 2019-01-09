@@ -8,7 +8,7 @@ import io.moyada.medivh.annotation.NumberRule;
  **/
 public class Counter {
 
-    @NumberRule(min = "0", max = "1000")
+    @NumberRule(min = "0")
     private int count;
 
     @NumberRule(min = "-20.5", max = "100")

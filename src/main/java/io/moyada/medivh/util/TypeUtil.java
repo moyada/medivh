@@ -47,10 +47,10 @@ public final class TypeUtil {
         MIN.put(LONG, Long.MIN_VALUE);
         MAX.put(LONG, Long.MAX_VALUE);
 
-        MIN.put(FLOAT, Float.MIN_VALUE);
+        MIN.put(FLOAT, -Float.MAX_VALUE);
         MAX.put(FLOAT, Float.MAX_VALUE);
 
-        MIN.put(DOUBLE, Double.MIN_VALUE);
+        MIN.put(DOUBLE, -Double.MAX_VALUE);
         MAX.put(DOUBLE, Double.MAX_VALUE);
     }
 
@@ -241,8 +241,8 @@ public final class TypeUtil {
         }
 
         Object min = MIN.get(type);
-        int result = compare(type, min, value);
-        if (result == -1) {
+        int result = compare(type, value, min);
+        if (result == 1) {
             return value;
         }
         return null;
@@ -330,19 +330,9 @@ public final class TypeUtil {
             case LONG:
                 return m1.longValue() < m2.longValue() ? -1 : m1.longValue() > m2.longValue() ? 1 : 0;
             case FLOAT:
-                float floatValue = m2.floatValue();
-                if (floatValue == 0) {
-                    floatValue += 0.000000001F;
-                }
-                return Float.compare(m1.floatValue(), floatValue);
-//                return Float.compare(m1.floatValue(), Math.abs(m2.floatValue()));
+                return Float.compare(m1.floatValue(), m2.floatValue());
             case DOUBLE:
-                double doubleValue = m2.doubleValue();
-                if (doubleValue == 0) {
-                    doubleValue += 0.000000000000001D;
-                }
-                return Double.compare(m1.doubleValue(), doubleValue);
-//                return Double.compare(m1.doubleValue(), Math.abs(m2.doubleValue()));
+                return Double.compare(m1.doubleValue(), m2.doubleValue());
         }
         return 0;
     }

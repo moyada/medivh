@@ -13,7 +13,7 @@ A simple, automatic, and flexible method parameter check library for the Java pl
 ## Motivation
 
 We often need to check the method parameters, especially in remote invocation.
-This library can save time and effort in this respect, modify the syntax tree at `compilation phase` by configure annotations, add parameter validation to method.
+This library can save time and effort in this respect, modify the syntax tree at `compilation phase` by configure annotations, and add parameter validation to method.
 
 ## Features
 
