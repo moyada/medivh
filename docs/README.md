@@ -88,8 +88,8 @@ Use compile commands of build tool, such as `mvn compile` or `gradle build`.
  
 Or use java compile command, such as `javac -cp medivh.jar MyApp.java`.
 
-After compilation phase, the class file that configures the rule will create a `validation` method, which is called by method parameter validation logic.
-The method of configure parameter verification will adds verify logic in front of the method body.
+After compilation phase, the class file that configures the rule will create a `validation` method that provide to method validation logic, 
+and methods that require parameter verify will add validation logic in front of the method body.
 
 ## Configuration option
 
@@ -124,6 +124,8 @@ Attribute Description
 | max() | String | set the maximum allowed value. |
 
 ```
+import io.moyada.medivh.annotation.NumberRule;
+
 public class Counter {
 
     @NumberRule(min = "0", max = "1000")
@@ -137,7 +139,7 @@ public class Counter {
 }
 ```
 
-The compiled verification method will be:
+The compiled `validation` method will be:
 
 ```
 public String invalid0() {
@@ -169,6 +171,8 @@ Attribute Description
 | max() | int | set the maximum allowed length or capacity. |
 
 ```
+import io.moyada.medivh.annotation.SizeRule;
+
 public class Capacity {
 
     public Capacity() {
@@ -196,7 +200,7 @@ public class Capacity {
 }
 ```
 
-The compiled verification method will be:
+The compiled `validation` method will be:
 
 ```
 public String invalid0() {
@@ -237,6 +241,8 @@ public String invalid0() {
 
 
 ```
+import io.moyada.medivh.annotation.NotBlank;
+
 public abstract class Person {
 
     @NotBlank
@@ -244,7 +250,7 @@ public abstract class Person {
 }
 ```
 
-The compiled verification method will be:
+The compiled `validation` method will be:
 
 ```
 public String invalid0() {
@@ -281,6 +287,9 @@ public static boolean isBlank(String str) {
 
 
 ```
+import io.moyada.medivh.annotation.NotNull;
+import io.moyada.medivh.annotation.Variable;
+
 @Variable("check0")
 public class Param {
 
@@ -292,7 +301,7 @@ public class Param {
 }
 ```
 
-The compiled verification method will be:
+The compiled `validation` method will be:
 
 ```
 public String check0() {
@@ -312,6 +321,8 @@ public String check0() {
 
 
 ```
+import io.moyada.medivh.annotation.Nullable;
+
 public interface Product {
 
     @Nullable
@@ -330,12 +341,12 @@ public interface Product {
 }
 ```
 
-The compiled verification method will be:
+The compiled `validation` method will be:
 
 ```
 default String invalid0() {
     String getName = this.getType();
-    if (getName != null && Param.isBlank(getName)) {
+    if (getName != null && Person.isBlank(getName)) {
         return "getType is blank";
     } else {
         long getId = this.getId();
@@ -373,6 +384,8 @@ Attribute Description
 | message() | String | modify the message head of thrown exception. |
 
 ```
+import io.moyada.medivh.annotation.Throw;
+
 public class CaseThrow {
 
     public boolean hasReturn(@Throw @NotNull String name,
@@ -442,6 +455,8 @@ Attribute Description
 | value() | Array of String | set the return data, need to have a correspond constructor when return type is object. |
 
 ```
+import io.moyada.medivh.annotation.Return;
+
 public class CaseReturn {
 
     public boolean returnPrimitive(@Return("false") @NotNull String name,
@@ -537,7 +552,7 @@ public Capacity returnObject(String name, Byte type) {
 public Product returnInterface(String name) {
     if (name == null) {
         return new CaseReturn.Item();
-    } else if (Param.isBlank(name)) {
+    } else if (Person.isBlank(name)) {
         return new CaseReturn.Item();
     } else {
         System.out.println("returnInterface");
@@ -612,7 +627,7 @@ public Product returnObject(Person person, String name, Capacity capacity) {
             throw new IllegalArgumentException("Invalid input parameter, cause " + mvar_0);
         } else if (name == null) {
             return new Item();
-        } else if (Param.isBlank(name)) {
+        } else if (Person.isBlank(name)) {
             return new Item();
         } else if (capacity == null) {
             return CaseReturn.getProduct();
@@ -632,6 +647,8 @@ public Product returnObject(Person person, String name, Capacity capacity) {
 #### Inheritance
 
 ```
+import io.moyada.medivh.annotation.Exclusive;
+
 @Throw
 public class CaseInherit {
 
@@ -688,7 +705,7 @@ public boolean customRule(Product product, Capacity capacity) {
 public Capacity useReturn(String name, Counter counter) {
     if (name == null) {
         return new Capacity("test", true);
-    } else if (Param.isBlank(name)) {
+    } else if (Person.isBlank(name)) {
         return new Capacity("test", true);
     } else if (counter == null) {
         throw new IllegalArgumentException("Invalid input parameter, cause counter is null");

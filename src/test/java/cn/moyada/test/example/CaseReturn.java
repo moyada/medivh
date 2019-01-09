@@ -60,6 +60,11 @@ public class CaseReturn {
         }
 
         @Override
+        public long getId() {
+            return 0;
+        }
+
+        @Override
         public String getName() {
             return null;
         }

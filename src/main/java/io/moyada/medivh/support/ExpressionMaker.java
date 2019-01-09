@@ -98,7 +98,7 @@ public class ExpressionMaker {
      * @param flags 字段标记
      * @param type 类名称
      * @param init 初始值
-     * @return
+     * @return 变量元素
      */
     public JCTree.JCVariableDecl newVar(String name, long flags, String type, JCTree.JCExpression init) {
         return newVar(name, flags, findClass(type), init);
@@ -110,7 +110,7 @@ public class ExpressionMaker {
      * @param flags 字段标记
      * @param typeTag 类型标签
      * @param init 初始值
-     * @return
+     * @return 变量元素
      */
     public JCTree.JCVariableDecl newVar(String name, long flags, TypeTag typeTag, JCTree.JCExpression init) {
         return newVar(name, flags, CTreeUtil.getPrimitiveType(treeMaker, typeTag), init);

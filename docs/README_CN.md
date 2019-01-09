@@ -88,7 +88,7 @@ dependencies {
  
 或者使用 Java 命令进行编译，如 `javac -cp medivh.jar MyApp.java`
 
-经过编译期，配置规则注解的类文件将会创建 `验证` 方法，由参数校验逻辑调用，配置参数校验的方法则会在方法体前添加校验逻辑。
+经过编译期，配置规则注解的类文件将会创建 `验证` 方法，提供参数校验逻辑调用，而需要参数校验的方法则会在方法体前添加校验逻辑。
 
 ## 系统可选参数
 
@@ -122,6 +122,8 @@ dependencies {
 | max() | 字符串 | 设置允许的最大值。 |
 
 ```
+import io.moyada.medivh.annotation.NumberRule;
+
 public class Counter {
 
     @NumberRule(min = "0", max = "1000")
@@ -167,6 +169,8 @@ public String invalid0() {
 | max() | 整数 | 设置允许的最大长度或容量。 |
 
 ```
+import io.moyada.medivh.annotation.SizeRule;
+
 public class Capacity {
 
     public Capacity() {
@@ -235,6 +239,8 @@ public String invalid0() {
 
 
 ```
+import io.moyada.medivh.annotation.NotBlank;
+
 public abstract class Person {
 
     @NotBlank
@@ -279,6 +285,9 @@ public String invalid0() {
 
 
 ```
+import io.moyada.medivh.annotation.NotNull;
+import io.moyada.medivh.annotation.Variable;
+
 @Variable("check0")
 public class Param {
 
@@ -310,6 +319,8 @@ public String check0() {
 
 
 ```
+import io.moyada.medivh.annotation.Nullable;
+
 public interface Product {
 
     @Nullable
@@ -333,7 +344,7 @@ public interface Product {
 ```
 default String invalid0() {
     String getName = this.getType();
-    if (getName != null && Param.isBlank(getName)) {
+    if (getName != null && Person.isBlank(getName)) {
         return "getType is blank";
     } else {
         long getId = this.getId();
@@ -370,6 +381,8 @@ default String invalid0() {
 | message() | 字符串 | 修改异常信息头。 |
 
 ```
+import io.moyada.medivh.annotation.Throw;
+
 public class CaseThrow {
 
     public boolean hasReturn(@Throw @NotNull String name,
@@ -439,6 +452,8 @@ public void nonReturn(Product product, List<String> param) {
 | value() | 字符串数组 | 设置返回值，当返回类型为对象时需要有对应构造函数。 |
 
 ```
+import io.moyada.medivh.annotation.Return;
+
 public class CaseReturn {
 
     public boolean returnPrimitive(@Return("false") @NotNull String name,
@@ -534,7 +549,7 @@ public Capacity returnObject(String name, Byte type) {
 public Product returnInterface(String name) {
     if (name == null) {
         return new CaseReturn.Item();
-    } else if (Param.isBlank(name)) {
+    } else if (Person.isBlank(name)) {
         return new CaseReturn.Item();
     } else {
         System.out.println("returnInterface");
@@ -608,7 +623,7 @@ public Product returnObject(Person person, String name, Capacity capacity) {
             throw new IllegalArgumentException("Invalid input parameter, cause " + mvar_0);
         } else if (name == null) {
             return new Item();
-        } else if (Param.isBlank(name)) {
+        } else if (Person.isBlank(name)) {
             return new Item();
         } else if (capacity == null) {
             return CaseReturn.getProduct();
@@ -628,6 +643,8 @@ public Product returnObject(Person person, String name, Capacity capacity) {
 #### 继承使用
 
 ```
+import io.moyada.medivh.annotation.Exclusive;
+
 @Throw
 public class CaseInherit {
 
@@ -684,7 +701,7 @@ public boolean customRule(Product product, Capacity capacity) {
 public Capacity useReturn(String name, Counter counter) {
     if (name == null) {
         return new Capacity("test", true);
-    } else if (Param.isBlank(name)) {
+    } else if (Person.isBlank(name)) {
         return new Capacity("test", true);
     } else if (counter == null) {
         throw new IllegalArgumentException("Invalid input parameter, cause counter is null");
