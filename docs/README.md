@@ -141,19 +141,16 @@ The compiled verification method will be:
 
 ```
 public String invalid0() {
-    if (this.lastest == null) {
+    if (this.type != 1) {
+        return "type cannot equals 1";
+    } else if (this.lastest == null) {
         return "lastest is null";
     } else if (this.lastest > 100.0D) {
         return "lastest great than 100.0";
-    } else if (this.type != 1) {
-        return "type cannot equals 1";
+    } else if (this.lastest < -20.5D) {
+        return "lastest less than -20.5";
     } else {
-        int var$3 = this.count;
-        if (var$3 > 1000) {
-            return "count great than 1000";
-        } else {
-            return var$3 < 0 ? "count less than 0" : null;
-        }
+        return this.count < 0 ? "count less than 0" : null;
     }
 }
 ```
@@ -203,29 +200,29 @@ The compiled verification method will be:
 
 ```
 public String invalid0() {
-    Map<String, Integer> getEntry = this.getEntry();
-    if (getEntry == null) {
-        return "getEntry is null";
-    } else if (getEntry.size() != 10) {
-        return "getEntry cannot equals 10";
+    byte[] getTypes = this.getTypes();
+    if (getTypes == null) {
+        return "getTypes is null";
+    } else if (getTypes.length < 1) {
+        return "getTypes.length less than 1";
     } else {
-        byte[] getTypes = this.getTypes();
-        if (getTypes == null) {
-            return "getTypes is null";
-        } else if (getTypes.length < 1) {
-            return "getTypes.length less than 1";
+        Map<String, Integer> getEntry = this.getEntry();
+        if (getEntry == null) {
+            return "getEntry is null";
+        } else if (getEntry.size() != 10) {
+            return "getEntry cannot equals 10";
+        } else if (this.counters == null) {
+            return "counters is null";
+        } else if (this.counters.size() > 200) {
+            return "counters.size() great than 200";
         } else if (this.type == null) {
             return "type is null";
         } else {
             int var$3 = this.type.length();
             if (var$3 > 50) {
                 return "type.length() great than 50";
-            } else if (var$3 < 0) {
-                return "type.length() less than 0";
-            } else if (this.counters == null) {
-                return "counters is null";
             } else {
-                return this.counters.size() > 200 ? "counters.size() great than 200" : null;
+                return var$3 < 0 ? "type.length() less than 0" : null;
             }
         }
     }
@@ -317,6 +314,10 @@ public String check0() {
 ```
 public interface Product {
 
+    @Nullable
+    @NumberRule(min = "-5", max = "80")
+    long getId();
+    
     String getName();
 
     @Nullable
@@ -333,16 +334,23 @@ The compiled verification method will be:
 
 ```
 default String invalid0() {
-    List<Capacity> getStore = this.getStore();
-    if (getStore != null && getStore.size() < 0) {
-        return "getStore.size() less than 0";
+    String getName = this.getType();
+    if (getName != null && Param.isBlank(getName)) {
+        return "getType is blank";
     } else {
-        String getName = this.getType();
-        if (getName != null && Person.isBlank(getName)) {
-            return "getType is blank";
+        long getId = this.getId();
+        if (getId > 80L) {
+            return "getId great than 80";
+        } else if (getId < -5L) {
+            return "getId less than -5";
         } else {
             getName = this.getName();
-            return getName == null ? "getName is null" : null;
+            if (getName == null) {
+                return "getName is null";
+            } else {
+                List<Capacity> getStore = this.getStore();
+                return getStore != null && getStore.size() < 0 ? "getStore.size() less than 0" : null;
+            }
         }
     }
 }
