@@ -31,8 +31,8 @@ public final class TypeUtil {
     private static final char FLOAT = 'F';
     private static final char DOUBLE = 'D';
 
-    private static final Map<Character, Object> MIN = new HashMap<Character, Object>();
-    private static final Map<Character, Object> MAX = new HashMap<Character, Object>();
+    private static final Map<Character, Number> MIN = new HashMap<Character, Number>();
+    private static final Map<Character, Number> MAX = new HashMap<Character, Number>();
 
     static {
         MIN.put(BYTE, Byte.MIN_VALUE);
@@ -52,6 +52,10 @@ public final class TypeUtil {
 
         MIN.put(DOUBLE, -Double.MAX_VALUE);
         MAX.put(DOUBLE, Double.MAX_VALUE);
+    }
+
+    public static boolean isDecimal(char type) {
+        return type == TypeUtil.FLOAT || type == TypeUtil.DOUBLE;
     }
 
     /**
@@ -234,18 +238,9 @@ public final class TypeUtil {
      * @param input 输入数据
      * @return 获取返回数值，输入数据有误则返回 null
      */
-    public static Object getMin(char type, String input) {
-        Object value = getNumberValue(type, input);
-        if (null == value) {
-            return null;
-        }
-
-        Object min = MIN.get(type);
-        int result = compare(type, value, min);
-        if (result == 1) {
-            return value;
-        }
-        return null;
+    public static Number getMin(char type, String input) {
+        Number value = getNumberValue(type, input);
+        return getMin(type, value);
     }
 
     /**
@@ -255,15 +250,44 @@ public final class TypeUtil {
      * @return 获取返回数值，输入数据有误则返回 null
      */
     public static Object getMax(char type, String input) {
-        Object value = getNumberValue(type, input);
+        Number value = getNumberValue(type, input);
+        return getMax(type, value);
+    }
+
+    /**
+     * 获取最小数
+     * @param type 类型
+     * @param value 数值
+     * @return 获取返回数值，输入数据有误则返回 null
+     */
+    public static Number getMin(char type, Number value) {
         if (null == value) {
             return null;
         }
 
-        Object max = MAX.get(type);
+        Number min = MIN.get(type);
+        int result = compare(type, value, min);
+        if (result == 1) {
+            return getValue(type, value);
+        }
+        return null;
+    }
+
+    /**
+     * 获取最大数
+     * @param type 类型
+     * @param value 数值
+     * @return 获取返回数值，输入数据有误则返回 null
+     */
+    public static Number getMax(char type, Number value) {
+        if (null == value) {
+            return null;
+        }
+
+        Number max = MAX.get(type);
         int result = compare(type, value, max);
         if (result == -1) {
-            return value;
+            return getValue(type, value);
         }
         return null;
     }
@@ -274,12 +298,12 @@ public final class TypeUtil {
      * @param input 输入
      * @return 当输入有误则返回 null，则否返回解析数值
      */
-    static Object getNumberValue(char type, String input) {
+    static Number getNumberValue(char type, String input) {
         if (null == input) {
             return null;
         }
 
-        Object value;
+        Number value;
         try {
             switch (type) {
                 case BYTE:
@@ -311,15 +335,43 @@ public final class TypeUtil {
     }
 
     /**
+     * 映射对应类型数值
+     * @param type 类型
+     * @param value 源数值
+     * @return 数值
+     */
+    public static Number getValue(char type, Number value) {
+        switch (type) {
+            case BYTE:
+                value = value.byteValue();
+                break;
+            case SHORT:
+                value = value.shortValue();
+                break;
+            case INT:
+                value = value.intValue();
+                break;
+            case LONG:
+                value = value.longValue();
+                break;
+            case FLOAT:
+                value = value.floatValue();
+                break;
+            case DOUBLE:
+                value = value.doubleValue();
+                break;
+        }
+        return value;
+    }
+
+    /**
      * 比较转换数值
      * @param type 类型
-     * @param o1 数据1
-     * @param o2 数据2
+     * @param m1 数据1
+     * @param m2 数据2
      * @return 比较结果，0 为相等，-1 为 1比2小，1 为 1比2大
      */
-    public static int compare(char type, Object o1, Object o2) {
-        Number m1 = (Number) o1;
-        Number m2 = (Number) o2;
+    public static int compare(char type, Number m1, Number m2) {
         switch (type) {
             case BYTE:
                 return m1.byteValue() < m2.byteValue() ? -1 : m1.byteValue() > m2.byteValue() ? 1 : 0;

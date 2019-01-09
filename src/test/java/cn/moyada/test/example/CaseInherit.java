@@ -24,7 +24,7 @@ public class CaseInherit {
     @Variable("tmp0")
     @Throw(value = UnsupportedOperationException.class)
     public void excludeParam(@Exclusive Product product,
-                             @SizeRule(min = 5) int[] ids) {
+                             @Size(min = 5) int[] ids) {
         System.out.println("excludeParam");
     }
 

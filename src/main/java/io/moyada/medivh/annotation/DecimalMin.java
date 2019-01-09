@@ -3,12 +3,18 @@ package io.moyada.medivh.annotation;
 import java.lang.annotation.*;
 
 /**
- * 校验 String 对象不可为空白字符串
+ * 浮点数最小值规则
+ * 兼容整数使用
  * @author xueyikang
- * @since 1.0
+ * @since 1.3.0
  **/
 @Documented
 @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD})
 @Retention(RetentionPolicy.SOURCE)
-public @interface NotBlank {
+public @interface DecimalMin {
+
+    /**
+     * 最小值
+     */
+    double value();
 }

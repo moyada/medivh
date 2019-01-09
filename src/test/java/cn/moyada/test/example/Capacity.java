@@ -1,6 +1,6 @@
 package cn.moyada.test.example;
 
-import io.moyada.medivh.annotation.SizeRule;
+import io.moyada.medivh.annotation.Size;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,18 +19,18 @@ public class Capacity {
         this.type = type;
     }
 
-    @SizeRule(min = 0, max = 50)
+    @Size(min = 1, max = 50)
     private String type;
 
-    @SizeRule(min = 1)
+    @Size(max = 13)
     private byte[] getTypes() {
         return new byte[0];
     }
 
-    @SizeRule(max = 200)
+    @Size(min = 2)
     private List<Counter> counters;
 
-    @SizeRule(min = 10, max = 10)
+    @Size(min = 10, max = 10)
     public Map<String, Integer> getEntry() {
         return new HashMap<String, Integer>();
     }

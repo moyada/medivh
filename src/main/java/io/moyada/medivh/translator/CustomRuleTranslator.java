@@ -6,16 +6,18 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.support.ExpressionMaker;
-import io.moyada.medivh.support.RegulationBuilder;
+import com.sun.tools.javac.util.Name;
 import io.moyada.medivh.regulation.LocalVariableRegulation;
 import io.moyada.medivh.regulation.NotNullWrapperRegulation;
 import io.moyada.medivh.regulation.NullCheckRegulation;
 import io.moyada.medivh.regulation.Regulation;
+import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.RegulationBuilder;
 import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.util.CheckUtil;
 
 import javax.annotation.processing.Messager;
+import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,8 +30,18 @@ import java.util.Map;
  **/
 public class CustomRuleTranslator extends BaseTranslator {
 
-    public CustomRuleTranslator(ExpressionMaker expressionMaker, Messager messager) {
+    private Map<String, java.util.List<String>> ruleItems;
+
+    public CustomRuleTranslator(ExpressionMaker expressionMaker, Messager messager,
+                                Map<? extends Element, java.util.List<String>> classRules) {
         super(expressionMaker, messager);
+
+        ruleItems = new HashMap<String, java.util.List<String>>(classRules.size());
+        for (Map.Entry<? extends Element, java.util.List<String>> classRule : classRules.entrySet()) {
+            String className = classRule.getKey().toString();
+            java.util.List<String> items = classRule.getValue();
+            ruleItems.put(className, items);
+        }
     }
 
     /**
@@ -49,19 +61,24 @@ public class CustomRuleTranslator extends BaseTranslator {
         }
 
         Symbol.ClassSymbol classSymbol = jcClassDecl.sym;
+        String className = classSymbol.className();
+        java.util.List<String> items = ruleItems.get(className);
+        if (null == items) {
+            return;
+        }
+
         String methodName = CheckUtil.getTmpMethod(classSymbol);
 
         // 解析所有参数规则
         Map<JCTree.JCExpression, java.util.List<Regulation>> rules = new HashMap<JCTree.JCExpression, java.util.List<Regulation>>();
 
         for (JCTree var : jcClassDecl.defs) {
-            joinVarRules(rules, var);
+            joinVarRules(items, rules, var);
         }
         if (rules.isEmpty()) {
             return;
         }
 
-        String className = classSymbol.className();
         messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + methodName + " method in " + className);
 
         JCTree.JCBlock body = createBody(rules);
@@ -76,12 +93,14 @@ public class CustomRuleTranslator extends BaseTranslator {
 
     /**
      * 加入字段规则
+     * @param items
      * @param rules 规则集合
      * @param var 当前元素节点
      */
-    private void joinVarRules(Map<JCTree.JCExpression, java.util.List<Regulation>> rules, JCTree var) {
+    private void joinVarRules(java.util.List<String> items, Map<JCTree.JCExpression, java.util.List<Regulation>> rules, JCTree var) {
         Symbol symbol;
-        String className;
+        String name;
+        String typeName;
         JCTree.JCExpression self;
         JCTree.JCVariableDecl localVar = null;
 
@@ -94,37 +113,44 @@ public class CustomRuleTranslator extends BaseTranslator {
             }
 
             symbol = jcVariableDecl.sym;
-            className = CTreeUtil.getOriginalTypeName(symbol);
+            typeName = CTreeUtil.getOriginalTypeName(symbol);
             self = treeMaker.Ident(jcVariableDecl.name);
+            name = jcVariableDecl.name.toString();
         }
         // 方法
         else if (var.getKind() == Tree.Kind.METHOD) {
             JCTree.JCMethodDecl methodDecl = (JCTree.JCMethodDecl) var;
+            typeName = CTreeUtil.getReturnTypeName(methodDecl);
+            // 过滤无返回值方法或构造方法
+            if (null == typeName) {
+                return;
+            }
             // 过滤带参方法
             if (!methodDecl.getParameters().isEmpty()) {
                 return;
             }
 
-            className = CTreeUtil.getReturnTypeName(methodDecl);
-            // 过滤无返回值方法
-            if (null == className) {
-                return;
-            }
-
             symbol = methodDecl.sym;
 
-            JCTree.JCIdent ident = treeMaker.Ident(methodDecl.name);
+            Name methodName = methodDecl.name;
+            JCTree.JCIdent ident = treeMaker.Ident(methodName);
             self = treeMaker.Apply(CTreeUtil.emptyParam(), ident, CTreeUtil.emptyParam());
 
             // 使用临时变量保存方法回调数据
-            localVar = treeMaker.VarDef(treeMaker.Modifiers(0L), methodDecl.name, methodDecl.restype, self);
+            localVar = treeMaker.VarDef(treeMaker.Modifiers(0L), methodName, methodDecl.restype, self);
             self = treeMaker.Ident(localVar.name);
+
+            name = methodName.toString() + "()";
         } else {
             return;
         }
 
-        byte classType = getClassType(className);
-        java.util.List<Regulation> regulations = RegulationBuilder.findBasicRule(symbol, className, classType);
+        if (!items.contains(name)) {
+            return;
+        }
+
+        byte classType = getClassType(typeName);
+        java.util.List<Regulation> regulations = RegulationBuilder.findBasicRule(symbol, typeName, classType);
 
         Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType);
         // 非原始类型

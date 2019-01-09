@@ -68,10 +68,10 @@ public class ValidationTranslator extends BaseTranslator {
             statements.append(oldStatements.get(i));
         }
 
-        JCTree.JCBlock body = getBlock(statements);
-        methodDecl.body = body;
-
-        this.result = replaceMethod(methodDecl, body);
+        JCTree.JCBlock block = getBlock(statements);
+        block.setPos(methodDecl.body.getPreferredPosition());
+        methodDecl.body = block;
+        this.result = methodDecl;
     }
 
     /**

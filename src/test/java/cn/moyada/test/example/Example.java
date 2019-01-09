@@ -1,8 +1,6 @@
 package cn.moyada.test.example;
 
-import io.moyada.medivh.annotation.NotBlank;
-import io.moyada.medivh.annotation.NumberRule;
-import io.moyada.medivh.annotation.Return;
+import io.moyada.medivh.annotation.*;
 
 /**
  * @author xueyikang
@@ -20,7 +18,8 @@ public class Example {
         @NotBlank
         private String name;
 
-        @NumberRule(min = "0", max = "500")
+        @Min(0)
+        @Max(300)
         private int age;
     }
 }

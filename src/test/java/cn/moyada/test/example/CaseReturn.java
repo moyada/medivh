@@ -11,20 +11,20 @@ import java.util.List;
 public class CaseReturn {
 
     public boolean returnPrimitive(@Return("false") @NotNull String name,
-                                   @Return("true") @NumberRule(min = "0.0") double price,
+                                   @Return("true") @DecimalMin(0.5) double price,
                                    boolean putaway) {
         System.out.println("returnPrimitive");
         return true;
     }
 
     public Integer returnBasic(@Return("0") Product product,
-                               @Throw(message = "null") @SizeRule(min = 0) List<String> param) {
+                               @Throw(message = "null") @Size(min = 1) List<String> param) {
         System.out.println("returnBasic");
         return -1;
     }
 
     public Capacity returnObject(@Return({"test", "true"})  @NotNull String name,
-                                 @Return @NumberRule(min = "0") Byte type) {
+                                 @Return @Min(0) Byte type) {
         System.out.println("returnObject");
         return new Capacity();
     }
@@ -34,7 +34,7 @@ public class CaseReturn {
         return null;
     }
 
-    public Product useStaticMethod(@Return(type = CaseReturn.class, staticMethod = "getProduct") @SizeRule(min = 1) String name,
+    public Product useStaticMethod(@Return(type = CaseReturn.class, staticMethod = "getProduct") @Size(min = 3) String name,
                                    @Return(value = "test", type = CaseReturn.class, staticMethod = "getProduct") @NotNull Integer id) {
         System.out.println("useStaticMethod");
         return null;

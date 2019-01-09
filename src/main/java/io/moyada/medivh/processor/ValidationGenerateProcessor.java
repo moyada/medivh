@@ -24,10 +24,7 @@ import javax.lang.model.element.*;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import java.lang.annotation.Annotation;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 校验注解处理器
@@ -36,6 +33,9 @@ import java.util.Set;
  **/
 public class ValidationGenerateProcessor extends AbstractProcessor {
 
+    // 规则注解
+    private List<Class<? extends Annotation>> ruleAnnos;
+
     // 信息输出体
     private Messager messager;
 
@@ -43,6 +43,18 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
     private Context context;
     // 语法树
     private Trees trees;
+
+    public ValidationGenerateProcessor() {
+        ruleAnnos = new ArrayList<Class<? extends Annotation>>();
+        ruleAnnos.add(Nullable.class);
+        ruleAnnos.add(NotNull.class);
+        ruleAnnos.add(NotBlank.class);
+        ruleAnnos.add(DecimalMin.class);
+        ruleAnnos.add(DecimalMax.class);
+        ruleAnnos.add(Min.class);
+        ruleAnnos.add(Max.class);
+        ruleAnnos.add(Size.class);
+    }
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -61,29 +73,23 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Set<? extends Element> rootElements = roundEnv.getRootElements();
         // 获取校验方法
-        Collection<? extends Element> methods = getMethods(rootElements,
-                Throw.class.getName(), Return.class.getName());
-
+        Collection<? extends Element> methods = getMethods(rootElements, Throw.class.getName(), Return.class.getName());
         if (methods.isEmpty()) {
             return true;
         }
 
         // 获取对象规则
-        Collection<? extends Element> ruleClass = getRuleClass(roundEnv,
-                Nullable.class, NotNull.class, NumberRule.class, SizeRule.class);
+        Map<? extends Element, List<String>> classRules = getRule(roundEnv);
 
         ExpressionMaker expressionMaker = ExpressionMaker.newInstance(context);
 
         createUtilMethod(rootElements, expressionMaker);
 
         // 校验方法生成器
-        TreeTranslator translator = new CustomRuleTranslator(expressionMaker, messager);
-
-        if (null != ruleClass) {
-            for (Element element : ruleClass) {
-                JCTree tree = (JCTree) trees.getTree(element);
-                tree.accept(translator);
-            }
+        TreeTranslator translator = new CustomRuleTranslator(expressionMaker, messager, classRules);
+        for (Element element : classRules.keySet()) {
+            JCTree tree = (JCTree) trees.getTree(element);
+            tree.accept(translator);
         }
 
         // 校验逻辑生成器
@@ -238,42 +244,30 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
     /**
      * 获取存在规则元素
      * @param roundEnv 环境
-     * @param annos 注解类型
      * @return 规则类元素集合
      */
-    private Collection<? extends Element> getRuleClass(RoundEnvironment roundEnv, Class<? extends Annotation>... annos) {
+    private Map<? extends Element, List<String>> getRule(RoundEnvironment roundEnv) {
         Set<Element> rules = new HashSet<Element>();
 
         Set<? extends Element> elements;
-
-        for (Class<? extends Annotation> anno : annos) {
+        for (Class<? extends Annotation> anno : ruleAnnos) {
             elements = roundEnv.getElementsAnnotatedWith(anno);
             rules.addAll(ElementFilter.fieldsIn(elements));
             rules.addAll(ElementFilter.methodsIn(elements));
         }
 
-        elements = roundEnv.getElementsAnnotatedWith(NotBlank.class);
-//        if (elements.isEmpty()) {
-//            return rules;
-//        }
-
-        rules.addAll(ElementFilter.fieldsIn(elements));
-        rules.addAll(ElementFilter.methodsIn(elements));
-
-//        try {
-//            SystemUtil.createFile(processingEnv.getFiler(), io.moyada.medivh.core.ElementOptions.BLANK_METHOD[0]);
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-
-        if (elements.isEmpty()) {
-            return null;
-        }
-
-        Set<Element> classRule = new HashSet<Element>();
+        Map<Element, List<String>> classRule = new HashMap<Element, List<String>>();
+        Element classEle;
         for (Element element : rules) {
-            classRule.add( element.getEnclosingElement());
+            classEle = element.getEnclosingElement();
+            List<String> items = classRule.get(classEle);
+            if (null == items) {
+                items = new ArrayList<String>();
+                classRule.put(classEle, items);
+            }
+            items.add(element.toString());
         }
+
         return classRule;
     }
 
@@ -282,11 +276,9 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
         Set<String> annotationTypes = new HashSet<String>(16, 1.0F);
         annotationTypes.add(Throw.class.getName());
         annotationTypes.add(Return.class.getName());
-        annotationTypes.add(Nullable.class.getName());
-        annotationTypes.add(NotNull.class.getName());
-        annotationTypes.add(NotBlank.class.getName());
-        annotationTypes.add(NumberRule.class.getName());
-        annotationTypes.add(SizeRule.class.getName());
+        for (Class<? extends Annotation> ruleAnno : ruleAnnos) {
+            annotationTypes.add(ruleAnno.getName());
+        }
         annotationTypes.add(Variable.class.getName());
         annotationTypes.add(Exclusive.class.getName());
         return annotationTypes;

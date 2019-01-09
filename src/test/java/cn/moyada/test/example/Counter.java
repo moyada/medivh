@@ -1,6 +1,9 @@
 package cn.moyada.test.example;
 
-import io.moyada.medivh.annotation.NumberRule;
+import io.moyada.medivh.annotation.DecimalMax;
+import io.moyada.medivh.annotation.DecimalMin;
+import io.moyada.medivh.annotation.Max;
+import io.moyada.medivh.annotation.Min;
 
 /**
  * @author xueyikang
@@ -8,12 +11,18 @@ import io.moyada.medivh.annotation.NumberRule;
  **/
 public class Counter {
 
-    @NumberRule(min = "0")
+    @Min(0)
     private int count;
 
-    @NumberRule(min = "-20.5", max = "100")
+    @DecimalMin(0.0)
+    @DecimalMax(0.75)
+    private float loadFactor;
+
+    @DecimalMin(-20.5)
+    @Max(100)
     private Double lastest;
 
-    @NumberRule(min = "1", max = "1")
+    @Min(1)
+    @Max(1)
     private byte type;
 }

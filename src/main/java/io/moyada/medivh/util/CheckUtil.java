@@ -2,10 +2,7 @@ package io.moyada.medivh.util;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
-import io.moyada.medivh.annotation.Exclusive;
-import io.moyada.medivh.annotation.Return;
-import io.moyada.medivh.annotation.Throw;
-import io.moyada.medivh.annotation.Variable;
+import io.moyada.medivh.annotation.*;
 import io.moyada.medivh.support.ElementOptions;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -155,6 +152,93 @@ public final class CheckUtil {
             var = defaultValue;
         }
         return var;
+    }
+
+    /**
+     * 获取最小数值
+     * @param symbol 元素
+     * @param numType 元素
+     * @return 数值
+     */
+    public static Number getMinNumber(Symbol symbol, char numType) {
+        Double decimal = getMinDecimal(symbol);
+        Long value = getMin(symbol);
+        return getNumber(numType, decimal, value);
+    }
+
+    /**
+     * 获取最大数值
+     * @param symbol 元素
+     * @param numType 元素
+     * @return 数值
+     */
+    public static Number getMaxNumber(Symbol symbol, char numType) {
+        Double decimal = getMaxDecimal(symbol);
+        Long value = getMax(symbol);
+        return getNumber(numType, decimal, value);
+    }
+
+    /**
+     * 根据类型获取数值
+     * 当当前数字类型为浮点时优先选取 浮点数，否则整数
+     * @param numType 数字类型
+     * @param decimal 浮点值
+     * @param value 整数值
+     * @return 数值
+     */
+    private static Number getNumber(char numType, Double decimal, Long value) {
+        Number num;
+        if (TypeUtil.isDecimal(numType)) {
+            if (null != decimal) {
+                num = decimal;
+            } else {
+                num = value;
+            }
+        } else {
+            if (null != value) {
+                num = value;
+            } else {
+                num = decimal;
+            }
+        }
+        return num;
+    }
+
+    private static Long getMin(Symbol symbol) {
+        Min min = CTreeUtil.getAnnotation(symbol, Min.class);
+        if (null == min) {
+            return null;
+        }
+        return min.value();
+    }
+
+    /**
+     * 获取最大整数
+     * @param symbol 元素
+     * @return 数值
+     */
+    private static Long getMax(Symbol symbol) {
+        Max max = CTreeUtil.getAnnotation(symbol, Max.class);
+        if (null == max) {
+            return null;
+        }
+        return max.value();
+    }
+
+    private static Double getMinDecimal(Symbol symbol) {
+        DecimalMin decimalMin = CTreeUtil.getAnnotation(symbol, DecimalMin.class);
+        if (null == decimalMin) {
+            return null;
+        }
+        return decimalMin.value();
+    }
+
+    private static Double getMaxDecimal(Symbol symbol) {
+        DecimalMax decimalMax = CTreeUtil.getAnnotation(symbol, DecimalMax.class);
+        if (null == decimalMax) {
+            return null;
+        }
+        return decimalMax.value();
     }
 
     /**

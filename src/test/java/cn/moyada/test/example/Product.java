@@ -1,9 +1,6 @@
 package cn.moyada.test.example;
 
-import io.moyada.medivh.annotation.NotBlank;
-import io.moyada.medivh.annotation.Nullable;
-import io.moyada.medivh.annotation.NumberRule;
-import io.moyada.medivh.annotation.SizeRule;
+import io.moyada.medivh.annotation.*;
 
 import java.util.List;
 
@@ -14,7 +11,8 @@ import java.util.List;
 public interface Product {
 
     @Nullable
-    @NumberRule(min = "-5", max = "80")
+    @Min(-5)
+    @Max(80)
     long getId();
 
     String getName();
@@ -24,6 +22,6 @@ public interface Product {
     String getType();
 
     @Nullable
-    @SizeRule(min = 0)
+    @Size(min = 1, max = 10)
     List<Capacity> getStore();
 }

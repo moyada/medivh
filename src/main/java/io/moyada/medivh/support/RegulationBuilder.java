@@ -1,9 +1,13 @@
 package io.moyada.medivh.support;
 
 import com.sun.tools.javac.code.Symbol;
-import io.moyada.medivh.annotation.*;
+import io.moyada.medivh.annotation.NotBlank;
+import io.moyada.medivh.annotation.NotNull;
+import io.moyada.medivh.annotation.Nullable;
+import io.moyada.medivh.annotation.Size;
 import io.moyada.medivh.regulation.*;
 import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.CheckUtil;
 import io.moyada.medivh.util.TypeUtil;
 
 import java.util.ArrayList;
@@ -70,8 +74,8 @@ public final class RegulationBuilder {
     public static List<Regulation> findBasicRule(Symbol symbol, String className, byte type, ActionData actionData) {
         List<Regulation> regulations = new ArrayList<Regulation>();
 
-        if (needNotBlank(symbol, className)) {
-            NotBlankRegulation notBlankRegulation = new NotBlankRegulation();
+        BaseRegulation notBlankRegulation = buildNotBlank(symbol, className);
+        if (null != notBlankRegulation) {
             notBlankRegulation.setActionData(actionData);
             regulations.add(notBlankRegulation);
         }
@@ -95,10 +99,17 @@ public final class RegulationBuilder {
      * 是否需要非空字符串校验
      * @param symbol 元素
      * @param className 类名
-     * @return 布尔值
+     * @return 非空字符串处理规则
      */
-    private static boolean needNotBlank(Symbol symbol, String className) {
-        return null != CTreeUtil.getAnnotation(symbol, NotBlank.class) && TypeUtil.isStr(className);
+    private static BaseRegulation buildNotBlank(Symbol symbol, String className) {
+        if (!TypeUtil.isStr(className)) {
+            return null;
+        }
+        NotBlank notBlank = CTreeUtil.getAnnotation(symbol, NotBlank.class);
+        if (null == notBlank) {
+            return null;
+        }
+        return new NotBlankRegulation();
     }
     
     /**
@@ -110,30 +121,31 @@ public final class RegulationBuilder {
      * @return 基础处理规则
      */
     private static BaseRegulation buildNumber(Symbol symbol, String className) {
-        NumberRule numberRule = CTreeUtil.getAnnotation(symbol, NumberRule.class);
-        if (null == numberRule) {
-            return null;
-        }
-
         BaseRegulation regulation = null;
         // 数字逻辑
         char numType = TypeUtil.getNumType(className);
         if (numType != TypeUtil.UNKNOWN) {
-            Object min = TypeUtil.getMin(numType, numberRule.min());
-            Object max = TypeUtil.getMax(numType, numberRule.max());
-
-            int result;
-            if (null == min || null == max) {
-                result = -1;
-            } else {
-                result = TypeUtil.compare(numType, min, max);
+            Number minVal = CheckUtil.getMinNumber(symbol, numType);
+            Number maxVal = CheckUtil.getMaxNumber(symbol, numType);
+            if (null == minVal && null == maxVal) {
+                return null;
             }
 
-            if (null != min || null != max) {
+            minVal = TypeUtil.getMin(numType, minVal);
+            maxVal = TypeUtil.getMax(numType, maxVal);
+
+            int result;
+            if (null == minVal || null == maxVal) {
+                result = -1;
+            } else {
+                result = TypeUtil.compare(numType, minVal, maxVal);
+            }
+
+            if (null != minVal || null != maxVal) {
                 if (result == -1) {
-                    regulation = new NumberRegulation(TypeUtil.getTypeTag(numType), min, max);
+                    regulation = new NumberRegulation(TypeUtil.getTypeTag(numType), minVal, maxVal);
                 } else if (result == 0) {
-                    regulation = new EqualsRegulation(TypeUtil.OBJECT, TypeUtil.getTypeTag(numType), min, false);
+                    regulation = new EqualsRegulation(TypeUtil.OBJECT, TypeUtil.getTypeTag(numType), minVal, false);
                 }
             }
         }
@@ -144,30 +156,46 @@ public final class RegulationBuilder {
      * 获取空间处理规则
      * 获得空间规则数据创建
      * 当类型不属于 String 或 Collection, Map 的类型或实现类将返回 null
+     * 当最小值与最大值相同时返回 {@link EqualsRegulation}，最小值大于最大值返回 null，否则返回 {@link SizeRangeRegulation}
      * @param symbol 元素
      * @param type 类型
      * @return 基础处理规则
      */
     public static BaseRegulation buildSize(Symbol symbol, byte type) {
-        SizeRule sizeRule = CTreeUtil.getAnnotation(symbol, SizeRule.class);
-        if (null == sizeRule) {
-            return null;
-        }
         if (type < TypeUtil.STRING || type > TypeUtil.COLLECTION) {
             return null;
         }
 
-        Integer minLength = getLength(sizeRule.min());
-        Integer maxLength = getLength(sizeRule.max());
+        Size size = CTreeUtil.getAnnotation(symbol, Size.class);
+        if (null == size) {
+            return null;
+        }
+        Integer minSize = getSize(size.min());
+        Integer maxSize = getSize(size.max());
 
-        if (!isInvalid(minLength, maxLength)) {
-            if (isEquals(minLength, maxLength)) {
-                return new EqualsRegulation(type, TypeTag.INT, minLength, false);
+        if (!isInvalid(minSize, maxSize)) {
+            if (isEquals(minSize, maxSize)) {
+                return new EqualsRegulation(type, TypeTag.INT, minSize, false);
             }
-            return new SizeRangeRegulation(minLength, maxLength, type);
+            return new SizeRangeRegulation(minSize, maxSize, type);
         }
 
         return null;
+    }
+
+    /**
+     * 获取大小信息，小于等于 0 或大于 {@code Integer.MAX_VALUE} 则返回 null
+     * @param size 设置大小
+     * @return 大小对象
+     */
+    private static Integer getSize(int size) {
+        if (size < 1) {
+            return null;
+        }
+        if (size >= Integer.MAX_VALUE) {
+            return null;
+        }
+        return size;
     }
 
     /**
@@ -186,15 +214,6 @@ public final class RegulationBuilder {
         }
 
         return false;
-    }
-
-    /**
-     * 获取长度信息，小于 0 则返回 null
-     * @param length 长度值
-     * @return 长度对象
-     */
-    private static Integer getLength(int length) {
-        return length < 0 ? null : length;
     }
 
     /**

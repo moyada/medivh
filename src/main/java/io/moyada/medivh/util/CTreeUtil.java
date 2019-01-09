@@ -101,6 +101,9 @@ public final class CTreeUtil {
      */
     @SuppressWarnings("deprecation")
     public static <T extends Annotation> T getAnnotation(Symbol symbol, Class<T> anno) {
+        if (null == symbol) {
+            return null;
+        }
         return symbol.getAnnotation(anno);
     }
 
@@ -119,7 +122,18 @@ public final class CTreeUtil {
      * @return 当返回类名为 void 则返回 null
      */
     public static String getReturnTypeName(JCTree.JCMethodDecl methodDecl) {
-        String returnTypeName = getOriginalTypeName(methodDecl.sym.getReturnType().asElement());
+        String returnTypeName;
+        Symbol.MethodSymbol methodSymbol = methodDecl.sym;
+        if (methodSymbol == null) {
+            JCTree returnType = methodDecl.getReturnType();
+            if (null == returnType) {
+                return null;
+            }
+            returnTypeName = returnType.toString();
+        } else {
+            returnTypeName = getOriginalTypeName(methodSymbol.getReturnType().asElement());
+        }
+
         if (returnTypeName.equals("void") || returnTypeName.equals("java.lang.Void")) {
             return null;
         }

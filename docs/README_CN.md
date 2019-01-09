@@ -6,7 +6,7 @@
 
 [English](/README) | 简体中文
 
-简单、自动、灵活的 Java 方法入参校验器。
+> 简单、自动、灵活的 Java 方法入参校验器。
 
 ## 愿景 
 
@@ -44,7 +44,7 @@ JDK 1.6 及以上版本。
     <dependency>
         <groupId>io.github.moyada</groupId>
         <artifactId>medivh</artifactId>
-        <version>1.2.2</version>
+        <version>1.3.0</version>
         <scope>provided</scope>
     </dependency>
 <dependencies/>
@@ -54,31 +54,36 @@ JDK 1.6 及以上版本。
 
 ```
 dependencies {
-  compileOnly 'io.github.moyada:medivh:1.2.2'
+  compileOnly 'io.github.moyada:medivh:1.3.0'
 }
 ```
 
 普通工程可以通过
-[![release](https://img.shields.io/badge/release-v1.2.2-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
+[![release](https://img.shields.io/badge/release-v1.3.0-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
 或
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh)
 下载最新 jar 包。
 
 ### 2. 在程序中配置注解
 
-注解说明
+<font size=5>**注解说明**</font>
 
 | 注解 | 作用域 | 作用 |
 | :---- | :----- | :---- |
 | @NotNull | 类字段、无参方法、方法参数 | 为对象类型的字段或返回值提供非空校验，默认定义了规则都会进行非空校验。 |
 | @Nullable | 类字段、无参方法、方法参数 | 不进行非空校验。 |
 | @NotBlank | 类字段、无参方法、方法参数 | 对 String 类型提供空白字符串校验规则。 |
-| @SizeRule | 类字段、无参方法、方法参数 | 为 String 或 数组 或 集合 类型提供长度或大小校验规则。 |
-| @NumberRule | 类字段、无参方法、方法参数 | 为基础数字类型提供大小校验规则。 |
+| @Min | 类字段、无参方法、方法参数 | 为整数类型提供最小值校验规则。 |
+| @Max | 类字段、无参方法、方法参数 | 为整数类型提供最大值校验规则。 |
+| @DecimalMin | 类字段、无参方法、方法参数 | 为浮点数类型提供最小值校验规则。 |
+| @DecimalMax | 类字段、无参方法、方法参数 | 为浮点数类型提供最大值校验规则。 |
+| @Size | 类字段、无参方法、方法参数 | 为 String 或 数组 或 集合 类型提供长度或大小校验规则。 |
 | @Throw | 类、非静态方法、方法参数 | 指定参数校验失败时抛出异常。 |
 | @Return | 非静态方法、方法参数 | 指定参数校验失败时返回数据。 |
 | @Exclusive | 方法、方法参数 | 禁用校验逻辑。 |
 | @Variable | 类、方法 | 修改当前作用域下校验逻辑产生的变量名和方法名。 |
+
+* 基于 [JSR380](https://jcp.org/en/jsr/detail?id=380)
 
 具体使用方式见 [示例](#示例)
 
@@ -108,31 +113,37 @@ dependencies {
 
 ### 定义对象规则
 
-#### @NumberRule
+#### 数字规则
 
-| 作用域 | 用途 |
-| :---- | :----- |
-| 类字段、无参方法、方法参数 | 为基础数字类型提供大小校验规则。 |
+| 注解 | 作用域 | 作用 |
+| :---- | :----- | :---- |
+| @Min | 类字段、无参方法、方法参数 | 为整数类型提供最小值校验规则。 |
+| @Max | 类字段、无参方法、方法参数 | 为整数类型提供最大值校验规则。 |
+| @DecimalMin | 类字段、无参方法、方法参数 | 为浮点数类型提供最小值校验规则。 |
+| @DecimalMax | 类字段、无参方法、方法参数 | 为浮点数类型提供最大值校验规则。 |
 
-属性说明
-
-| 名称 | 类型 | 作用 |
-| :--- | :--- | :--- |
-| min() | 字符串 | 设置允许的最小值。 |
-| max() | 字符串 | 设置允许的最大值。 |
 
 ```
-import io.moyada.medivh.annotation.NumberRule;
+import io.moyada.medivh.annotation.DecimalMax;
+import io.moyada.medivh.annotation.DecimalMin;
+import io.moyada.medivh.annotation.Max;
+import io.moyada.medivh.annotation.Min;
 
 public class Counter {
 
-    @NumberRule(min = "0", max = "1000")
+    @Min(0)
     private int count;
 
-    @NumberRule(min = "-20.5", max = "100")
+    @DecimalMin(0.0)
+    @DecimalMax(0.75)
+    private float loadFactor;
+
+    @DecimalMin(-20.5)
+    @Max(100)
     private Double lastest;
 
-    @NumberRule(min = "1", max = "1")
+    @Min(1)
+    @Max(1)
     private byte type;
 }
 ```
@@ -141,21 +152,25 @@ public class Counter {
 
 ```
 public String invalid0() {
-    if (this.type != 1) {
-        return "type cannot equals 1";
+    if (this.count < 0) {
+        return "count less than 0";
     } else if (this.lastest == null) {
         return "lastest is null";
     } else if (this.lastest > 100.0D) {
         return "lastest great than 100.0";
     } else if (this.lastest < -20.5D) {
         return "lastest less than -20.5";
+    } else if (this.loadFactor > 0.75F) {
+        return "loadFactor great than 0.75";
+    } else if (this.loadFactor < 0.0F) {
+        return "loadFactor less than 0.0";
     } else {
-        return this.count < 0 ? "count less than 0" : null;
+        return this.type != 1 ? "type cannot equals 1" : null;
     }
 }
 ```
 
-#### @SizeRule
+#### @Size
 
 | 作用域 | 用途 |
 | :---- | :----- |
@@ -169,7 +184,7 @@ public String invalid0() {
 | max() | 整数 | 设置允许的最大长度或容量。 |
 
 ```
-import io.moyada.medivh.annotation.SizeRule;
+import io.moyada.medivh.annotation.Size;
 
 public class Capacity {
 
@@ -180,18 +195,18 @@ public class Capacity {
         this.type = type;
     }
 
-    @SizeRule(min = 0, max = 50)
+    @Size(min = 1, max = 50)
     private String type;
 
-    @SizeRule(min = 1)
+    @Size(max = 13)
     private byte[] getTypes() {
         return new byte[0];
     }
 
-    @SizeRule(max = 200)
+    @Size(min = 2)
     private List<Counter> counters;
 
-    @SizeRule(min = 10, max = 10)
+    @Size(min = 10, max = 10)
     public Map<String, Integer> getEntry() {
         return new HashMap<String, Integer>();
     }
@@ -205,26 +220,26 @@ public String invalid0() {
     byte[] getTypes = this.getTypes();
     if (getTypes == null) {
         return "getTypes is null";
-    } else if (getTypes.length < 1) {
-        return "getTypes.length less than 1";
+    } else if (getTypes.length > 13) {
+        return "getTypes.length great than 13";
+    } else if (this.counters == null) {
+        return "counters is null";
+    } else if (this.counters.size() < 2) {
+        return "counters.size() less than 2";
+    } else if (this.type == null) {
+        return "type is null";
     } else {
-        Map<String, Integer> getEntry = this.getEntry();
-        if (getEntry == null) {
-            return "getEntry is null";
-        } else if (getEntry.size() != 10) {
-            return "getEntry cannot equals 10";
-        } else if (this.counters == null) {
-            return "counters is null";
-        } else if (this.counters.size() > 200) {
-            return "counters.size() great than 200";
-        } else if (this.type == null) {
-            return "type is null";
+        int var$3 = this.type.length();
+        if (var$3 > 50) {
+            return "type.length() great than 50";
+        } else if (var$3 < 1) {
+            return "type.length() less than 1";
         } else {
-            int var$3 = this.type.length();
-            if (var$3 > 50) {
-                return "type.length() great than 50";
+            Map<String, Integer> getEntry = this.getEntry();
+            if (getEntry == null) {
+                return "getEntry is null";
             } else {
-                return var$3 < 0 ? "type.length() less than 0" : null;
+                return getEntry.size() != 10 ? "getEntry cannot equals 10" : null;
             }
         }
     }
@@ -324,9 +339,10 @@ import io.moyada.medivh.annotation.Nullable;
 public interface Product {
 
     @Nullable
-    @NumberRule(min = "-5", max = "80")
+    @Min(-5)
+    @Max(80)
     long getId();
-    
+
     String getName();
 
     @Nullable
@@ -334,7 +350,7 @@ public interface Product {
     String getType();
 
     @Nullable
-    @SizeRule(min = 0)
+    @Size(min = 1, max = 10)
     List<Capacity> getStore();
 }
 ```
@@ -343,8 +359,8 @@ public interface Product {
 
 ```
 default String invalid0() {
-    String getName = this.getType();
-    if (getName != null && Person.isBlank(getName)) {
+    String getType = this.getType();
+    if (getType != null && CaseReturn.isBlank(getType)) {
         return "getType is blank";
     } else {
         long getId = this.getId();
@@ -353,13 +369,19 @@ default String invalid0() {
         } else if (getId < -5L) {
             return "getId less than -5";
         } else {
-            getName = this.getName();
-            if (getName == null) {
-                return "getName is null";
-            } else {
-                List<Capacity> getStore = this.getStore();
-                return getStore != null && getStore.size() < 0 ? "getStore.size() less than 0" : null;
+            List<Capacity> getStore = this.getStore();
+            if (getStore != null) {
+                int var$3 = getStore.size();
+                if (var$3 > 10) {
+                    return "getStore.size() great than 10";
+                }
+
+                if (var$3 < 1) {
+                    return "getStore.size() less than 1";
+                }
             }
+
+            return null;
         }
     }
 }
@@ -386,14 +408,14 @@ import io.moyada.medivh.annotation.Throw;
 public class CaseThrow {
 
     public boolean hasReturn(@Throw @NotNull String name,
-                             @Throw(NumberFormatException.class) @NumberRule(min = "0.0") double price,
+                             @Throw(NumberFormatException.class) @Min(0) double price,
                              boolean putaway) {
         System.out.println("hasReturn");
         return true;
     }
 
     public void nonReturn(@Throw(value = IllegalStateException.class, message = "unknown error") Product product,
-                          @Throw(message = "price error") @SizeRule(min = 0, max = 20) List<String> param) {
+                          @Throw(message = "price error") @Size(min = 1, max = 20) List<String> param) {
         System.out.println("nonReturn");
     }
 }
@@ -426,8 +448,8 @@ public void nonReturn(Product product, List<String> param) {
             int var$3 = param.size();
             if (var$3 > 20) {
                 throw new IllegalArgumentException("price error, cause param.size() great than 20");
-            } else if (var$3 < 0) {
-                throw new IllegalArgumentException("price error, cause param.size() less than 0");
+            } else if (var$3 < 1) {
+                throw new IllegalArgumentException("price error, cause param.size() less than 1");
             } else {
                 System.out.println("nonReturn");
             }
@@ -457,20 +479,20 @@ import io.moyada.medivh.annotation.Return;
 public class CaseReturn {
 
     public boolean returnPrimitive(@Return("false") @NotNull String name,
-                                   @Return("true") @NumberRule(min = "0.0") double price,
+                                   @Return("true") @DecimalMin(0.5) double price,
                                    boolean putaway) {
         System.out.println("returnPrimitive");
         return true;
     }
 
     public Integer returnBasic(@Return("0") Product product,
-                               @Throw(message = "null") @SizeRule(min = 0) List<String> param) {
+                               @Throw(message = "null") @Size(min = 1) List<String> param) {
         System.out.println("returnBasic");
         return -1;
     }
 
     public Capacity returnObject(@Return({"test", "true"})  @NotNull String name,
-                                 @Return @NumberRule(min = "0") Byte type) {
+                                 @Return @Min(0) Byte type) {
         System.out.println("returnObject");
         return new Capacity();
     }
@@ -480,7 +502,7 @@ public class CaseReturn {
         return null;
     }
 
-    public Product useStaticMethod(@Return(type = CaseReturn.class, staticMethod = "getProduct") @SizeRule(min = 1) String name,
+    public Product useStaticMethod(@Return(type = CaseReturn.class, staticMethod = "getProduct") @Size(min = 3) String name,
                                    @Return(value = "test", type = CaseReturn.class, staticMethod = "getProduct") @NotNull Integer id) {
         System.out.println("useStaticMethod");
         return null;
@@ -507,7 +529,7 @@ public class CaseReturn {
 public boolean returnPrimitive(String name, double price, boolean putaway) {
     if (name == null) {
         return false;
-    } else if (price < 0.0D) {
+    } else if (price < 0.5D) {
         return true;
     } else {
         System.out.println("returnPrimitive");
@@ -524,8 +546,8 @@ public Integer returnBasic(Product product, List<String> param) {
             return 0;
         } else if (param == null) {
             throw new IllegalArgumentException("null, cause param is null");
-        } else if (param.size() < 0) {
-            throw new IllegalArgumentException("null, cause param.size() less than 0");
+        } else if (param.size() < 1) {
+            throw new IllegalArgumentException("null, cause param.size() less than 1");
         } else {
             System.out.println("returnBasic");
             return -1;
@@ -549,7 +571,7 @@ public Capacity returnObject(String name, Byte type) {
 public Product returnInterface(String name) {
     if (name == null) {
         return new CaseReturn.Item();
-    } else if (Person.isBlank(name)) {
+    } else if (isBlank(name)) {
         return new CaseReturn.Item();
     } else {
         System.out.println("returnInterface");
@@ -560,7 +582,7 @@ public Product returnInterface(String name) {
 public Product useStaticMethod(String name, Integer id) {
     if (name == null) {
         return getProduct();
-    } else if (name.length() < 1) {
+    } else if (name.length() < 3) {
         return getProduct();
     } else if (id == null) {
         return getProduct("test");
@@ -623,7 +645,7 @@ public Product returnObject(Person person, String name, Capacity capacity) {
             throw new IllegalArgumentException("Invalid input parameter, cause " + mvar_0);
         } else if (name == null) {
             return new Item();
-        } else if (Person.isBlank(name)) {
+        } else if (CaseReturn.isBlank(name)) {
             return new Item();
         } else if (capacity == null) {
             return CaseReturn.getProduct();
@@ -648,29 +670,29 @@ import io.moyada.medivh.annotation.Exclusive;
 @Throw
 public class CaseInherit {
 
-    public boolean customRule(Product product, Capacity capacity) {
-        System.out.println("customRule");
-        return true;
-    }
+   public boolean customRule(Product product, Capacity capacity) {
+       System.out.println("customRule");
+       return true;
+   }
 
-    @Return({"test", "true"})
-    public Capacity useReturn(@NotBlank String name,
-                              @Throw Counter counter) {
-        System.out.println("useReturn");
-        return null;
-    }
+   @Return({"test", "true"})
+   public Capacity useReturn(@NotBlank String name,
+                             @Throw Counter counter) {
+       System.out.println("useReturn");
+       return null;
+   }
 
-    @Variable("tmp0")
-    @Throw(value = UnsupportedOperationException.class)
-    public void excludeParam(@Exclusive Product product,
-                             @SizeRule(min = 5) int[] ids) {
-        System.out.println("excludeParam");
-    }
+   @Variable("tmp0")
+   @Throw(value = UnsupportedOperationException.class)
+   public void excludeParam(@Exclusive Product product,
+                            @Size(min = 5) int[] ids) {
+       System.out.println("excludeParam");
+   }
 
-    @Exclusive
-    public int excludeMethod(@Return("-1") Product product) {
-        return 0;
-    }
+   @Exclusive
+   public int excludeMethod(@Return("-1") Product product) {
+       return 0;
+   }
 }
 ```
 
@@ -701,7 +723,7 @@ public boolean customRule(Product product, Capacity capacity) {
 public Capacity useReturn(String name, Counter counter) {
     if (name == null) {
         return new Capacity("test", true);
-    } else if (Person.isBlank(name)) {
+    } else if (CaseReturn.isBlank(name)) {
         return new Capacity("test", true);
     } else if (counter == null) {
         throw new IllegalArgumentException("Invalid input parameter, cause counter is null");
