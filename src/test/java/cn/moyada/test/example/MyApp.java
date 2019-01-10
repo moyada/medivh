@@ -12,37 +12,25 @@ import java.util.List;
 public class MyApp {
 
     @Throw
-    public Info run(Args args,
-                    @Nullable Info info,
-                    @Return({"test", "20"}) @NotBlank String name,
-                    @Return("null") @Min(1) int num) {
-        // process
-        return new Info();
+    public Boolean run(Args args,
+                    @Return("null") @NotBlank String name,
+                    @Return("false") @Min(1) int num) {
+        System.out.println("process");
+        return true;
     }
 
     class Args {
 
         @Max(1000) int id;
 
-        @NotNull HashMap<String, Object> param;
-
-        @Nullable @Size(max = 5) boolean[] value;
-    }
-
-    static class Info {
-
-        @Size(max = 50) String name;
+        @NotBlank String name;
 
         @Nullable @DecimalMin(-25.02) @DecimalMax(200) Double price;
 
-        @Size(min = 10, max = 10) List<String> extra;
+        @Size(min = 10, max = 10) String[] values;
 
-        public Info() {
-        }
+        @NotNull HashMap<String, Object> param;
 
-        Info(String name, Double price) {
-            this.name = name;
-            this.price = price;
-        }
+        @Size(max = 5) List<String> extra;
     }
 }

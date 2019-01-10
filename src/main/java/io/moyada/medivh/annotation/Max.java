@@ -14,7 +14,7 @@ import java.lang.annotation.*;
 public @interface Max {
 
     /**
-     * 最大值
+     * @return 整数最大值
      */
     long value();
 }

@@ -83,7 +83,7 @@ dependencies {
 | [@Exclusive](#继承使用) | 方法、方法参数 | 禁用校验逻辑。 |
 | [@Variable](#NotNull) | 类、方法 | 修改当前作用域下校验逻辑产生的变量名和方法名。 |
 
-* 基于 [JSR380](https://jcp.org/en/jsr/detail?id=380)
+* 注解的设计参考自 Bean Validation 2.0 ([JSR-380](https://jcp.org/en/jsr/detail?id=380))
 
 具体使用方式见 [示例](#示例)
 

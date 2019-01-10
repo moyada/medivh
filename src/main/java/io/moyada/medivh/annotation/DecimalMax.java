@@ -14,7 +14,7 @@ import java.lang.annotation.*;
 public @interface DecimalMax {
 
     /**
-     * 最大值
+     * @return 浮点数最大值
      */
     double value();
 }

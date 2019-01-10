@@ -44,10 +44,6 @@ public class CustomRuleTranslator extends BaseTranslator {
         }
     }
 
-    /**
-     * 扫描类节点
-     * @param jcClassDecl
-     */
     @Override
     public void visitClassDef(JCTree.JCClassDecl jcClassDecl) {
         super.visitClassDef(jcClassDecl);

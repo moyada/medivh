@@ -14,7 +14,7 @@ import java.lang.annotation.*;
 public @interface DecimalMin {
 
     /**
-     * 最小值
+     * @return 浮点数最小值
      */
     double value();
 }

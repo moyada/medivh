@@ -14,7 +14,7 @@ import java.lang.annotation.*;
 public @interface Min {
 
     /**
-     * 最小值
+     * @return 整数最小值
      */
     long value();
 }

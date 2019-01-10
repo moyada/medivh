@@ -27,10 +27,6 @@ public class UtilMethodTranslator extends BaseTranslator {
         this.className = className;
     }
 
-    /**
-     * 扫描类节点
-     * @param jcClassDecl
-     */
     @Override
     public void visitClassDef(JCTree.JCClassDecl jcClassDecl) {
         super.visitClassDef(jcClassDecl);

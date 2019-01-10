@@ -187,7 +187,7 @@ public class ExpressionMaker {
      * @param giver 调用对象
      * @param accepter 接收对象
      * @param methodName 调用方法
-     * @param accepter paramArgs 参数列表
+     * @param paramArgs 参数列表
      * @return 调用赋值语句
      */
     public JCTree.JCExpressionStatement assignCallback(JCTree.JCIdent giver, JCTree.JCExpression accepter, String methodName, List<JCTree.JCExpression> paramArgs) {
