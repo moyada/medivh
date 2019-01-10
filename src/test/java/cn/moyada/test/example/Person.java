@@ -10,4 +10,7 @@ public abstract class Person {
 
     @NotBlank
     public abstract String getName();
+
+    @NotBlank
+    public abstract StringBuffer getAddress();
 }

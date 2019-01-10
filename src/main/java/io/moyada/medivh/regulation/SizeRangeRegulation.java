@@ -19,7 +19,7 @@ public class SizeRangeRegulation extends BaseRegulation implements Regulation {
     private final Integer max;
 
     // 类型数据获取支持
-    private final TypeGetSupport typeGetSupport;
+    private final TypeFetchSupport typeFetchSupport;
 
     // 临时变量支持
     private final LocalVarSupport localVarSupport;
@@ -28,7 +28,7 @@ public class SizeRangeRegulation extends BaseRegulation implements Regulation {
         this.min = min;
         this.max = max;
         this.localVarSupport = new LocalVarSupport(TypeTag.INT);
-        this.typeGetSupport = new TypeGetSupport(type);
+        this.typeFetchSupport = new TypeFetchSupport(type);
     }
 
     @Override
@@ -41,10 +41,10 @@ public class SizeRangeRegulation extends BaseRegulation implements Regulation {
         JCTree.JCExpression getLength;
 
         if (null != min && null != max) {
-            getLength = typeGetSupport.getExpr(expressionMaker, self);
+            getLength = typeFetchSupport.getExpr(expressionMaker, self);
             getLength = localVarSupport.getValue(expressionMaker, statements, getLength);
         } else {
-            getLength = typeGetSupport.getExpr(expressionMaker, self);
+            getLength = typeFetchSupport.getExpr(expressionMaker, self);
         }
 
         JCTree.JCIf expression = null;
@@ -90,6 +90,6 @@ public class SizeRangeRegulation extends BaseRegulation implements Regulation {
 
     @Override
     String buildInfo(String fieldName) {
-        return fieldName + typeGetSupport.getMode() + " ";
+        return fieldName + typeFetchSupport.getMode() + " ";
     }
 }

@@ -74,7 +74,7 @@ public final class RegulationBuilder {
     public static List<Regulation> findBasicRule(Symbol symbol, String className, byte type, ActionData actionData) {
         List<Regulation> regulations = new ArrayList<Regulation>();
 
-        BaseRegulation notBlankRegulation = buildNotBlank(symbol, className);
+        BaseRegulation notBlankRegulation = buildNotBlank(symbol, type);
         if (null != notBlankRegulation) {
             notBlankRegulation.setActionData(actionData);
             regulations.add(notBlankRegulation);
@@ -98,11 +98,10 @@ public final class RegulationBuilder {
     /**
      * 是否需要非空字符串校验
      * @param symbol 元素
-     * @param className 类名
+     * @param classType 类别
      * @return 非空字符串处理规则
-     */
-    private static BaseRegulation buildNotBlank(Symbol symbol, String className) {
-        if (!TypeUtil.isStr(className)) {
+     */private static BaseRegulation buildNotBlank(Symbol symbol, byte classType) {
+        if (classType != TypeUtil.STRING) {
             return null;
         }
         NotBlank notBlank = CTreeUtil.getAnnotation(symbol, NotBlank.class);

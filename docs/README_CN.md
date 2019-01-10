@@ -260,12 +260,31 @@ public abstract class Person {
 
     @NotBlank
     public abstract String getName();
+    
+    @NotBlank
+    public abstract StringBuffer getAddress();
 }
 ```
 
 经过编译后的验证方法为:
 
 ```
+public String invalid0() {
+    StringBuffer getAddress = this.getAddress();
+    if (getAddress == null) {
+        return "getAddress is null";
+    } else if (isBlank(getAddress)) {
+        return "getAddress is blank";
+    } else {
+        String getName = this.getName();
+        if (getName == null) {
+            return "getName is null";
+        } else {
+            return isBlank(getName) ? "getName is blank" : null;
+        }
+    }
+}
+
 public static boolean isBlank(String str) {
     int length = str.length();
     if (length == 0) {
@@ -279,15 +298,6 @@ public static boolean isBlank(String str) {
         }
 
         return true;
-    }
-}
-
-public String invalid0() {
-    String getName = this.getName();
-    if (getName == null) {
-        return "getName is null";
-    } else {
-        return isBlank(getName) ? "getName is blank" : null;
     }
 }
 ```

@@ -43,7 +43,7 @@ public class ValidationTranslator extends BaseTranslator {
         }
 
         String fullName = CTreeUtil.getFullName(methodSymbol);
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build Validation logic for " + fullName + "()");
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build validation logic for " + fullName + "()");
 
         // 返回类型
         String returnTypeName = CTreeUtil.getReturnTypeName(methodDecl);
@@ -403,9 +403,10 @@ public class ValidationTranslator extends BaseTranslator {
         }
 
         // 当 checkData.returnValue 为 null 时使用 actionData 创建校验处理动作
-        for (Regulation regulation : regulations) {
-            statements = regulation.handle(expressionMaker, statements, varName, self, checkData.returnValue);
-        }
+        statements = RegulationExecutor.newExecutor(regulations)
+                .setStatement(statements)
+                .setAction(checkData.returnValue)
+                .execute(self, varName);
         return getBlock(statements);
     }
 

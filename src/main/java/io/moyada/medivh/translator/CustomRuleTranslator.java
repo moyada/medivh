@@ -13,6 +13,7 @@ import io.moyada.medivh.regulation.NullCheckRegulation;
 import io.moyada.medivh.regulation.Regulation;
 import io.moyada.medivh.support.ExpressionMaker;
 import io.moyada.medivh.support.RegulationBuilder;
+import io.moyada.medivh.support.RegulationExecutor;
 import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.util.CheckUtil;
 
@@ -183,16 +184,14 @@ public class CustomRuleTranslator extends BaseTranslator {
 
 
         for (Map.Entry<JCTree.JCExpression, java.util.List<Regulation>> entry : ruleMap.entrySet()) {
-            // 当前字段规则链
-            ListBuffer<JCTree.JCStatement> thisStatements = CTreeUtil.newStatement();
-
             JCTree.JCExpression self = entry.getKey();
-            java.util.List<Regulation> rules = entry.getValue();
+            java.util.List<Regulation> regulations = entry.getValue();
 
-            String name = self.toString();
-            for (Regulation rule : rules) {
-                thisStatements = rule.handle(expressionMaker, thisStatements, name, self,null);
-            }
+            // 当前字段规则链
+            ListBuffer<JCTree.JCStatement> thisStatements = RegulationExecutor
+                    .newExecutor(regulations)
+                    .execute(self, self.toString());
+
             statements.append(getBlock(thisStatements));
         }
 

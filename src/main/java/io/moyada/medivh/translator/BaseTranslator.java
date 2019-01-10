@@ -69,7 +69,7 @@ abstract class BaseTranslator extends TreeTranslator {
      */
     byte getClassType(String className) {
         // 字符串逻辑
-        if (TypeUtil.isStr(className)) {
+        if (isString(className)) {
             return TypeUtil.STRING;
         }
         // 数组规则
@@ -88,7 +88,39 @@ abstract class BaseTranslator extends TreeTranslator {
     }
 
     /**
-     * 是否属于集合或子类
+     * 类型是否属于 {@link CharSequence} 或实现类
+     * @param className 类型名称
+     * @return 是否属于字符序列
+     */
+    private boolean isString(String className) {
+        Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(className);
+        // primitive 类型
+        if (null == classSymbol) {
+            return false;
+        }
+
+        if (classSymbol.isInterface()) {
+            return isString(classSymbol);
+        } else {
+            List<Type> interfaces = classSymbol.getInterfaces();
+            int size = interfaces.size();
+            if (size == 0) {
+                return false;
+            }
+
+            Symbol.TypeSymbol typeSymbol;
+            for (int i = 0; i < size; i++) {
+                typeSymbol = interfaces.get(i).tsym;
+                if (isString(typeSymbol)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 类型是否属于集合或子类
      * @param className 类型名称
      * @return 是否属于集合
      */
@@ -154,6 +186,15 @@ abstract class BaseTranslator extends TreeTranslator {
      */
     private boolean isCollection(Symbol typeSymbol) {
         return isInstanceOf(typeSymbol, expressionMaker.getCollectionSymbol()) || isInstanceOf(typeSymbol, expressionMaker.getMapSymbol());
+    }
+
+    /**
+     * 判断类型是否为字符序列
+     * @param typeSymbol 类型元素
+     * @return 是否属于 CharSequence
+     */
+    private boolean isString(Symbol typeSymbol) {
+        return isInstanceOf(typeSymbol, expressionMaker.getStringSymbol());
     }
 
     /**

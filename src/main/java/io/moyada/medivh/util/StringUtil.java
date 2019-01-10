@@ -10,7 +10,7 @@ public final class StringUtil {
     private StringUtil() {
     }
 
-    public static boolean isEmpty(String str) {
+    public static boolean isEmpty(CharSequence str) {
         if (null == str) {
             return true;
         }

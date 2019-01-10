@@ -5,7 +5,7 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.support.ElementOptions;
 import io.moyada.medivh.support.ExpressionMaker;
-import io.moyada.medivh.support.TypeGetSupport;
+import io.moyada.medivh.support.TypeFetchSupport;
 import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.support.TypeTag;
 
@@ -22,7 +22,7 @@ public class EqualsRegulation extends BaseRegulation implements Regulation {
     private Object value;
 
     // 类型数据获取
-    private TypeGetSupport typeGetSupport;
+    private TypeFetchSupport typeFetchSupport;
 
     // 值语句
     private JCTree.JCExpression valueExpr;
@@ -42,7 +42,7 @@ public class EqualsRegulation extends BaseRegulation implements Regulation {
         } else {
             this.compareTag = TypeTag.NE;
         }
-        this.typeGetSupport = new TypeGetSupport(type);
+        this.typeFetchSupport = new TypeFetchSupport(type);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class EqualsRegulation extends BaseRegulation implements Regulation {
         JCTree.JCExpression rival = getValue(treeMaker);
 
         JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, compareTag,
-                typeGetSupport.getExpr(expressionMaker, self), rival);
+                typeFetchSupport.getExpr(expressionMaker, self), rival);
         return treeMaker.If(condition, action, null);
     }
 

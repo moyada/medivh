@@ -10,12 +10,12 @@ import io.moyada.medivh.util.TypeUtil;
  * @author xueyikang
  * @since 1.0
  **/
-public class TypeGetSupport {
+public class TypeFetchSupport {
 
     // 类型
     private final byte type;
 
-    public TypeGetSupport(byte type) {
+    public TypeFetchSupport(byte type) {
         this.type = type;
     }
 

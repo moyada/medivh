@@ -69,7 +69,7 @@ public class UtilMethodTranslator extends BaseTranslator {
         JCTree.JCReturn returnFalse = treeMaker.Return(expressionMaker.falseNode);
 
         // define String str parameter
-        JCTree.JCVariableDecl var = expressionMaker.newVar("str", Flags.PARAMETER, String.class.getName(), null);
+        JCTree.JCVariableDecl var = expressionMaker.newVar("str", Flags.PARAMETER, CharSequence.class.getName(), null);
         JCTree.JCIdent str = treeMaker.Ident(var.name);
 
         ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();

@@ -262,6 +262,9 @@ public abstract class Person {
 
     @NotBlank
     public abstract String getName();
+
+    @NotBlank
+    public abstract StringBuffer getAddress();
 }
 ```
 
@@ -269,11 +272,18 @@ The compiled `validation` method will be:
 
 ```
 public String invalid0() {
-    String getName = this.getName();
-    if (getName == null) {
-        return "getName is null";
+    StringBuffer getAddress = this.getAddress();
+    if (getAddress == null) {
+        return "getAddress is null";
+    } else if (isBlank(getAddress)) {
+        return "getAddress is blank";
     } else {
-        return isBlank(getName) ? "getName is blank" : null;
+        String getName = this.getName();
+        if (getName == null) {
+            return "getName is null";
+        } else {
+            return isBlank(getName) ? "getName is blank" : null;
+        }
     }
 }
 
