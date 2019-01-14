@@ -54,10 +54,4 @@ public class PosScanner extends TreeScanner {
         visit(jcAnnotation);
         super.visitAnnotation(jcAnnotation);
     }
-
-    @Override
-    public void visitAnnotatedType(JCTree.JCAnnotatedType jcAnnotatedType) {
-        visit(jcAnnotatedType);
-        super.visitAnnotatedType(jcAnnotatedType);
-    }
 }
