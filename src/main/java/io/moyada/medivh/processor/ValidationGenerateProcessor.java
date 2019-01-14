@@ -2,26 +2,23 @@ package io.moyada.medivh.processor;
 
 
 import com.sun.source.util.Trees;
-import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
 import io.moyada.medivh.annotation.*;
+import io.moyada.medivh.support.ElementOptions;
 import io.moyada.medivh.support.ExpressionMaker;
 import io.moyada.medivh.translator.CustomRuleTranslator;
 import io.moyada.medivh.translator.UtilMethodTranslator;
 import io.moyada.medivh.translator.ValidationTranslator;
-import io.moyada.medivh.util.CheckUtil;
 import io.moyada.medivh.util.ClassUtil;
+import io.moyada.medivh.util.ElementUtil;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Messager;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.*;
-import javax.lang.model.util.ElementFilter;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.lang.annotation.Annotation;
 import java.util.*;
@@ -41,14 +38,18 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
 
     // 处理器上下文
     private Context context;
+
     // 语法树
     private Trees trees;
+
+    // 文件处理器
+    private Filer filer;
 
     public ValidationGenerateProcessor() {
         ruleAnnos = new ArrayList<Class<? extends Annotation>>();
         ruleAnnos.add(Nullable.class);
-        ruleAnnos.add(NotNull.class);
         ruleAnnos.add(NotBlank.class);
+        ruleAnnos.add(NotNull.class);
         ruleAnnos.add(DecimalMin.class);
         ruleAnnos.add(DecimalMax.class);
         ruleAnnos.add(Min.class);
@@ -63,6 +64,7 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
         ClassUtil.disableJava9SillyWarning();
 
         this.context = ((JavacProcessingEnvironment) processingEnv).getContext();
+        this.filer = processingEnv.getFiler();
         this.trees = Trees.instance(processingEnv);
         this.messager = processingEnv.getMessager();
 
@@ -73,17 +75,17 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Set<? extends Element> rootElements = roundEnv.getRootElements();
         // 获取校验方法
-        Collection<? extends Element> methods = getMethods(rootElements, Throw.class.getName(), Return.class.getName());
+        Collection<? extends Element> methods = ElementUtil.getMethods(trees, rootElements, Throw.class.getName(), Return.class.getName());
         if (methods.isEmpty()) {
             return true;
         }
 
         // 获取对象规则
-        Map<? extends Element, List<String>> classRules = getRule(roundEnv);
+        Map<? extends Element, List<String>> classRules = ElementUtil.getRule(roundEnv, ruleAnnos);
 
         ExpressionMaker expressionMaker = ExpressionMaker.newInstance(context);
 
-        createUtilMethod(rootElements, expressionMaker);
+        createUtilMethod(roundEnv, rootElements, expressionMaker);
 
         // 校验方法生成器
         TreeTranslator translator = new CustomRuleTranslator(expressionMaker, messager, classRules);
@@ -103,101 +105,21 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
     }
 
     /**
-     * 获取待增强方法
-     * @param rootElements 根元素集合
-     * @param annoNames 注解名称
-     * @return 方法元素集合
-     */
-    private Collection<? extends Element> getMethods(Set<? extends Element> rootElements, String... annoNames) {
-        Set<Element> methods = new HashSet<Element>();
-
-        boolean filter;
-        for (Element rootElement : rootElements) {
-            if (rootElement.getKind() == ElementKind.INTERFACE) {
-                continue;
-            }
-            JCTree.JCClassDecl classDecl = (JCTree.JCClassDecl) trees.getTree(rootElement);
-            boolean checkClass = CheckUtil.isCheckClass(classDecl);
-
-            List<? extends Element> elements = rootElement.getEnclosedElements();
-            for (Element element : elements) {
-                if (element.getKind() != ElementKind.METHOD) {
-                    continue;
-                }
-                JCTree.JCMethodDecl methodDecl = (JCTree.JCMethodDecl) trees.getTree(element);
-                // 无需校验的方法
-                if (isJump(methodDecl)) {
-                    continue;
-                }
-                // 无参数方法
-                com.sun.tools.javac.util.List<JCTree.JCVariableDecl> parameters = methodDecl.getParameters();
-                if (parameters.isEmpty()) {
-                    continue;
-                }
-
-                // 标记排除
-                if (CheckUtil.isExclusive(methodDecl.sym)) {
-                    continue;
-                }
-
-                // 类上或方法上标记校验处理
-                if (checkClass || CheckUtil.isCheckMethod(methodDecl)) {
-                    methods.add(element);
-                    continue;
-                }
-
-                filter = true;
-                for (int i = 0; filter && i < parameters.size(); i++) {
-                    JCTree.JCVariableDecl variableDecl = parameters.get(i);
-                    List<? extends AnnotationMirror> mirrors = variableDecl.sym.getAnnotationMirrors();
-                    if (mirrors.isEmpty()) {
-                        continue;
-                    }
-                    for (int j = 0; filter && j < mirrors.size(); j++) {
-                        String name = mirrors.get(j).getAnnotationType().toString();
-                        for (int k = 0; filter && k < annoNames.length; k++) {
-                            // 存在标记注解的字段，则将该方法记录，跳至下一方法
-                            if (annoNames[k].equals(name)) {
-                                methods.add(element);
-                                filter = false;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return methods;
-    }
-
-    /**
-     * 创建工具方法
-     * 选择一个 public class 创建工具方法，如指定方法则不创建
+     * 创建工具方法，如指定方法则不生效
+     * 根据配置选择创建新文件提供方法，或者选择一个 public class 创建工具方法
+     * @param roundEnv 根环境
      * @param elements 元素集合
      * @param expressionMaker 语句构造器
      */
-    private void createUtilMethod(Collection<? extends Element> elements, ExpressionMaker expressionMaker) {
-        List<TypeElement> typeElements = ElementFilter.typesIn(elements);
-        if (typeElements.isEmpty()) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "cannot find any class type");
+    private void createUtilMethod(RoundEnvironment roundEnv, Collection<? extends Element> elements, ExpressionMaker expressionMaker) {
+        boolean createFile = !Boolean.FALSE.toString().equalsIgnoreCase(ElementOptions.UTIL_CREATE);
+        if (createFile) {
+            ElementUtil.createUtil(filer, roundEnv);
+            messager.printMessage(Diagnostic.Kind.NOTE, "Created util class " + ElementOptions.UTIL_CLASS);
             return;
         }
-        TypeElement classElement = null;
-        for (TypeElement element : typeElements) {
-            ElementKind kind = element.getKind();
-            if (kind != ElementKind.CLASS) {
-                continue;
-            }
-            if (element.getEnclosingElement().getKind() != ElementKind.PACKAGE) {
-                continue;
-            }
-            if (!isPublic(element)) {
-                continue;
-            }
 
-            classElement = element;
-        }
-
+        Element classElement = ElementUtil.getPublicClass(elements);
         if (classElement == null) {
             messager.printMessage(Diagnostic.Kind.ERROR, "cannot find any public class");
             return;
@@ -205,70 +127,6 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
 
         JCTree tree = (JCTree) trees.getTree(classElement);
         tree.accept(new UtilMethodTranslator(expressionMaker, messager, classElement.toString()));
-    }
-
-    /**
-     * 是否是public类型
-     * @param element 元素
-     * @return 存在 Public 标识则返回 true
-     */
-    private boolean isPublic(Element element) {
-        Set<Modifier> modifiers = element.getModifiers();
-        for (Modifier modifier : modifiers) {
-            if (modifier == Modifier.PUBLIC) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 跳过 接口、抽象 方法
-     * @param methodDecl 方法节点
-     * @return 合法节点则返回 false
-     */
-    private boolean isJump(JCTree.JCMethodDecl methodDecl) {
-        if (null == methodDecl) {
-            return true;
-        }
-        if ((methodDecl.sym.getEnclosingElement().flags() & Flags.INTERFACE) != 0) {
-            return true;
-        }
-        if ((methodDecl.getModifiers().flags & Flags.ABSTRACT) != 0) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 获取存在规则元素
-     * @param roundEnv 环境
-     * @return 规则类元素集合
-     */
-    private Map<? extends Element, List<String>> getRule(RoundEnvironment roundEnv) {
-        Set<Element> rules = new HashSet<Element>();
-
-        Set<? extends Element> elements;
-        for (Class<? extends Annotation> anno : ruleAnnos) {
-            elements = roundEnv.getElementsAnnotatedWith(anno);
-            rules.addAll(ElementFilter.fieldsIn(elements));
-            rules.addAll(ElementFilter.methodsIn(elements));
-        }
-
-        Map<Element, List<String>> classRule = new HashMap<Element, List<String>>();
-        Element classEle;
-        for (Element element : rules) {
-            classEle = element.getEnclosingElement();
-            List<String> items = classRule.get(classEle);
-            if (null == items) {
-                items = new ArrayList<String>();
-                classRule.put(classEle, items);
-            }
-            items.add(element.toString());
-        }
-
-        return classRule;
     }
 
     @Override

@@ -52,8 +52,8 @@ public class CustomRuleTranslator extends BaseTranslator {
         boolean isInterface = (jcClassDecl.mods.flags & Flags.INTERFACE) != 0;
         // 过滤jdk8以下接口无法创建校验方法
         if (isInterface && !CTreeUtil.isDefaultInterface()) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "[Param Error] unable to use " +
-                    CTreeUtil.getOriginalTypeName(jcClassDecl.sym) + " (interface type) as parameter before JDK8 version.");
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Param Error] Can't use " +
+                    CTreeUtil.getOriginalTypeName(jcClassDecl.sym) + " (interface type) as parameter before Java 8.");
             return;
         }
 
@@ -76,7 +76,7 @@ public class CustomRuleTranslator extends BaseTranslator {
             return;
         }
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create " + methodName + " method in " + className);
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create method \"" + methodName + "\" in " + className);
 
         JCTree.JCBlock body = createBody(rules);
         JCTree.JCMethodDecl method = createMethod(methodName, body, isInterface);
@@ -148,21 +148,22 @@ public class CustomRuleTranslator extends BaseTranslator {
 
         byte classType = getClassType(typeName);
         java.util.List<Regulation> regulations = RegulationBuilder.findBasicRule(symbol, typeName, classType);
+        boolean empty = regulations.isEmpty();
 
-        Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType);
+        Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType, !empty);
         // 非原始类型
         if (null != checkNull) {
             if (checkNull) {
                 regulations.add(new NullCheckRegulation());
             } else {
                 // 无规则不使用非空包装
-                if (!regulations.isEmpty()) {
+                if (!empty) {
                     regulations.add(new NotNullWrapperRegulation());
                 }
             }
         }
 
-        if (regulations.isEmpty()) {
+        if (empty) {
             return;
         }
 

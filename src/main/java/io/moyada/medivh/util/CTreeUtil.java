@@ -199,8 +199,8 @@ public final class CTreeUtil {
      */
     public static Object newInstanceForName(Context context) {
         Method method;
-        switch (VersionUtil.VERSION) {
-            case VersionUtil.VERSION_6:
+        switch (Compiler.CURRENT_VERSION) {
+            case Compiler.JAVA_6:
                 Class<?> tableClass = ClassUtil.getClass("com.sun.tools.javac.util.Name$Table");
                 method = ClassUtil.getMethod(tableClass, "instance", Context.class);
                 break;
@@ -220,8 +220,8 @@ public final class CTreeUtil {
      */
     public static Name getName(Object instance, String name) {
         Method method;
-        switch (VersionUtil.VERSION) {
-            case VersionUtil.VERSION_6:
+        switch (Compiler.CURRENT_VERSION) {
+            case Compiler.JAVA_6:
                 Class<?> nameClass = ClassUtil.getClass("com.sun.tools.javac.util.Name");
                 Class<?> tableClass = ClassUtil.getClass("com.sun.tools.javac.util.Name$Table");
                 method = ClassUtil.getMethod(nameClass, "fromString", tableClass, String.class);
@@ -251,9 +251,9 @@ public final class CTreeUtil {
      * @return 版本在 8 以下则返回 false
      */
     public static boolean isDefaultInterface() {
-        switch (VersionUtil.VERSION) {
-            case VersionUtil.VERSION_6:
-            case VersionUtil.VERSION_7:
+        switch (Compiler.CURRENT_VERSION) {
+            case Compiler.JAVA_6:
+            case Compiler.JAVA_7:
                 return false;
             default:
                 return true;
@@ -267,9 +267,9 @@ public final class CTreeUtil {
      */
     private static Object getTypeTag(TypeTag typeTag) {
         String target;
-        switch (VersionUtil.VERSION) {
-            case VersionUtil.VERSION_6:
-            case VersionUtil.VERSION_7:
+        switch (Compiler.CURRENT_VERSION) {
+            case Compiler.JAVA_6:
+            case Compiler.JAVA_7:
                 target = "com.sun.tools.javac.code.TypeTags";
                 break;
             default:
@@ -288,9 +288,9 @@ public final class CTreeUtil {
      */
     public static JCTree.JCPrimitiveTypeTree getPrimitiveType(TreeMaker treeMaker, TypeTag typeTag) {
         Method method;
-        switch (VersionUtil.VERSION) {
-            case VersionUtil.VERSION_6:
-            case VersionUtil.VERSION_7:
+        switch (Compiler.CURRENT_VERSION) {
+            case Compiler.JAVA_6:
+            case Compiler.JAVA_7:
                 method = ClassUtil.getMethod(TreeMaker.class, "TypeIdent", int.class);
                 break;
             default:
@@ -310,9 +310,9 @@ public final class CTreeUtil {
      */
     public static JCTree.JCLiteral newElement(TreeMaker treeMaker, TypeTag typeTag, Object value) {
         Method method;
-        switch (VersionUtil.VERSION) {
-            case VersionUtil.VERSION_6:
-            case VersionUtil.VERSION_7:
+        switch (Compiler.CURRENT_VERSION) {
+            case Compiler.JAVA_6:
+            case Compiler.JAVA_7:
                 method = ClassUtil.getMethod(TreeMaker.class, "Literal", int.class, Object.class);
                 break;
             default:
@@ -335,9 +335,9 @@ public final class CTreeUtil {
                                                 JCTree.JCExpression left, JCTree.JCExpression right) {
         String target;
         Method method;
-        switch (VersionUtil.VERSION) {
-            case VersionUtil.VERSION_6:
-            case VersionUtil.VERSION_7:
+        switch (Compiler.CURRENT_VERSION) {
+            case Compiler.JAVA_6:
+            case Compiler.JAVA_7:
                 method = ClassUtil.getMethod(TreeMaker.class, "Binary", int.class,
                         JCTree.JCExpression.class, JCTree.JCExpression.class);
                 target = "com.sun.tools.javac.tree.JCTree";
@@ -362,9 +362,9 @@ public final class CTreeUtil {
      */
     public static JCTree.JCStatement newThrow(TreeMaker treeMaker, Object exceptionType) {
         Class<?> param;
-        switch (VersionUtil.VERSION) {
-            case VersionUtil.VERSION_6:
-            case VersionUtil.VERSION_7:
+        switch (Compiler.CURRENT_VERSION) {
+            case Compiler.JAVA_6:
+            case Compiler.JAVA_7:
                 param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree");
                 break;
             default:

@@ -39,7 +39,7 @@ public final class ClassUtil {
      * 关闭 JAVA9 使用 Unsafe 反射警告
      */
     public static void disableJava9SillyWarning() {
-        if (VersionUtil.VERSION < VersionUtil.VERSION_9) {
+        if (Compiler.CURRENT_VERSION < Compiler.JAVA_9) {
             return;
         }
         try {

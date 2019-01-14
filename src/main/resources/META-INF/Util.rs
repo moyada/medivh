@@ -1,9 +1,4 @@
-public class Util {
-
-    private Util() {
-    }
-
-    public static boolean isBlank(String str) {
+    public static boolean isBlank(CharSequence str) {
         int length = str.length();
         if (length == 0) {
             return true;
@@ -17,4 +12,3 @@ public class Util {
         }
         return true;
     }
-}

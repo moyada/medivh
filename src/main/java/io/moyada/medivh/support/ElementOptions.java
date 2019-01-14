@@ -56,11 +56,15 @@ public class ElementOptions {
     private static final String DEFAULT_BLANK_INFO = "is blank";
     public final static String BLANK_INFO = SystemUtil.getProperty(BLANK_KEY, DEFAULT_BLANK_INFO);
 
-    // 非空白字符串方法
-    private static final String BLANK_METHOD_KEY = "medivh.method.blank";
-    public static final String[] DEFAULT_BLANK_METHOD = new String[] {"io.moyada.medivh.support.Util", "isBlank"};
-    public static String[] BLANK_METHOD = SystemUtil.getClassAndMethod(System.getProperty(BLANK_METHOD_KEY), null);
+    // 是否创建工具类
+    private static final String UTIL_CREATE_KEY = "medivh.util.create";
+    private static final String DEFAULT_UTIL_CREATE = "true";
+    public final static String UTIL_CREATE = SystemUtil.getProperty(UTIL_CREATE_KEY, DEFAULT_UTIL_CREATE);
 
+    // 工具类
+    public static String UTIL_CLASS;
+    // 非空白字符串方法
+    public static String BLANK_METHOD = "isBlank";
 
     // 默认布尔值返回
     private static final String RETURN_BOOLEAN_KEY = "medivh.return.boolean";

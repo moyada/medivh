@@ -1,7 +1,5 @@
 package io.moyada.medivh.util;
 
-import io.moyada.medivh.support.ElementOptions;
-
 import javax.annotation.processing.Filer;
 import javax.tools.JavaFileObject;
 import java.io.FileNotFoundException;
@@ -61,7 +59,7 @@ public final class SystemUtil {
      * @param className 类名
      * @return 包名
      */
-    public static String getPackage(String className) {
+    private static String getPackage(String className) {
         int index = className.lastIndexOf(".");
         if (index < 0) {
             return "";
@@ -73,21 +71,20 @@ public final class SystemUtil {
     /**
      * 创建工具类
      * @param filer 文件创建器
-     * @param name 文见名
+     * @param packageName 包名
+     * @param className 类名
      * @throws IOException 资源获取失败异常
      */
-    public static void createFile(Filer filer, String name) throws IOException {
-        if (!ElementOptions.BLANK_METHOD[0].equals(ElementOptions.DEFAULT_BLANK_METHOD[0])) {
-            return;
-        }
+    static void createFile(Filer filer, String packageName, String className, String resourcePath) throws IOException {
+        String content = getJarContent(resourcePath);
 
-        String content = getUtilContent("META-INF/Util.rs");
-        String packageUrl = getPackage(name);
-
-        JavaFileObject classFile = filer.createSourceFile(name);
+        JavaFileObject classFile = filer.createSourceFile(packageName + "." + className);
         Writer writer = classFile.openWriter();
-        writer.append("package ").append(packageUrl).append(";\n\n");
+        writer.append("package ").append(packageName).append(";\n\n");
+        writer.append("public final class ").append(className).append("{\n");
+        writer.append("    private ").append(className).append("() {}\n");
         writer.append(content);
+        writer.append("\n}\n");
         writer.flush();
         writer.close();
     }
@@ -98,7 +95,7 @@ public final class SystemUtil {
      * @return 返回内容信息
      * @throws IOException 资源获取失败异常
      */
-    private static String getUtilContent(String url) throws IOException {
+    private static String getJarContent(String url) throws IOException {
         URL resource = StringUtil.class.getResource("");
         String path = resource.getPath();
         String protocol = "file:";

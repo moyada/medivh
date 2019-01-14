@@ -6,8 +6,8 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.annotation.Return;
 import io.moyada.medivh.annotation.Throw;
-import io.moyada.medivh.support.*;
 import io.moyada.medivh.regulation.*;
+import io.moyada.medivh.support.*;
 import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.util.CheckUtil;
 import io.moyada.medivh.util.TypeUtil;
@@ -43,7 +43,6 @@ public class ValidationTranslator extends BaseTranslator {
         }
 
         String fullName = CTreeUtil.getFullName(methodSymbol);
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build validation logic for " + fullName + "()");
 
         // 返回类型
         String returnTypeName = CTreeUtil.getReturnTypeName(methodDecl);
@@ -59,6 +58,8 @@ public class ValidationTranslator extends BaseTranslator {
         if (statements.isEmpty()) {
             return;
         }
+
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Build validation for " + fullName + "()");
 
         statements.prepend(msg);
         // 加入原始逻辑
@@ -168,7 +169,7 @@ public class ValidationTranslator extends BaseTranslator {
         }
         // 无效的返回类型，void
         if (returnTypeName == null) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot mark Return annotation on void return method.");
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't mark Return annotation on void return method.");
             return null;
         }
 
@@ -186,7 +187,7 @@ public class ValidationTranslator extends BaseTranslator {
                     returnTypeName = type;
                 } else {
                     // 类型不一致
-                    messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] " + type + " cannot convert to " + returnTypeName);
+                    messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't convert " + type + " to " + returnTypeName);
                 }
             } else {
                 returnTypeName = type;
@@ -224,7 +225,7 @@ public class ValidationTranslator extends BaseTranslator {
         if (CheckUtil.isReturnNull(values)) {
             // 返回空对象
             if (primitive) {
-                messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot return <nulltype> value to " + classType);
+                messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't return <nulltype> value to " + classType);
             }
             returnValue = expressionMaker.nullNode;
             return treeMaker.Return(returnValue);
@@ -238,7 +239,7 @@ public class ValidationTranslator extends BaseTranslator {
                 paramType = getParamType(classSymbol, false, values);
                 if (null == paramType) {
                     // 无匹配的静态方法
-                    messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot find match param static method from " + classType + " by " + Arrays.toString(values));
+                    messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't find match param static method from " + classType + " by " + Arrays.toString(values));
                 }
             }
             JCTree.JCExpression clazzType = expressionMaker.findClass(classType);
@@ -248,7 +249,7 @@ public class ValidationTranslator extends BaseTranslator {
 
         // 无法创建抽象类和接口
         if (errorType) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot find constructor from abstract or interface, return type is " + classType);
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't find constructor from abstract or interface, return type is " + classType);
             return null;
         }
 
@@ -269,7 +270,7 @@ public class ValidationTranslator extends BaseTranslator {
                 Object tagValue = CTreeUtil.getValue(baseType, value);
                 if (null == tagValue) {
                     // 数据有误
-                    messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot convert " + value + " to " + classType);
+                    messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't convert " + value + " to " + classType);
                 }
                 returnValue = CTreeUtil.newElement(treeMaker, baseType, tagValue);
                 return treeMaker.Return(returnValue);
@@ -281,7 +282,7 @@ public class ValidationTranslator extends BaseTranslator {
         List<JCTree.JCExpression> paramType = getParamType(classSymbol, true, values);
         if (null == paramType) {
             // 无匹配的构造方法
-            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot find match param constructor from " + classType + " by " + Arrays.toString(values));
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't find match param constructor from " + classType + " by " + Arrays.toString(values));
         }
         returnValue = treeMaker.NewClass(null, CTreeUtil.emptyParam(), returnType, paramType, null);
         return treeMaker.Return(returnValue);
@@ -295,7 +296,7 @@ public class ValidationTranslator extends BaseTranslator {
      */
     private JCTree.JCExpression getEmptyType(String returnTypeName) {
         if (null != TypeUtil.getBaseType(returnTypeName)) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] cannot find return value to " + returnTypeName);
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't find return value to " + returnTypeName);
         }
         JCTree.JCExpression returnType = expressionMaker.findClass(returnTypeName);
         return treeMaker.NewClass(null, CTreeUtil.emptyParam(), returnType, CTreeUtil.emptyParam(), null);
@@ -381,7 +382,7 @@ public class ValidationTranslator extends BaseTranslator {
             isEmpty = false;
         }
 
-        Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType);
+        Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType, !isEmpty);
 
         // 非原始类型
         if (null != checkNull) {

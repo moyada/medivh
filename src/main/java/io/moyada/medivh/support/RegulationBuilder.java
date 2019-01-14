@@ -28,7 +28,7 @@ public final class RegulationBuilder {
      * @param classType 类型
      * @return null 为不需，true 为进行非空校验，false 需要保证其他操作不抛出 NPE
      */
-    public static Boolean checkNotNull(Symbol symbol, byte classType) {
+    public static Boolean checkNotNull(Symbol symbol, byte classType, boolean hasAnyRule) {
         // 基础类型排除空校验
         if (classType == TypeUtil.PRIMITIVE) {
             return null;
@@ -37,19 +37,16 @@ public final class RegulationBuilder {
         NotNull notnull = CTreeUtil.getAnnotation(symbol, NotNull.class);
         Nullable nullable = CTreeUtil.getAnnotation(symbol, Nullable.class);
 
-        boolean nullcheck;
+        Boolean nullcheck;
         if (null != notnull) {
             nullcheck = true;
         } else if (null != nullable) {
             nullcheck = false;
         } else {
-            nullcheck = true;
+            nullcheck = hasAnyRule ? true : null;
         }
 
-        if (nullcheck) {
-            return true;
-        }
-        return false;
+        return nullcheck;
     }
 
     /**

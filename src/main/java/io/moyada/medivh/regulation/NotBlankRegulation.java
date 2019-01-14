@@ -22,8 +22,8 @@ public class NotBlankRegulation extends BaseRegulation implements Regulation {
         TreeMaker treeMaker = expressionMaker.getTreeMaker();
 
         // 调用方法进行校验
-        JCTree.JCExpression aClass = expressionMaker.findClass(ElementOptions.BLANK_METHOD[0]);
-        JCTree.JCMethodInvocation isBlank = expressionMaker.getMethod(aClass, ElementOptions.BLANK_METHOD[1], List.of(self));
+        JCTree.JCExpression aClass = expressionMaker.findClass(ElementOptions.UTIL_CLASS);
+        JCTree.JCMethodInvocation isBlank = expressionMaker.getMethod(aClass, ElementOptions.BLANK_METHOD, List.of(self));
 
         // 返回值为 true 执行动作语句
         JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.EQ, isBlank, expressionMaker.trueNode);

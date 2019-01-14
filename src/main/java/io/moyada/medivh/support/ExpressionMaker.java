@@ -7,9 +7,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
-import io.moyada.medivh.regulation.Regulation;
 import io.moyada.medivh.util.CTreeUtil;
 
 import java.util.Collection;
@@ -47,12 +45,12 @@ public class ExpressionMaker {
     public final JCTree.JCLiteral emptyCh;
 
     // string
-    final Symbol.ClassSymbol stringSymbol;
+    private final Symbol.ClassSymbol stringSymbol;
     // collection
-    final Symbol.ClassSymbol collectionSymbol;
+    private final Symbol.ClassSymbol collectionSymbol;
     // map
-    final Symbol.ClassSymbol mapSymbol;
-    
+    private final Symbol.ClassSymbol mapSymbol;
+
     private ExpressionMaker(Context context) {
         this.treeMaker = TreeMaker.instance(context);
         this.namesInstance = CTreeUtil.newInstanceForName(context);
@@ -75,23 +73,6 @@ public class ExpressionMaker {
 
     public static ExpressionMaker newInstance(Context context) {
         return new ExpressionMaker(context);
-    }
-
-    /**
-     * 处理规则
-     * @param regulations
-     * @param statements
-     * @param fieldName
-     * @param self
-     * @param executeAction
-     * @return
-     */
-    public ListBuffer<JCTree.JCStatement> executeRegulation(java.util.List<Regulation> regulations, ListBuffer<JCTree.JCStatement> statements,
-                                                            String fieldName, JCTree.JCExpression self, JCTree.JCStatement executeAction) {
-        for (Regulation regulation : regulations) {
-            statements = regulation.handle(this, statements, fieldName, self, executeAction);
-        }
-        return statements;
     }
 
     /**

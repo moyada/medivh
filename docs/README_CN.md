@@ -44,7 +44,7 @@ JDK 1.6 及以上版本。
     <dependency>
         <groupId>io.github.moyada</groupId>
         <artifactId>medivh</artifactId>
-        <version>1.3.0</version>
+        <version>1.3.1</version>
         <scope>provided</scope>
     </dependency>
 <dependencies/>
@@ -54,12 +54,12 @@ JDK 1.6 及以上版本。
 
 ```
 dependencies {
-  compileOnly 'io.github.moyada:medivh:1.3.0'
+  compileOnly 'io.github.moyada:medivh:1.3.1'
 }
 ```
 
 普通工程可以通过
-[![release](https://img.shields.io/badge/release-v1.3.0-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
+[![release](https://img.shields.io/badge/release-v1.3.1-blue.svg)](https://github.com/moyada/medivh/releases/latest) 
 或
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/medivh)
 下载最新 jar 包。
@@ -107,7 +107,7 @@ dependencies {
 | medivh.info.less | 配置小于校验信息，默认为 `less than` 。 |
 | medivh.info.great | 配置大于校验信息，默认为 `great than` 。 |
 | medivh.info.blank | 配置空白字符串校验信息，默认为 `is blank` 。 |
-| medivh.method.blank | 指定空白字符串校验方法，格式为 `<package>.<className>.<methodName>` ，不指定将随机选取个 public 标识类创建此方法。 |
+| medivh.util.create | 指定工具方法的创建位置为新建类或者已有类，默认为 `true` 表示使用新建类模式。 |
 
 ## 示例
 
@@ -273,31 +273,15 @@ public String invalid0() {
     StringBuffer getAddress = this.getAddress();
     if (getAddress == null) {
         return "getAddress is null";
-    } else if (isBlank(getAddress)) {
+    } else if (Util.isBlank(getAddress)) {
         return "getAddress is blank";
     } else {
         String getName = this.getName();
         if (getName == null) {
             return "getName is null";
         } else {
-            return isBlank(getName) ? "getName is blank" : null;
+            return Util.isBlank(getName) ? "getName is blank" : null;
         }
-    }
-}
-
-public static boolean isBlank(String str) {
-    int length = str.length();
-    if (length == 0) {
-        return true;
-    } else {
-        for(int i = 0; i < length; ++i) {
-            char ch = str.charAt(i);
-            if (ch != ' ') {
-                return false;
-            }
-        }
-
-        return true;
     }
 }
 ```
@@ -370,7 +354,7 @@ public interface Product {
 ```
 default String invalid0() {
     String getType = this.getType();
-    if (getType != null && CaseReturn.isBlank(getType)) {
+    if (getType != null && Util.isBlank(getType)) {
         return "getType is blank";
     } else {
         long getId = this.getId();
@@ -581,7 +565,7 @@ public Capacity returnObject(String name, Byte type) {
 public Product returnInterface(String name) {
     if (name == null) {
         return new CaseReturn.Item();
-    } else if (isBlank(name)) {
+    } else if (Util.isBlank(name)) {
         return new CaseReturn.Item();
     } else {
         System.out.println("returnInterface");
@@ -655,7 +639,7 @@ public Product returnObject(Person person, String name, Capacity capacity) {
             throw new IllegalArgumentException("Invalid input parameter, cause " + mvar_0);
         } else if (name == null) {
             return new Item();
-        } else if (CaseReturn.isBlank(name)) {
+        } else if (Util.isBlank(name)) {
             return new Item();
         } else if (capacity == null) {
             return CaseReturn.getProduct();
@@ -733,7 +717,7 @@ public boolean customRule(Product product, Capacity capacity) {
 public Capacity useReturn(String name, Counter counter) {
     if (name == null) {
         return new Capacity("test", true);
-    } else if (CaseReturn.isBlank(name)) {
+    } else if (Util.isBlank(name)) {
         return new Capacity("test", true);
     } else if (counter == null) {
         throw new IllegalArgumentException("Invalid input parameter, cause counter is null");

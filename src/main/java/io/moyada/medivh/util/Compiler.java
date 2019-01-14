@@ -7,22 +7,22 @@ import com.sun.tools.javac.main.JavaCompiler;
  * @author xueyikang
  * @since 1.2.2
  **/
-class VersionUtil {
+final class Compiler {
 
-    private VersionUtil() {
+    private Compiler() {
     }
 
-    final static byte VERSION;
-    final static byte VERSION_6 = 0;
-    final static byte VERSION_7 = 1;
-    final static byte VERSION_8 = 2;
-    final static byte VERSION_9 = 3;
+    final static byte CURRENT_VERSION;
+    final static byte JAVA_6 = 0;
+    final static byte JAVA_7 = 1;
+    final static byte JAVA_8 = 2;
+    final static byte JAVA_9 = 3;
 
     // 获取编译器版本号
     static {
         String version = JavaCompiler.version();
-        int sversion = VersionUtil.getVersion(version);
-        VERSION = getSpecialVersion(sversion, version);
+        int sversion = getVersion(version);
+        CURRENT_VERSION = getSpecialVersion(sversion, version);
     }
 
     /**
@@ -38,13 +38,13 @@ class VersionUtil {
 
         switch (v) {
             case 6:
-                return VERSION_6;
+                return JAVA_6;
             case 7:
-                return VERSION_7;
+                return JAVA_7;
             case 8:
-                return VERSION_8;
+                return JAVA_8;
             default:
-                return VERSION_9;
+                return JAVA_9;
         }
     }
 
@@ -83,9 +83,8 @@ class VersionUtil {
         } else {
             // x
             sversion = getFirstNumber(version, 0);
-
             // 1x
-            if (sversion < 2 && length > 2) {
+            if (sversion < 2 && length > 1) {
                 int number = getIndexNumber(version, 1);
                 if (number >= 0) {
                     sversion *= 10;
