@@ -4,9 +4,8 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.support.ElementOptions;
-import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.SyntaxTreeMaker;
 import io.moyada.medivh.support.TypeFetchSupport;
-import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.support.TypeTag;
 
 /**
@@ -46,15 +45,15 @@ public class EqualsRegulation extends BaseRegulation implements Regulation {
     }
 
     @Override
-    JCTree.JCStatement doHandle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
+    JCTree.JCStatement doHandle(SyntaxTreeMaker syntaxTreeMaker, ListBuffer<JCTree.JCStatement> statements,
                                 JCTree.JCExpression self, JCTree.JCStatement action) {
-        TreeMaker treeMaker = expressionMaker.getTreeMaker();
+        TreeMaker treeMaker = syntaxTreeMaker.getTreeMaker();
 
         // 使用固定值比较
-        JCTree.JCExpression rival = getValue(treeMaker);
+        JCTree.JCExpression rival = getValue(syntaxTreeMaker);
 
-        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, compareTag,
-                typeFetchSupport.getExpr(expressionMaker, self), rival);
+        JCTree.JCExpression condition = syntaxTreeMaker.newBinary(compareTag,
+                typeFetchSupport.getExpr(syntaxTreeMaker, self), rival);
         return treeMaker.If(condition, action, null);
     }
 
@@ -65,12 +64,12 @@ public class EqualsRegulation extends BaseRegulation implements Regulation {
 
     /**
      * 获取数据语句
-     * @param treeMaker 语句树构造器
+     * @param syntaxTreeMaker 语法创建工具
      * @return 数据语句元素
      */
-    private JCTree.JCExpression getValue(TreeMaker treeMaker) {
+    private JCTree.JCExpression getValue(SyntaxTreeMaker syntaxTreeMaker) {
         if (null == valueExpr) {
-            valueExpr = CTreeUtil.newElement(treeMaker, typeTag, value);
+            valueExpr = syntaxTreeMaker.newElement(typeTag, value);
         }
         return valueExpr;
     }

@@ -2,7 +2,7 @@ package io.moyada.medivh.regulation;
 
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.SyntaxTreeMaker;
 
 /**
  * 临时变量存储，用于保存方法的调用数据
@@ -19,7 +19,7 @@ public class LocalVariableRegulation implements Regulation {
     }
 
     @Override
-    public ListBuffer<JCTree.JCStatement> handle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
+    public ListBuffer<JCTree.JCStatement> handle(SyntaxTreeMaker syntaxTreeMaker, ListBuffer<JCTree.JCStatement> statements,
                                                  String fieldName, JCTree.JCExpression self, JCTree.JCStatement action) {
         statements.prepend(localVar);
         return statements;

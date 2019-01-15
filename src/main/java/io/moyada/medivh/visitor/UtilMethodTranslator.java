@@ -1,14 +1,13 @@
-package io.moyada.medivh.translator;
+package io.moyada.medivh.visitor;
 
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.support.ElementOptions;
-import io.moyada.medivh.support.ExpressionMaker;
-import io.moyada.medivh.support.PosScanner;
+import io.moyada.medivh.support.SyntaxTreeMaker;
 import io.moyada.medivh.support.TypeTag;
-import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.TreeUtil;
 
 import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic;
@@ -25,8 +24,8 @@ public class UtilMethodTranslator extends BaseTranslator {
 
     private PosScanner posScanner;
 
-    public UtilMethodTranslator(ExpressionMaker expressionMaker, Messager messager, String className) {
-        super(expressionMaker, messager);
+    public UtilMethodTranslator(SyntaxTreeMaker syntaxTreeMaker, Messager messager, String className) {
+        super(syntaxTreeMaker, messager);
         this.className = className;
     }
 
@@ -34,7 +33,7 @@ public class UtilMethodTranslator extends BaseTranslator {
     public void visitClassDef(JCTree.JCClassDecl jcClassDecl) {
         super.visitClassDef(jcClassDecl);
 
-        String typeName = CTreeUtil.getOriginalTypeName(jcClassDecl.sym);
+        String typeName = TreeUtil.getOriginalTypeName(jcClassDecl.sym);
         // 过滤内部类
         if (!typeName.equals(className)) {
             return;
@@ -70,53 +69,53 @@ public class UtilMethodTranslator extends BaseTranslator {
      * @return 返回新方法
      */
     private JCTree.JCMethodDecl createIsBlankMethod(String methodName) {
-        JCTree.JCReturn returnTrue = treeMaker.Return(expressionMaker.trueNode);
-        JCTree.JCReturn returnFalse = treeMaker.Return(expressionMaker.falseNode);
+        JCTree.JCReturn returnTrue = treeMaker.Return(syntaxTreeMaker.trueNode);
+        JCTree.JCReturn returnFalse = treeMaker.Return(syntaxTreeMaker.falseNode);
 
         // define String str parameter
-        JCTree.JCVariableDecl var = expressionMaker.newVar("str", Flags.PARAMETER, CharSequence.class.getName(), null);
+        JCTree.JCVariableDecl var = syntaxTreeMaker.newVar("str", Flags.PARAMETER, CharSequence.class.getName(), null);
         JCTree.JCIdent str = treeMaker.Ident(var.name);
 
-        ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
+        ListBuffer<JCTree.JCStatement> statements = TreeUtil.newStatement();
 
         // int length = str.length();
-        JCTree.JCMethodInvocation getLength = expressionMaker.getMethod(str, "length", CTreeUtil.emptyParam());
-        JCTree.JCVariableDecl newInt = expressionMaker.newLocalVar("length", TypeTag.INT, getLength);
+        JCTree.JCMethodInvocation getLength = syntaxTreeMaker.getMethod(str, "length", TreeUtil.emptyParam());
+        JCTree.JCVariableDecl newInt = syntaxTreeMaker.newLocalVar("length", TypeTag.INT, getLength);
         JCTree.JCIdent length = treeMaker.Ident(newInt.name);
 
         statements.append(newInt);
 
         // if (length == 0) { return true; }
-        JCTree.JCExpression isZero = CTreeUtil.newBinary(treeMaker, TypeTag.EQ, length, expressionMaker.zeroIntNode);
+        JCTree.JCExpression isZero = syntaxTreeMaker.newBinary(TypeTag.EQ, length, syntaxTreeMaker.zeroIntNode);
         JCTree.JCIf ifReturn = treeMaker.If(isZero, returnTrue, null);
 
         statements.append(ifReturn);
 
         // char ch;
-        JCTree.JCVariableDecl varChar = expressionMaker.newLocalVar("ch", TypeTag.CHAR, null);
+        JCTree.JCVariableDecl varChar = syntaxTreeMaker.newLocalVar("ch", TypeTag.CHAR, null);
 
         statements.append(varChar);
 
         // for (int i = 0; i < length; i++) { body ... }
 
         // int i = 0;
-        JCTree.JCVariableDecl init = expressionMaker.newLocalVar("i", TypeTag.INT, expressionMaker.zeroIntNode);
+        JCTree.JCVariableDecl init = syntaxTreeMaker.newLocalVar("i", TypeTag.INT, syntaxTreeMaker.zeroIntNode);
         JCTree.JCExpression vari = treeMaker.Ident(init.name);
         // i < length
-        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.LT, vari, length);
+        JCTree.JCExpression condition = syntaxTreeMaker.newBinary(TypeTag.LT, vari, length);
         // i++
-        JCTree.JCLiteral onePlus = CTreeUtil.newElement(treeMaker, TypeTag.INT, 1);
-        JCTree.JCExpression step = CTreeUtil.newBinary(treeMaker, TypeTag.PLUS, vari, onePlus);
+        JCTree.JCLiteral onePlus = syntaxTreeMaker.newElement(TypeTag.INT, 1);
+        JCTree.JCExpression step = syntaxTreeMaker.newBinary(TypeTag.PLUS, vari, onePlus);
 
         // body start
         // ch = str.charAt(i);
-        ListBuffer<JCTree.JCStatement> body = CTreeUtil.newStatement();
+        ListBuffer<JCTree.JCStatement> body = TreeUtil.newStatement();
         JCTree.JCIdent ch = treeMaker.Ident(varChar.name);
         List<JCTree.JCExpression> paramArgs = List.of(vari);
-        JCTree.JCExpressionStatement charAt = expressionMaker.assignCallback(str,  ch,"charAt", paramArgs);
+        JCTree.JCExpressionStatement charAt = syntaxTreeMaker.assignCallback(str,  ch,"charAt", paramArgs);
 
         // if (ch != ' ') { return false; }
-        JCTree.JCExpression isNotEmtyp = CTreeUtil.newBinary(treeMaker, TypeTag.NE, ch, expressionMaker.emptyCh);
+        JCTree.JCExpression isNotEmtyp = syntaxTreeMaker.newBinary(TypeTag.NE, ch, syntaxTreeMaker.emptyCh);
         JCTree.JCIf notEqualsReturn = treeMaker.If(isNotEmtyp, returnFalse, null);
         // body end
 
@@ -140,15 +139,13 @@ public class UtilMethodTranslator extends BaseTranslator {
      * @return 方法元素
      */
     private JCTree.JCMethodDecl createPublicStaticMethod(String methodName, List<JCTree.JCVariableDecl> var, JCTree.JCBlock body) {
-        for (JCTree.JCVariableDecl variableDecl : var) {
-            variableDecl.accept(posScanner);
-        }
+        TreeUtil.visit(var, posScanner);
 
         List<JCTree.JCTypeParameter> param = List.nil();
         List<JCTree.JCExpression> thrown = List.nil();
         return treeMaker.MethodDef(treeMaker.Modifiers(Flags.PUBLIC | Flags.STATIC),
-                CTreeUtil.getName(namesInstance, methodName),
-                CTreeUtil.getPrimitiveType(treeMaker, TypeTag.BOOLEAN),
+                syntaxTreeMaker.getName(methodName),
+                syntaxTreeMaker.getPrimitiveType(TypeTag.BOOLEAN),
                 param, var, thrown,
                 body, null);
     }

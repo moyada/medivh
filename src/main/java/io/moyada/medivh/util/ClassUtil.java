@@ -60,7 +60,7 @@ public final class ClassUtil {
      * @param className 类名称
      * @return 类对象
      */
-    static Class<?> getClass(String className) {
+    public static Class<?> getClass(String className) {
         Class<?> clazz = getReference(classMap, className);
         if (null != clazz) {
             return clazz;
@@ -82,7 +82,7 @@ public final class ClassUtil {
      * @param parameterTypes 方法参数
      * @return 方法对象
      */
-    static Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
+    public static Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
         Method method = getReference(methodMap, name);
         if (null != method) {
             return method;
@@ -107,7 +107,7 @@ public final class ClassUtil {
      * @param <T> 返回类型
      * @return 返回调用数据
      */
-    static <T> T invoke(Method method, Object target, Object... args) {
+    public static <T> T invoke(Method method, Object target, Object... args) {
         try {
             @SuppressWarnings("unchecked")
             T m = (T) method.invoke(target, args);
@@ -125,7 +125,7 @@ public final class ClassUtil {
      * @param file 静态属性名
      * @return 属性对象
      */
-    static Object getStaticField(Class<?> clazz, String file) {
+    public static Object getStaticField(Class<?> clazz, String file) {
         return getField(clazz, null, file);
     }
 

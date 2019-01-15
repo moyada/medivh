@@ -117,7 +117,7 @@ public final class ElementUtil {
      * @param ruleAnnos 注解
      * @return 规则类元素与规则元素集合
      */
-    public static Map<? extends Element, List<String>> getRule(RoundEnvironment roundEnv, List<Class<? extends Annotation>> ruleAnnos) {
+    public static Map<? extends Element, List<String>> aggregateRule(RoundEnvironment roundEnv, List<Class<? extends Annotation>> ruleAnnos) {
         Set<Element> rules = new HashSet<Element>();
 
         Set<? extends Element> elements;
@@ -191,7 +191,7 @@ public final class ElementUtil {
      * @param elements 元素集合
      * @return 类元素
      */
-    public static Element getPublicClass(Collection<? extends Element> elements) {
+    public static Element findFirstPublicClass(Collection<? extends Element> elements) {
         List<TypeElement> typeElements = ElementFilter.typesIn(elements);
         if (typeElements.isEmpty()) {
             return null;

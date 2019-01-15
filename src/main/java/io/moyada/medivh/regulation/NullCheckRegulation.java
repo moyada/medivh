@@ -3,9 +3,8 @@ package io.moyada.medivh.regulation;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.support.ExpressionMaker;
-import io.moyada.medivh.util.CTreeUtil;
 import io.moyada.medivh.support.ElementOptions;
+import io.moyada.medivh.support.SyntaxTreeMaker;
 import io.moyada.medivh.support.TypeTag;
 
 /**
@@ -17,23 +16,23 @@ import io.moyada.medivh.support.TypeTag;
 public class NullCheckRegulation extends BaseRegulation implements Regulation {
 
     @Override
-    public ListBuffer<JCTree.JCStatement> handle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
+    public ListBuffer<JCTree.JCStatement> handle(SyntaxTreeMaker syntaxTreeMaker, ListBuffer<JCTree.JCStatement> statements,
                                                  String fieldName, JCTree.JCExpression self, JCTree.JCStatement action) {
         if (null == action) {
-            action = createAction(expressionMaker, buildInfo(fieldName));
+            action = createAction(syntaxTreeMaker, buildInfo(fieldName));
         }
-        JCTree.JCStatement exec = doHandle(expressionMaker, statements, self, action);
+        JCTree.JCStatement exec = doHandle(syntaxTreeMaker, statements, self, action);
         // 将非空处理提前
         statements.prepend(exec);
         return statements;
     }
 
     @Override
-    JCTree.JCStatement doHandle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
+    JCTree.JCStatement doHandle(SyntaxTreeMaker syntaxTreeMaker, ListBuffer<JCTree.JCStatement> statements,
                                 JCTree.JCExpression self, JCTree.JCStatement action) {
-        TreeMaker treeMaker = expressionMaker.getTreeMaker();
+        TreeMaker treeMaker = syntaxTreeMaker.getTreeMaker();
         // 等于 null 执行动作
-        JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.EQ, self, expressionMaker.nullNode);
+        JCTree.JCExpression condition = syntaxTreeMaker.newBinary(TypeTag.EQ, self, syntaxTreeMaker.nullNode);
         return treeMaker.If(condition, action, null);
     }
 

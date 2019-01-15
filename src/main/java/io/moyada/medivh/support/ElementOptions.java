@@ -1,5 +1,6 @@
 package io.moyada.medivh.support;
 
+import io.moyada.medivh.util.CheckUtil;
 import io.moyada.medivh.util.SystemUtil;
 
 /**
@@ -58,23 +59,22 @@ public class ElementOptions {
 
     // 是否创建工具类
     private static final String UTIL_CREATE_KEY = "medivh.util.create";
-    private static final String DEFAULT_UTIL_CREATE = "true";
-    public final static String UTIL_CREATE = SystemUtil.getProperty(UTIL_CREATE_KEY, DEFAULT_UTIL_CREATE);
+    public final static String UTIL_CREATE = SystemUtil.getProperty(UTIL_CREATE_KEY, "true");
 
     // 工具类
     public static String UTIL_CLASS;
     // 非空白字符串方法
     public static String BLANK_METHOD = "isBlank";
 
-    // 默认布尔值返回
+    // 默认原生布尔值返回
     private static final String RETURN_BOOLEAN_KEY = "medivh.return.boolean";
-    public final static String RETURN_BOOLEAN = System.getProperty(RETURN_BOOLEAN_KEY);
+    public final static String RETURN_BOOLEAN = CheckUtil.checkBoolean(System.getProperty(RETURN_BOOLEAN_KEY));
 
-    // 默认数字值返回
+    // 默认原生数字值返回
     private static final String RETURN_NUMBER_KEY = "medivh.return.number";
-    public final static String RETURN_NUMBER = System.getProperty(RETURN_NUMBER_KEY);
+    public final static String RETURN_NUMBER = CheckUtil.checkNumber(System.getProperty(RETURN_NUMBER_KEY));
 
-    // 默认字符值返回
+    // 默认原生字符值返回
     private static final String RETURN_CHAR_KEY = "medivh.return.char";
-    public final static String RETURN_CHAR = System.getProperty(RETURN_CHAR_KEY);
+    public final static String RETURN_CHAR = CheckUtil.checkChar(System.getProperty(RETURN_CHAR_KEY));
 }

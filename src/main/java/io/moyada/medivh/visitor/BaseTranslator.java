@@ -1,4 +1,4 @@
-package io.moyada.medivh.translator;
+package io.moyada.medivh.visitor;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
@@ -8,9 +8,9 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.SyntaxTreeMaker;
 import io.moyada.medivh.support.TypeTag;
-import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.TreeUtil;
 import io.moyada.medivh.util.CheckUtil;
 import io.moyada.medivh.util.TypeUtil;
 
@@ -18,26 +18,32 @@ import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
 
 /**
+ * 基础监视器
  * @author xueyikang
  * @since 1.0
  **/
 abstract class BaseTranslator extends TreeTranslator {
 
+    // 信息输出提供器
     final Messager messager;
 
-    protected final ExpressionMaker expressionMaker;
+    // 语法创建工具
+    protected final SyntaxTreeMaker syntaxTreeMaker;
 
+    // 语法树构造器
     final TreeMaker treeMaker;
+    // 元素获取器
     final JavacElements javacElements;
+    // 名称构造器
     final Object namesInstance ;
 
-    BaseTranslator(ExpressionMaker expressionMaker, Messager messager) {
-        this.expressionMaker = expressionMaker;
+    BaseTranslator(SyntaxTreeMaker syntaxTreeMaker, Messager messager) {
+        this.syntaxTreeMaker = syntaxTreeMaker;
         this.messager = messager;
 
-        this.treeMaker = expressionMaker.getTreeMaker();
-        this.namesInstance = expressionMaker.getNamesInstance();
-        this.javacElements = expressionMaker.getJavacElements();
+        this.treeMaker = syntaxTreeMaker.getTreeMaker();
+        this.namesInstance = syntaxTreeMaker.getNamesInstance();
+        this.javacElements = syntaxTreeMaker.getJavacElements();
     }
 
     /**
@@ -109,6 +115,7 @@ abstract class BaseTranslator extends TreeTranslator {
             }
 
             Symbol.TypeSymbol typeSymbol;
+            // 检查接口
             for (int i = 0; i < size; i++) {
                 typeSymbol = interfaces.get(i).tsym;
                 if (isString(typeSymbol)) {
@@ -125,7 +132,7 @@ abstract class BaseTranslator extends TreeTranslator {
      * @return 是否属于集合
      */
     private boolean isCollection(String className) {
-        Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(className);
+        Symbol.ClassSymbol classSymbol = syntaxTreeMaker.getTypeElement(className);
         // primitive 类型
         if (null == classSymbol) {
             return false;
@@ -141,6 +148,7 @@ abstract class BaseTranslator extends TreeTranslator {
             }
 
             Symbol.TypeSymbol typeSymbol;
+            // 检查接口
             for (int i = 0; i < size; i++) {
                 typeSymbol = interfaces.get(i).tsym;
                 if (isCollection(typeSymbol)) {
@@ -185,7 +193,7 @@ abstract class BaseTranslator extends TreeTranslator {
      * @return 是否属于 Collection 或 Map
      */
     private boolean isCollection(Symbol typeSymbol) {
-        return isInstanceOf(typeSymbol, expressionMaker.getCollectionSymbol()) || isInstanceOf(typeSymbol, expressionMaker.getMapSymbol());
+        return isInstanceOf(typeSymbol, syntaxTreeMaker.getCollectionSymbol()) || isInstanceOf(typeSymbol, syntaxTreeMaker.getMapSymbol());
     }
 
     /**
@@ -194,7 +202,7 @@ abstract class BaseTranslator extends TreeTranslator {
      * @return 是否属于 CharSequence
      */
     private boolean isString(Symbol typeSymbol) {
-        return isInstanceOf(typeSymbol, expressionMaker.getStringSymbol());
+        return isInstanceOf(typeSymbol, syntaxTreeMaker.getStringSymbol());
     }
 
     /**
@@ -204,7 +212,7 @@ abstract class BaseTranslator extends TreeTranslator {
      * @return 是否相似类型
      */
     private boolean isInstanceOf(Symbol typeSymbol, Symbol.ClassSymbol classSymbol) {
-        return typeSymbol.isSubClass(classSymbol, expressionMaker.getTypes());
+        return typeSymbol.isSubClass(classSymbol, syntaxTreeMaker.getTypes());
     }
 
     /**
@@ -253,15 +261,13 @@ abstract class BaseTranslator extends TreeTranslator {
                     continue;
                 }
             } else {
+                // 静态方法
                 if (element.getKind() != ElementKind.METHOD) {
                     continue;
                 }
                 if (!element.isStatic()) {
                     continue;
                 }
-//                if ((element.flags() & Flags.PUBLIC) != 0) {
-//                    continue;
-//                }
             }
 
             Symbol.MethodSymbol methodSymbol = (Symbol.MethodSymbol) element;
@@ -277,18 +283,19 @@ abstract class BaseTranslator extends TreeTranslator {
                 Symbol.VarSymbol varSymbol = parameters.get(i);
                 String value = values[i];
 
-                JCTree.JCExpression argsVal;
-
-                String typeName = CTreeUtil.getOriginalTypeName(varSymbol);
+                String typeName = TreeUtil.getOriginalTypeName(varSymbol);
                 TypeTag baseType = TypeUtil.getBaseType(typeName);
 
+                JCTree.JCExpression argsVal;
+
                 if (CheckUtil.isNull(value)) {
+                    // 原生类型无法返回 null
                     if (TypeUtil.isPrimitive(typeName)) {
                         param = null;
                         findParam = false;
                         continue;
                     }
-                    argsVal = expressionMaker.nullNode;
+                    argsVal = syntaxTreeMaker.nullNode;
                 } else {
                     // 不支持复杂对象
                     if (null == baseType) {
@@ -297,14 +304,14 @@ abstract class BaseTranslator extends TreeTranslator {
                         continue;
                     }
 
-                    Object data = CTreeUtil.getValue(baseType, value);
+                    Object data = TreeUtil.getValue(baseType, value);
                     // 数据与类型不匹配
                     if (null == data) {
                         param = null;
                         findParam = false;
                         continue;
                     }
-                    argsVal = CTreeUtil.newElement(treeMaker, baseType, data);
+                    argsVal = syntaxTreeMaker.newElement(baseType, data);
                 }
 
                 if (null == param) {
@@ -321,5 +328,4 @@ abstract class BaseTranslator extends TreeTranslator {
 
         return null;
     }
-
 }

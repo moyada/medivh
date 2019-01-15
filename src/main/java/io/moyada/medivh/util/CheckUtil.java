@@ -106,7 +106,7 @@ public final class CheckUtil {
      * @return 存在排除标识返回 true
      */
     public static boolean isExclusive(Symbol symbol) {
-        return null != CTreeUtil.getAnnotation(symbol, Exclusive.class);
+        return null != TreeUtil.getAnnotation(symbol, Exclusive.class);
     }
 
     /**
@@ -115,7 +115,7 @@ public final class CheckUtil {
      * @return 名称
      */
     public static String getTmpVar(Symbol symbol) {
-        Variable variable = CTreeUtil.getAnnotation(symbol, Variable.class);
+        Variable variable = TreeUtil.getAnnotation(symbol, Variable.class);
         return getValue(variable, ElementOptions.LOCAL_VARIABLE);
     }
 
@@ -125,7 +125,7 @@ public final class CheckUtil {
      * @return 名称
      */
     public static String getTmpMethod(Symbol symbol) {
-        Variable variable = CTreeUtil.getAnnotation(symbol, Variable.class);
+        Variable variable = TreeUtil.getAnnotation(symbol, Variable.class);
         return getValue(variable, ElementOptions.METHOD_NAME);
     }
 
@@ -205,7 +205,7 @@ public final class CheckUtil {
     }
 
     private static Long getMin(Symbol symbol) {
-        Min min = CTreeUtil.getAnnotation(symbol, Min.class);
+        Min min = TreeUtil.getAnnotation(symbol, Min.class);
         if (null == min) {
             return null;
         }
@@ -218,7 +218,7 @@ public final class CheckUtil {
      * @return 数值
      */
     private static Long getMax(Symbol symbol) {
-        Max max = CTreeUtil.getAnnotation(symbol, Max.class);
+        Max max = TreeUtil.getAnnotation(symbol, Max.class);
         if (null == max) {
             return null;
         }
@@ -226,7 +226,7 @@ public final class CheckUtil {
     }
 
     private static Double getMinDecimal(Symbol symbol) {
-        DecimalMin decimalMin = CTreeUtil.getAnnotation(symbol, DecimalMin.class);
+        DecimalMin decimalMin = TreeUtil.getAnnotation(symbol, DecimalMin.class);
         if (null == decimalMin) {
             return null;
         }
@@ -234,7 +234,7 @@ public final class CheckUtil {
     }
 
     private static Double getMaxDecimal(Symbol symbol) {
-        DecimalMax decimalMax = CTreeUtil.getAnnotation(symbol, DecimalMax.class);
+        DecimalMax decimalMax = TreeUtil.getAnnotation(symbol, DecimalMax.class);
         if (null == decimalMax) {
             return null;
         }
@@ -272,5 +272,94 @@ public final class CheckUtil {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 获取原生类型返回
+     * @param classType 类型标记
+     * @return 返回数据字符串
+     */
+    public static String getPrimitiveReturn(char classType) {
+        String r;
+        switch (classType) {
+            case TypeUtil.BOOLEAN:
+                r = ElementOptions.RETURN_BOOLEAN;
+                break;
+            case TypeUtil.CHAR:
+                r = ElementOptions.RETURN_CHAR;
+                break;
+            default:
+                r = ElementOptions.RETURN_NUMBER;
+        }
+        return r;
+    }
+
+    /**
+     * 检查字符串是否为数字类型，否则返回 null
+     * @param input 输入
+     * @return 规则后字符串
+     */
+    public static String checkNumber(String input) {
+        input = StringUtil.trim(input);
+        if (null == input) {
+            return null;
+        }
+        char ch = input.charAt(0);
+        if (!StringUtil.isDigital(ch) && ch != '-') {
+            return null;
+        }
+
+        int length = input.length();
+        boolean hasFloat = false;
+        for (int i = 1; i < length; i++) {
+            ch = input.charAt(i);
+            if (StringUtil.isDigital(ch)) {
+                continue;
+            }
+            if (ch == '.' && !hasFloat) {
+                hasFloat = true;
+                continue;
+            }
+
+            return null;
+        }
+
+        return input;
+    }
+
+    /**
+     * 检查字符串是否为布尔值，否则返回 null
+     * @param input 输入
+     * @return 规则后字符串
+     */
+    public static String checkBoolean(String input) {
+        input = StringUtil.trim(input);
+        if (null == input) {
+            return null;
+        }
+
+        if (Boolean.TRUE.toString().equalsIgnoreCase(input)) {
+            return input;
+        }
+
+        if (Boolean.FALSE.toString().equalsIgnoreCase(input)) {
+            return input;
+        }
+        return null;
+    }
+
+    /**
+     * 检查输入字符串是否为字符，否则返回 null
+     * @param input 输入
+     * @return 规则后字符串
+     */
+    public static String checkChar(String input) {
+        if (null == input) {
+            return null;
+        }
+        if (input.length() != 1) {
+            return null;
+        }
+        return Character.toString(input.charAt(0));
     }
 }

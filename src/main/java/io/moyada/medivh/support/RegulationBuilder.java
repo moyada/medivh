@@ -6,7 +6,7 @@ import io.moyada.medivh.annotation.NotNull;
 import io.moyada.medivh.annotation.Nullable;
 import io.moyada.medivh.annotation.Size;
 import io.moyada.medivh.regulation.*;
-import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.TreeUtil;
 import io.moyada.medivh.util.CheckUtil;
 import io.moyada.medivh.util.TypeUtil;
 
@@ -34,8 +34,8 @@ public final class RegulationBuilder {
             return null;
         }
 
-        NotNull notnull = CTreeUtil.getAnnotation(symbol, NotNull.class);
-        Nullable nullable = CTreeUtil.getAnnotation(symbol, Nullable.class);
+        NotNull notnull = TreeUtil.getAnnotation(symbol, NotNull.class);
+        Nullable nullable = TreeUtil.getAnnotation(symbol, Nullable.class);
 
         Boolean nullcheck;
         if (null != notnull) {
@@ -101,7 +101,7 @@ public final class RegulationBuilder {
         if (classType != TypeUtil.STRING) {
             return null;
         }
-        NotBlank notBlank = CTreeUtil.getAnnotation(symbol, NotBlank.class);
+        NotBlank notBlank = TreeUtil.getAnnotation(symbol, NotBlank.class);
         if (null == notBlank) {
             return null;
         }
@@ -162,7 +162,7 @@ public final class RegulationBuilder {
             return null;
         }
 
-        Size size = CTreeUtil.getAnnotation(symbol, Size.class);
+        Size size = TreeUtil.getAnnotation(symbol, Size.class);
         if (null == size) {
             return null;
         }

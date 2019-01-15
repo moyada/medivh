@@ -4,9 +4,8 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.support.ElementOptions;
-import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.SyntaxTreeMaker;
 import io.moyada.medivh.support.TypeTag;
-import io.moyada.medivh.util.CTreeUtil;
 
 /**
  * 数字范围校验规则
@@ -32,23 +31,23 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
     }
 
     @Override
-    JCTree.JCStatement doHandle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
+    JCTree.JCStatement doHandle(SyntaxTreeMaker syntaxTreeMaker, ListBuffer<JCTree.JCStatement> statements,
                                 JCTree.JCExpression self, JCTree.JCStatement action) {
-        TreeMaker treeMaker = expressionMaker.getTreeMaker();
+        TreeMaker treeMaker = syntaxTreeMaker.getTreeMaker();
 
         JCTree.JCIf expression = null;
 
         // min logic
         if (null != min) {
-            JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, typeTag, min);
-            JCTree.JCExpression minCondition = CTreeUtil.newBinary(treeMaker, TypeTag.LT, self, minField);
+            JCTree.JCLiteral minField = syntaxTreeMaker.newElement(typeTag, min);
+            JCTree.JCExpression minCondition = syntaxTreeMaker.newBinary(TypeTag.LT, self, minField);
 
             JCTree.JCStatement lessAction;
             if (null == info) {
                 lessAction = action;
             } else {
                 String msg = info + ElementOptions.LESS_INFO + " " + min;
-                lessAction = createAction(expressionMaker, msg);
+                lessAction = createAction(syntaxTreeMaker, msg);
             }
 
             expression = treeMaker.If(minCondition, lessAction, expression);
@@ -56,15 +55,15 @@ public class NumberRegulation extends BaseRegulation implements Regulation {
 
         // max logic
         if (null != max) {
-            JCTree.JCLiteral maxField = CTreeUtil.newElement(treeMaker, typeTag, max);
-            JCTree.JCExpression maxCondition = CTreeUtil.newBinary(treeMaker, TypeTag.GT, self, maxField);
+            JCTree.JCLiteral maxField = syntaxTreeMaker.newElement(typeTag, max);
+            JCTree.JCExpression maxCondition = syntaxTreeMaker.newBinary(TypeTag.GT, self, maxField);
 
             JCTree.JCStatement greatAction;
             if (null == info) {
                 greatAction = action;
             } else {
                 String msg = info + ElementOptions.GREAT_INFO + " " + max;
-                greatAction = createAction(expressionMaker, msg);
+                greatAction = createAction(syntaxTreeMaker, msg);
             }
 
             expression = treeMaker.If(maxCondition, greatAction, expression);

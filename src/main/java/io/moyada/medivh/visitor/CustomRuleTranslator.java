@@ -1,4 +1,4 @@
-package io.moyada.medivh.translator;
+package io.moyada.medivh.visitor;
 
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Flags;
@@ -11,10 +11,10 @@ import io.moyada.medivh.regulation.LocalVariableRegulation;
 import io.moyada.medivh.regulation.NotNullWrapperRegulation;
 import io.moyada.medivh.regulation.NullCheckRegulation;
 import io.moyada.medivh.regulation.Regulation;
-import io.moyada.medivh.support.ExpressionMaker;
+import io.moyada.medivh.support.SyntaxTreeMaker;
 import io.moyada.medivh.support.RegulationBuilder;
 import io.moyada.medivh.support.RegulationExecutor;
-import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.TreeUtil;
 import io.moyada.medivh.util.CheckUtil;
 
 import javax.annotation.processing.Messager;
@@ -33,9 +33,9 @@ public class CustomRuleTranslator extends BaseTranslator {
 
     private Map<String, java.util.List<String>> ruleItems;
 
-    public CustomRuleTranslator(ExpressionMaker expressionMaker, Messager messager,
+    public CustomRuleTranslator(SyntaxTreeMaker syntaxTreeMaker, Messager messager,
                                 Map<? extends Element, java.util.List<String>> classRules) {
-        super(expressionMaker, messager);
+        super(syntaxTreeMaker, messager);
 
         ruleItems = new HashMap<String, java.util.List<String>>(classRules.size());
         for (Map.Entry<? extends Element, java.util.List<String>> classRule : classRules.entrySet()) {
@@ -51,9 +51,9 @@ public class CustomRuleTranslator extends BaseTranslator {
 
         boolean isInterface = (jcClassDecl.mods.flags & Flags.INTERFACE) != 0;
         // 过滤jdk8以下接口无法创建校验方法
-        if (isInterface && !CTreeUtil.isDefaultInterface()) {
+        if (isInterface && !TreeUtil.hasDefaultInterface()) {
             messager.printMessage(Diagnostic.Kind.ERROR, "[Param Error] Can't use " +
-                    CTreeUtil.getOriginalTypeName(jcClassDecl.sym) + " (interface type) as parameter before Java 8.");
+                    TreeUtil.getOriginalTypeName(jcClassDecl.sym) + " (interface type) as parameter before Java 8.");
             return;
         }
 
@@ -64,11 +64,8 @@ public class CustomRuleTranslator extends BaseTranslator {
             return;
         }
 
-        String methodName = CheckUtil.getTmpMethod(classSymbol);
-
         // 解析所有参数规则
         Map<JCTree.JCExpression, java.util.List<Regulation>> rules = new HashMap<JCTree.JCExpression, java.util.List<Regulation>>();
-
         for (JCTree var : jcClassDecl.defs) {
             joinVarRules(items, rules, var);
         }
@@ -76,8 +73,8 @@ public class CustomRuleTranslator extends BaseTranslator {
             return;
         }
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create method \"" + methodName + "\" in " + className);
-
+        // 创建校验方法
+        String methodName = CheckUtil.getTmpMethod(classSymbol);
         JCTree.JCBlock body = createBody(rules);
         JCTree.JCMethodDecl method = createMethod(methodName, body, isInterface);
 
@@ -86,15 +83,19 @@ public class CustomRuleTranslator extends BaseTranslator {
         // 刷新类信息
         jcClassDecl.defs = jcClassDecl.defs.append(method);
         this.result = jcClassDecl;
+
+        messager.printMessage(Diagnostic.Kind.NOTE, "processing  =====>  Create method \"" + methodName + "\" in " + className);
     }
 
     /**
      * 加入字段规则
-     * @param items
+     * @param items 规则元素集合
      * @param rules 规则集合
      * @param var 当前元素节点
      */
     private void joinVarRules(java.util.List<String> items, Map<JCTree.JCExpression, java.util.List<Regulation>> rules, JCTree var) {
+        Tree.Kind kind = var.getKind();
+
         Symbol symbol;
         String name;
         String typeName;
@@ -102,7 +103,7 @@ public class CustomRuleTranslator extends BaseTranslator {
         JCTree.JCVariableDecl localVar = null;
 
         // 变量
-        if (var.getKind() == Tree.Kind.VARIABLE) {
+        if (kind == Tree.Kind.VARIABLE) {
             JCTree.JCVariableDecl jcVariableDecl = (JCTree.JCVariableDecl) var;
             // 排除枚举
             if ((jcVariableDecl.mods.flags & Flags.ENUM) != 0) {
@@ -110,14 +111,14 @@ public class CustomRuleTranslator extends BaseTranslator {
             }
 
             symbol = jcVariableDecl.sym;
-            typeName = CTreeUtil.getOriginalTypeName(symbol);
+            typeName = TreeUtil.getOriginalTypeName(symbol);
             self = treeMaker.Ident(jcVariableDecl.name);
             name = jcVariableDecl.name.toString();
         }
         // 方法
-        else if (var.getKind() == Tree.Kind.METHOD) {
+        else if (kind == Tree.Kind.METHOD) {
             JCTree.JCMethodDecl methodDecl = (JCTree.JCMethodDecl) var;
-            typeName = CTreeUtil.getReturnTypeName(methodDecl);
+            typeName = TreeUtil.getReturnTypeName(methodDecl);
             // 过滤无返回值方法或构造方法
             if (null == typeName) {
                 return;
@@ -129,9 +130,10 @@ public class CustomRuleTranslator extends BaseTranslator {
 
             symbol = methodDecl.sym;
 
+            // 获取方法引用
             Name methodName = methodDecl.name;
             JCTree.JCIdent ident = treeMaker.Ident(methodName);
-            self = treeMaker.Apply(CTreeUtil.emptyParam(), ident, CTreeUtil.emptyParam());
+            self = treeMaker.Apply(TreeUtil.emptyParam(), ident, TreeUtil.emptyParam());
 
             // 使用临时变量保存方法回调数据
             localVar = treeMaker.VarDef(treeMaker.Modifiers(0L), methodName, methodDecl.restype, self);
@@ -142,6 +144,7 @@ public class CustomRuleTranslator extends BaseTranslator {
             return;
         }
 
+        // 非规则元素
         if (!items.contains(name)) {
             return;
         }
@@ -151,7 +154,7 @@ public class CustomRuleTranslator extends BaseTranslator {
         boolean empty = regulations.isEmpty();
 
         Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType, !empty);
-        // 非原始类型
+        // 非原始类型增加空校验/非空包装
         if (null != checkNull) {
             if (checkNull) {
                 regulations.add(new NullCheckRegulation());
@@ -181,7 +184,7 @@ public class CustomRuleTranslator extends BaseTranslator {
      * @return 代码块
      */
     private JCTree.JCBlock createBody(Map<JCTree.JCExpression, java.util.List<Regulation>> ruleMap) {
-        ListBuffer<JCTree.JCStatement> statements = CTreeUtil.newStatement();
+        ListBuffer<JCTree.JCStatement> statements = TreeUtil.newStatement();
 
 
         for (Map.Entry<JCTree.JCExpression, java.util.List<Regulation>> entry : ruleMap.entrySet()) {
@@ -197,7 +200,7 @@ public class CustomRuleTranslator extends BaseTranslator {
         }
 
         // 校验通过返回 null
-        JCTree.JCReturn returnStatement = treeMaker.Return(expressionMaker.nullNode);
+        JCTree.JCReturn returnStatement = treeMaker.Return(syntaxTreeMaker.nullNode);
         statements.append(returnStatement);
         return getBlock(statements);
     }
@@ -213,9 +216,9 @@ public class CustomRuleTranslator extends BaseTranslator {
         List<JCTree.JCTypeParameter> param = List.nil();
         List<JCTree.JCVariableDecl> var = List.nil();
         List<JCTree.JCExpression> thrown = List.nil();
-        return treeMaker.MethodDef(treeMaker.Modifiers(CTreeUtil.getNewMethodFlag(isInterface)),
-                CTreeUtil.getName(namesInstance, methodName),
-                expressionMaker.findClass(String.class.getName()),
+        return treeMaker.MethodDef(treeMaker.Modifiers(TreeUtil.getNewMethodFlag(isInterface)),
+                syntaxTreeMaker.getName(methodName),
+                syntaxTreeMaker.findClass(String.class.getName()),
                 param, var, thrown,
                 body, null);
     }

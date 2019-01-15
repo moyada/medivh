@@ -4,7 +4,6 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.support.*;
-import io.moyada.medivh.util.CTreeUtil;
 
 /**
  * 空间范围校验规则
@@ -32,36 +31,36 @@ public class SizeRangeRegulation extends BaseRegulation implements Regulation {
     }
 
     @Override
-    JCTree.JCStatement doHandle(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements,
+    JCTree.JCStatement doHandle(SyntaxTreeMaker syntaxTreeMaker, ListBuffer<JCTree.JCStatement> statements,
                                 JCTree.JCExpression self, JCTree.JCStatement action) {
 
-        TreeMaker treeMaker = expressionMaker.getTreeMaker();
+        TreeMaker treeMaker = syntaxTreeMaker.getTreeMaker();
 
         // 获取大小信息
         JCTree.JCExpression getLength;
 
         if (null != min && null != max) {
-            getLength = typeFetchSupport.getExpr(expressionMaker, self);
-            getLength = localVarSupport.getValue(expressionMaker, statements, getLength);
+            getLength = typeFetchSupport.getExpr(syntaxTreeMaker, self);
+            getLength = localVarSupport.getValue(syntaxTreeMaker, statements, getLength);
         } else {
-            getLength = typeFetchSupport.getExpr(expressionMaker, self);
+            getLength = typeFetchSupport.getExpr(syntaxTreeMaker, self);
         }
 
         JCTree.JCIf expression = null;
 
         // min logic
         if (null != min) {
-            JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, TypeTag.INT, min);
+            JCTree.JCLiteral minField = syntaxTreeMaker.newElement(TypeTag.INT, min);
 
             // 创建对比语句
-            JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.LT, getLength, minField);
+            JCTree.JCExpression condition = syntaxTreeMaker.newBinary(TypeTag.LT, getLength, minField);
 
             JCTree.JCStatement lessAction;
             if (null == info) {
                 lessAction = action;
             } else {
                 String msg = info + ElementOptions.LESS_INFO + " " + min;
-                lessAction = createAction(expressionMaker, msg);
+                lessAction = createAction(syntaxTreeMaker, msg);
             }
 
             expression = treeMaker.If(condition, lessAction, expression);
@@ -69,17 +68,17 @@ public class SizeRangeRegulation extends BaseRegulation implements Regulation {
 
         // max logic
         if (null != max) {
-            JCTree.JCLiteral minField = CTreeUtil.newElement(treeMaker, TypeTag.INT, max);
+            JCTree.JCLiteral minField = syntaxTreeMaker.newElement(TypeTag.INT, max);
 
             // 创建对比语句
-            JCTree.JCExpression condition = CTreeUtil.newBinary(treeMaker, TypeTag.GT, getLength, minField);
+            JCTree.JCExpression condition = syntaxTreeMaker.newBinary(TypeTag.GT, getLength, minField);
 
             JCTree.JCStatement greatAction;
             if (null == info) {
                 greatAction = action;
             } else {
                 String msg = info + ElementOptions.GREAT_INFO + " " + max;
-                greatAction = createAction(expressionMaker, msg);
+                greatAction = createAction(syntaxTreeMaker, msg);
             }
 
             expression = treeMaker.If(condition, greatAction, expression);

@@ -17,10 +17,11 @@ public final class TypeUtil {
 
     public final static byte PRIMITIVE = -1;
 
-    public final static byte STRING = 0;
-    public final static byte ARRAY = 1;
-    public final static byte COLLECTION = 2;
-    public final static byte OBJECT = 3;
+    public final static byte OBJECT = 0;
+    public final static byte STRING = 1;
+    public final static byte ARRAY = 2;
+    public final static byte COLLECTION = 3;
+
 
     public static final char UNKNOWN = '-';
 
@@ -30,6 +31,9 @@ public final class TypeUtil {
     private static final char LONG = 'L';
     private static final char FLOAT = 'F';
     private static final char DOUBLE = 'D';
+
+    static final char BOOLEAN = 'b';
+    static final char CHAR = 'c';
 
     private static final Map<Character, Number> MIN = new HashMap<Character, Number>();
     private static final Map<Character, Number> MAX = new HashMap<Character, Number>();
@@ -89,6 +93,39 @@ public final class TypeUtil {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 获取原生类型
+     * @param name 类名
+     * @return 类型标记
+     */
+    public static Character getPrimitiveType(String name) {
+        if (name.equals(getName(byte.class))) {
+            return BYTE;
+        }
+        if (name.equals(getName(short.class))) {
+            return SHORT;
+        }
+        if (name.equals(getName(int.class))) {
+            return INT;
+        }
+        if (name.equals(getName(long.class))) {
+            return LONG;
+        }
+        if (name.equals(getName(float.class))) {
+            return FLOAT;
+        }
+        if (name.equals(getName(double.class))) {
+            return DOUBLE;
+        }
+        if (name.equals(getName(boolean.class))) {
+            return BOOLEAN;
+        }
+        if (name.equals(getName(char.class))) {
+            return CHAR;
+        }
+        return null;
     }
 
     /**
@@ -224,6 +261,13 @@ public final class TypeUtil {
                 break;
             case DOUBLE:
                 typeTag = TypeTag.DOUBLE;
+                break;
+
+            case CHAR:
+                typeTag = TypeTag.CHAR;
+                break;
+            case BOOLEAN:
+                typeTag = TypeTag.BOOLEAN;
                 break;
             default:
                 typeTag = null;

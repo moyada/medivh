@@ -10,6 +10,18 @@ public final class StringUtil {
     private StringUtil() {
     }
 
+    static String trim(String str) {
+        if (null == str) {
+            return null;
+        }
+        str = str.trim();
+        int length = str.length();
+        if (0 == length) {
+            return null;
+        }
+        return str;
+    }
+
     public static boolean isEmpty(CharSequence str) {
         if (null == str) {
             return true;
@@ -56,7 +68,7 @@ public final class StringUtil {
      * @param ch 字符
      * @return 是则返回 true
      */
-    private static boolean isDigital(char ch) {
+    static boolean isDigital(char ch) {
         return '0' <= ch && ch <= '9';
     }
 

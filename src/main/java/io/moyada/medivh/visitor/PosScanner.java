@@ -1,4 +1,4 @@
-package io.moyada.medivh.support;
+package io.moyada.medivh.visitor;
 
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
@@ -10,19 +10,35 @@ import com.sun.tools.javac.tree.TreeScanner;
  **/
 public class PosScanner extends TreeScanner {
 
+    // 类节点
     private final JCTree.JCClassDecl classNode;
 
-    public PosScanner(JCTree.JCClassDecl classNode) {
+    PosScanner(JCTree.JCClassDecl classNode) {
+        if (null == classNode) {
+            throw new NullPointerException("Parameter \"JCClassDecl\" can't be null");
+        }
         this.classNode = classNode;
     }
 
+    /**
+     * 为当前类内语法树节点分配坐标
+     * @param tree 子节点
+     */
     private void visit(JCTree tree) {
         if (null == tree) {
             return;
         }
+        tree.pos = getNextPos();
+    }
+
+    /**
+     * 获取下一个可用坐标
+     * @return 坐标索引
+     */
+    private int getNextPos() {
         int pos = classNode.getPreferredPosition();
-        tree.pos = pos;
         classNode.setPos(pos+1);
+        return pos;
     }
 
     @Override

@@ -2,7 +2,7 @@ package io.moyada.medivh.support;
 
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
-import io.moyada.medivh.util.CTreeUtil;
+import io.moyada.medivh.util.TreeUtil;
 import io.moyada.medivh.util.TypeUtil;
 
 /**
@@ -43,25 +43,25 @@ public class TypeFetchSupport {
 
     /**
      * 根据类型取值方式
-     * @param expressionMaker 语句创建器
+     * @param syntaxTreeMaker 语句创建器
      * @param origin 源对象
      * @return 语句元素
      */
-    public final JCTree.JCExpression getExpr(ExpressionMaker expressionMaker, JCTree.JCExpression origin) {
-        TreeMaker treeMaker = expressionMaker.getTreeMaker();
+    public final JCTree.JCExpression getExpr(SyntaxTreeMaker syntaxTreeMaker, JCTree.JCExpression origin) {
+        TreeMaker treeMaker = syntaxTreeMaker.getTreeMaker();
 
         // 获取大小信息
         JCTree.JCExpression out;
 
         switch (type) {
             case TypeUtil.STRING:
-                out = treeMaker.Exec(expressionMaker.getMethod(origin, "length", CTreeUtil.emptyParam())).getExpression();
+                out = treeMaker.Exec(syntaxTreeMaker.getMethod(origin, "length", TreeUtil.emptyParam())).getExpression();
                 break;
             case TypeUtil.ARRAY:
-                out = expressionMaker.Select(origin, "length");
+                out = syntaxTreeMaker.Select(origin, "length");
                 break;
             case TypeUtil.COLLECTION:
-                out = treeMaker.Exec(expressionMaker.getMethod(origin, "size", CTreeUtil.emptyParam())).getExpression();
+                out = treeMaker.Exec(syntaxTreeMaker.getMethod(origin, "size", TreeUtil.emptyParam())).getExpression();
                 break;
             default:
                 return origin;

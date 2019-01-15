@@ -7,14 +7,14 @@ import com.sun.tools.javac.main.JavaCompiler;
  * @author xueyikang
  * @since 1.2.2
  **/
-final class Compiler {
+public final class Compiler {
 
     private Compiler() {
     }
 
-    final static byte CURRENT_VERSION;
-    final static byte JAVA_6 = 0;
-    final static byte JAVA_7 = 1;
+    public final static byte CURRENT_VERSION;
+    public final static byte JAVA_6 = 0;
+    public final static byte JAVA_7 = 1;
     final static byte JAVA_8 = 2;
     final static byte JAVA_9 = 3;
 

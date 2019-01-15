@@ -36,16 +36,16 @@ public class LocalVarSupport {
 
     /**
      * 使用临时变量保存取值
-     * @param expressionMaker 语句创建器
+     * @param syntaxTreeMaker 语句创建器
      * @param statements 语句链
      * @param origin 取值方法
      * @return 临时变量语句
      */
-    public final JCTree.JCExpression getValue(ExpressionMaker expressionMaker, ListBuffer<JCTree.JCStatement> statements, JCTree.JCExpression origin) {
+    public final JCTree.JCExpression getValue(SyntaxTreeMaker syntaxTreeMaker, ListBuffer<JCTree.JCStatement> statements, JCTree.JCExpression origin) {
         if (null == localValue) {
-            TreeMaker treeMaker = expressionMaker.getTreeMaker();
+            TreeMaker treeMaker = syntaxTreeMaker.getTreeMaker();
 
-            JCTree.JCVariableDecl localVar = expressionMaker.newLocalVar(name, typeTag, origin);
+            JCTree.JCVariableDecl localVar = syntaxTreeMaker.newLocalVar(name, typeTag, origin);
             localValue = treeMaker.Ident(localVar.name);
 
             statements.append(localVar);

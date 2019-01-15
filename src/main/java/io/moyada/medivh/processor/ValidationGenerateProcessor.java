@@ -8,10 +8,10 @@ import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
 import io.moyada.medivh.annotation.*;
 import io.moyada.medivh.support.ElementOptions;
-import io.moyada.medivh.support.ExpressionMaker;
-import io.moyada.medivh.translator.CustomRuleTranslator;
-import io.moyada.medivh.translator.UtilMethodTranslator;
-import io.moyada.medivh.translator.ValidationTranslator;
+import io.moyada.medivh.support.SyntaxTreeMaker;
+import io.moyada.medivh.visitor.CustomRuleTranslator;
+import io.moyada.medivh.visitor.UtilMethodTranslator;
+import io.moyada.medivh.visitor.ValidationTranslator;
 import io.moyada.medivh.util.ClassUtil;
 import io.moyada.medivh.util.ElementUtil;
 
@@ -81,21 +81,21 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
         }
 
         // 获取对象规则
-        Map<? extends Element, List<String>> classRules = ElementUtil.getRule(roundEnv, ruleAnnos);
+        Map<? extends Element, List<String>> classRules = ElementUtil.aggregateRule(roundEnv, ruleAnnos);
 
-        ExpressionMaker expressionMaker = ExpressionMaker.newInstance(context);
+        SyntaxTreeMaker syntaxTreeMaker = SyntaxTreeMaker.newInstance(context);
 
-        createUtilMethod(roundEnv, rootElements, expressionMaker);
+        createUtilMethod(roundEnv, rootElements, syntaxTreeMaker);
 
         // 校验方法生成器
-        TreeTranslator translator = new CustomRuleTranslator(expressionMaker, messager, classRules);
+        TreeTranslator translator = new CustomRuleTranslator(syntaxTreeMaker, messager, classRules);
         for (Element element : classRules.keySet()) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
         }
 
         // 校验逻辑生成器
-        translator = new ValidationTranslator(expressionMaker, messager);
+        translator = new ValidationTranslator(syntaxTreeMaker, messager);
         for (Element element : methods) {
             JCTree tree = (JCTree) trees.getTree(element);
             tree.accept(translator);
@@ -109,9 +109,9 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
      * 根据配置选择创建新文件提供方法，或者选择一个 public class 创建工具方法
      * @param roundEnv 根环境
      * @param elements 元素集合
-     * @param expressionMaker 语句构造器
+     * @param syntaxTreeMaker 语句构造器
      */
-    private void createUtilMethod(RoundEnvironment roundEnv, Collection<? extends Element> elements, ExpressionMaker expressionMaker) {
+    private void createUtilMethod(RoundEnvironment roundEnv, Collection<? extends Element> elements, SyntaxTreeMaker syntaxTreeMaker) {
         boolean createFile = !Boolean.FALSE.toString().equalsIgnoreCase(ElementOptions.UTIL_CREATE);
         if (createFile) {
             ElementUtil.createUtil(filer, roundEnv);
@@ -119,14 +119,14 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
             return;
         }
 
-        Element classElement = ElementUtil.getPublicClass(elements);
+        Element classElement = ElementUtil.findFirstPublicClass(elements);
         if (classElement == null) {
             messager.printMessage(Diagnostic.Kind.ERROR, "cannot find any public class");
             return;
         }
 
         JCTree tree = (JCTree) trees.getTree(classElement);
-        tree.accept(new UtilMethodTranslator(expressionMaker, messager, classElement.toString()));
+        tree.accept(new UtilMethodTranslator(syntaxTreeMaker, messager, classElement.toString()));
     }
 
     @Override
