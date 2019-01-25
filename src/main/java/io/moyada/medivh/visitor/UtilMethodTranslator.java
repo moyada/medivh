@@ -38,9 +38,6 @@ public class UtilMethodTranslator extends BaseTranslator {
         if (!typeName.equals(className)) {
             return;
         }
-
-//        startPos = jcClassDecl.getPreferredPosition();
-//        jcClassDecl.setPos(startPos + 10);
         posScanner = new PosScanner(jcClassDecl);
 
         makeIsBlankMethod(jcClassDecl, ElementOptions.BLANK_METHOD);
@@ -79,7 +76,7 @@ public class UtilMethodTranslator extends BaseTranslator {
         ListBuffer<JCTree.JCStatement> statements = TreeUtil.newStatement();
 
         // int length = str.length();
-        JCTree.JCMethodInvocation getLength = syntaxTreeMaker.getMethod(str, "length", TreeUtil.emptyParam());
+        JCTree.JCMethodInvocation getLength = syntaxTreeMaker.getMethod(str, "length", TreeUtil.emptyExpression());
         JCTree.JCVariableDecl newInt = syntaxTreeMaker.newLocalVar("length", TypeTag.INT, getLength);
         JCTree.JCIdent length = treeMaker.Ident(newInt.name);
 
@@ -141,12 +138,10 @@ public class UtilMethodTranslator extends BaseTranslator {
     private JCTree.JCMethodDecl createPublicStaticMethod(String methodName, List<JCTree.JCVariableDecl> var, JCTree.JCBlock body) {
         TreeUtil.visit(var, posScanner);
 
-        List<JCTree.JCTypeParameter> param = List.nil();
-        List<JCTree.JCExpression> thrown = List.nil();
         return treeMaker.MethodDef(treeMaker.Modifiers(Flags.PUBLIC | Flags.STATIC),
                 syntaxTreeMaker.getName(methodName),
                 syntaxTreeMaker.getPrimitiveType(TypeTag.BOOLEAN),
-                param, var, thrown,
+                List.<JCTree.JCTypeParameter>nil(), var, TreeUtil.emptyExpression(),
                 body, null);
     }
 }

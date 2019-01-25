@@ -55,13 +55,13 @@ public class TypeFetchSupport {
 
         switch (type) {
             case TypeUtil.STRING:
-                out = treeMaker.Exec(syntaxTreeMaker.getMethod(origin, "length", TreeUtil.emptyParam())).getExpression();
+                out = treeMaker.Exec(syntaxTreeMaker.getMethod(origin, "length", TreeUtil.emptyExpression())).getExpression();
                 break;
             case TypeUtil.ARRAY:
                 out = syntaxTreeMaker.Select(origin, "length");
                 break;
             case TypeUtil.COLLECTION:
-                out = treeMaker.Exec(syntaxTreeMaker.getMethod(origin, "size", TreeUtil.emptyParam())).getExpression();
+                out = treeMaker.Exec(syntaxTreeMaker.getMethod(origin, "size", TreeUtil.emptyExpression())).getExpression();
                 break;
             default:
                 return origin;

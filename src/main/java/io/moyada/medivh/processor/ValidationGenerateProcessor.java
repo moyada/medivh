@@ -9,11 +9,11 @@ import com.sun.tools.javac.util.Context;
 import io.moyada.medivh.annotation.*;
 import io.moyada.medivh.support.ElementOptions;
 import io.moyada.medivh.support.SyntaxTreeMaker;
+import io.moyada.medivh.util.ClassUtil;
+import io.moyada.medivh.util.ElementUtil;
 import io.moyada.medivh.visitor.CustomRuleTranslator;
 import io.moyada.medivh.visitor.UtilMethodTranslator;
 import io.moyada.medivh.visitor.ValidationTranslator;
-import io.moyada.medivh.util.ClassUtil;
-import io.moyada.medivh.util.ElementUtil;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -28,6 +28,7 @@ import java.util.*;
  * @author xueyikang
  * @since 0.0.1
  **/
+@SupportedAnnotationTypes("io.moyada.medivh.annotation.*")
 public class ValidationGenerateProcessor extends AbstractProcessor {
 
     // 规则注解
@@ -87,11 +88,14 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
 
         createUtilMethod(roundEnv, rootElements, syntaxTreeMaker);
 
+        TreeTranslator translator;
         // 校验方法生成器
-        TreeTranslator translator = new CustomRuleTranslator(syntaxTreeMaker, messager, classRules);
-        for (Element element : classRules.keySet()) {
-            JCTree tree = (JCTree) trees.getTree(element);
-            tree.accept(translator);
+        if (!classRules.isEmpty()) {
+            translator = new CustomRuleTranslator(syntaxTreeMaker, messager, classRules);
+            for (Element element : classRules.keySet()) {
+                JCTree tree = (JCTree) trees.getTree(element);
+                tree.accept(translator);
+            }
         }
 
         // 校验逻辑生成器
@@ -127,19 +131,6 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
 
         JCTree tree = (JCTree) trees.getTree(classElement);
         tree.accept(new UtilMethodTranslator(syntaxTreeMaker, messager, classElement.toString()));
-    }
-
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-        Set<String> annotationTypes = new HashSet<String>(16, 1.0F);
-        annotationTypes.add(Throw.class.getName());
-        annotationTypes.add(Return.class.getName());
-        for (Class<? extends Annotation> ruleAnno : ruleAnnos) {
-            annotationTypes.add(ruleAnno.getName());
-        }
-        annotationTypes.add(Variable.class.getName());
-        annotationTypes.add(Exclusive.class.getName());
-        return annotationTypes;
     }
 
     @Override

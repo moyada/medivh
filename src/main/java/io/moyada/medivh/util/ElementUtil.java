@@ -228,7 +228,6 @@ public final class ElementUtil {
                 return true;
             }
         }
-
         return false;
     }
 }

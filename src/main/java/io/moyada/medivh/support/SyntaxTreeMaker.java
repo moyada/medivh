@@ -47,11 +47,11 @@ public class SyntaxTreeMaker {
     public final JCTree.JCLiteral emptyCh;
 
     // string
-    private final Symbol.ClassSymbol stringSymbol;
+    public final Symbol.ClassSymbol stringSymbol;
     // collection
-    private final Symbol.ClassSymbol collectionSymbol;
+    public final Symbol.ClassSymbol collectionSymbol;
     // map
-    private final Symbol.ClassSymbol mapSymbol;
+    public final Symbol.ClassSymbol mapSymbol;
 
     private SyntaxTreeMaker(Context context) {
         this.treeMaker = TreeMaker.instance(context);
@@ -75,6 +75,14 @@ public class SyntaxTreeMaker {
     public static SyntaxTreeMaker newInstance(Context context) {
         return new SyntaxTreeMaker(context);
     }
+
+    public TreeMaker getTreeMaker() {
+        return treeMaker;
+    }
+
+    public Types getTypes() {
+        return types;
+    }
     
     /**
      * 获取 Name 生成器对象
@@ -83,16 +91,14 @@ public class SyntaxTreeMaker {
      */
     private static Object newNameInstance(Context context) {
         Method method;
-        switch (Compiler.CURRENT_VERSION) {
-            case Compiler.JAVA_6:
-                Class<?> tableClass = ClassUtil.getClass("com.sun.tools.javac.util.Name$Table");
-                method = ClassUtil.getMethod(tableClass, "instance", Context.class);
-                break;
-            default:
-                Class<?> namesClass = ClassUtil.getClass("com.sun.tools.javac.util.Names");
-                method = ClassUtil.getMethod(namesClass, "instance", Context.class);
-                break;
+        if (Compiler.CURRENT_VERSION == Compiler.JAVA_6) {
+            Class<?> tableClass = ClassUtil.getClass("com.sun.tools.javac.util.Name$Table");
+            method = ClassUtil.getMethod(tableClass, "instance", Context.class);
+        } else {
+            Class<?> namesClass = ClassUtil.getClass("com.sun.tools.javac.util.Names");
+            method = ClassUtil.getMethod(namesClass, "instance", Context.class);
         }
+
         return ClassUtil.invoke(method, null, context);
     }
     
@@ -103,15 +109,13 @@ public class SyntaxTreeMaker {
      */
     private static Object getTypeTag(TypeTag typeTag) {
         String target;
-        switch (Compiler.CURRENT_VERSION) {
-            case Compiler.JAVA_6:
-            case Compiler.JAVA_7:
-                target = "com.sun.tools.javac.code.TypeTags";
-                break;
-            default:
-                target = "com.sun.tools.javac.code.TypeTag";
-                break;
+
+        if (Compiler.CURRENT_VERSION < Compiler.JAVA_8) {
+            target = "com.sun.tools.javac.code.TypeTags";
+        } else {
+            target = "com.sun.tools.javac.code.TypeTag";
         }
+
         Class<?> targetClass = ClassUtil.getClass(target);
         return ClassUtil.getStaticField(targetClass, typeTag.name());
     }
@@ -224,8 +228,7 @@ public class SyntaxTreeMaker {
      * @return 异常语句元素
      */
     public JCTree.JCStatement newMsgThrow(String exceptionTypeName, JCTree.JCExpression message) {
-        JCTree.JCExpression exceptionType = findClass(exceptionTypeName);
-        JCTree.JCExpression exceptionInstance = treeMaker.NewClass(null, TreeUtil.emptyParam(), exceptionType, List.of(message), null);
+        JCTree.JCExpression exceptionInstance = NewClass(exceptionTypeName, List.of(message));
         return newThrow(exceptionInstance);
     }
 
@@ -280,8 +283,6 @@ public class SyntaxTreeMaker {
         return e;
     }
 
-
-
     /**
      * 获取生成器创建 Name
      * @param name 名称
@@ -289,19 +290,28 @@ public class SyntaxTreeMaker {
      */
     public Name getName(String name) {
         Method method;
-        switch (Compiler.CURRENT_VERSION) {
-            case Compiler.JAVA_6:
-                Class<?> nameClass = ClassUtil.getClass("com.sun.tools.javac.util.Name");
-                Class<?> tableClass = ClassUtil.getClass("com.sun.tools.javac.util.Name$Table");
-                method = ClassUtil.getMethod(nameClass, "fromString", tableClass, String.class);
-                return ClassUtil.invoke(method, null, namesInstance, name);
-            default:
-                Class<?> namesClass = ClassUtil.getClass("com.sun.tools.javac.util.Names");
-                method = ClassUtil.getMethod(namesClass, "fromString", String.class);
-                return ClassUtil.invoke(method, namesInstance, name);
+        if (Compiler.CURRENT_VERSION == Compiler.JAVA_6) {
+            Class<?> nameClass = ClassUtil.getClass("com.sun.tools.javac.util.Name");
+            Class<?> tableClass = ClassUtil.getClass("com.sun.tools.javac.util.Name$Table");
+            method = ClassUtil.getMethod(nameClass, "fromString", tableClass, String.class);
+            return ClassUtil.invoke(method, null, namesInstance, name);
         }
+
+        Class<?> namesClass = ClassUtil.getClass("com.sun.tools.javac.util.Names");
+        method = ClassUtil.getMethod(namesClass, "fromString", String.class);
+        return ClassUtil.invoke(method, namesInstance, name);
     }
-    
+
+    /**
+     * 获取构造函数
+     * @param className 类名
+     * @param params 参数
+     * @return 构造函数语句
+     */
+    public JCTree.JCExpression NewClass(String className, List<JCTree.JCExpression> params) {
+        return treeMaker.NewClass(null, TreeUtil.emptyExpression(), findClass(className), params, null);
+    }
+
     /**
      * 获取原生类型
      * @param typeTag 类型标签
@@ -309,16 +319,14 @@ public class SyntaxTreeMaker {
      */
     public JCTree.JCPrimitiveTypeTree getPrimitiveType(TypeTag typeTag) {
         Method method;
-        switch (Compiler.CURRENT_VERSION) {
-            case Compiler.JAVA_6:
-            case Compiler.JAVA_7:
-                method = ClassUtil.getMethod(TreeMaker.class, "TypeIdent", int.class);
-                break;
-            default:
-                Class<?> param = ClassUtil.getClass("com.sun.tools.javac.code.TypeTag");
-                method = ClassUtil.getMethod(TreeMaker.class, "TypeIdent", param);
-                break;
+
+        if (Compiler.CURRENT_VERSION < Compiler.JAVA_8) {
+            method = ClassUtil.getMethod(TreeMaker.class, "TypeIdent", int.class);
+        } else {
+            Class<?> param = ClassUtil.getClass("com.sun.tools.javac.code.TypeTag");
+            method = ClassUtil.getMethod(TreeMaker.class, "TypeIdent", param);
         }
+
         return ClassUtil.invoke(method, treeMaker, getTypeTag(typeTag));
     }
 
@@ -330,16 +338,14 @@ public class SyntaxTreeMaker {
      */
     public JCTree.JCLiteral newElement(TypeTag typeTag, Object value) {
         Method method;
-        switch (Compiler.CURRENT_VERSION) {
-            case Compiler.JAVA_6:
-            case Compiler.JAVA_7:
-                method = ClassUtil.getMethod(TreeMaker.class, "Literal", int.class, Object.class);
-                break;
-            default:
-                Class<?> param = ClassUtil.getClass("com.sun.tools.javac.code.TypeTag");
-                method = ClassUtil.getMethod(TreeMaker.class, "Literal", param, Object.class);
-                break;
+
+        if (Compiler.CURRENT_VERSION < Compiler.JAVA_8) {
+            method = ClassUtil.getMethod(TreeMaker.class, "Literal", int.class, Object.class);
+        } else {
+            Class<?> param = ClassUtil.getClass("com.sun.tools.javac.code.TypeTag");
+            method = ClassUtil.getMethod(TreeMaker.class, "Literal", param, Object.class);
         }
+
         return ClassUtil.invoke(method, treeMaker, getTypeTag(typeTag), value);
     }
 
@@ -353,20 +359,18 @@ public class SyntaxTreeMaker {
     public JCTree.JCExpression newBinary(TypeTag typeTag, JCTree.JCExpression left, JCTree.JCExpression right) {
         String target;
         Method method;
-        switch (Compiler.CURRENT_VERSION) {
-            case Compiler.JAVA_6:
-            case Compiler.JAVA_7:
-                method = ClassUtil.getMethod(TreeMaker.class, "Binary", int.class,
-                        JCTree.JCExpression.class, JCTree.JCExpression.class);
-                target = "com.sun.tools.javac.tree.JCTree";
-                break;
-            default:
-                Class<?> param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree$Tag");
-                method = ClassUtil.getMethod(TreeMaker.class, "Binary", param,
-                        JCTree.JCExpression.class, JCTree.JCExpression.class);
-                target = "com.sun.tools.javac.tree.JCTree$Tag";
-                break;
+
+        if (Compiler.CURRENT_VERSION < Compiler.JAVA_8) {
+            method = ClassUtil.getMethod(TreeMaker.class, "Binary", int.class,
+                    JCTree.JCExpression.class, JCTree.JCExpression.class);
+            target = "com.sun.tools.javac.tree.JCTree";
+        } else {
+            Class<?> param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree$Tag");
+            method = ClassUtil.getMethod(TreeMaker.class, "Binary", param,
+                    JCTree.JCExpression.class, JCTree.JCExpression.class);
+            target = "com.sun.tools.javac.tree.JCTree$Tag";
         }
+
         Class<?> targetClass = ClassUtil.getClass(target);
         Object field = ClassUtil.getStaticField(targetClass, typeTag.name());
         return ClassUtil.invoke(method, treeMaker, field, left, right);
@@ -379,44 +383,13 @@ public class SyntaxTreeMaker {
      */
     public JCTree.JCStatement newThrow(Object exceptionType) {
         Class<?> param;
-        switch (Compiler.CURRENT_VERSION) {
-            case Compiler.JAVA_6:
-            case Compiler.JAVA_7:
-                param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree");
-                break;
-            default:
-                param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree$JCExpression");
-                break;
+        if (Compiler.CURRENT_VERSION < Compiler.JAVA_8) {
+            param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree");
+        } else {
+            param = ClassUtil.getClass("com.sun.tools.javac.tree.JCTree$JCExpression");
         }
+
         Method method = ClassUtil.getMethod(TreeMaker.class, "Throw", param);
         return ClassUtil.invoke(method, treeMaker, exceptionType);
-    }
-
-    public TreeMaker getTreeMaker() {
-        return treeMaker;
-    }
-
-    public JavacElements getJavacElements() {
-        return javacElements;
-    }
-
-    public Object getNamesInstance() {
-        return namesInstance;
-    }
-
-    public Types getTypes() {
-        return types;
-    }
-
-    public Symbol.ClassSymbol getCollectionSymbol() {
-        return collectionSymbol;
-    }
-
-    public Symbol.ClassSymbol getMapSymbol() {
-        return mapSymbol;
-    }
-
-    public Symbol.ClassSymbol getStringSymbol() {
-        return stringSymbol;
     }
 }

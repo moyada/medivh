@@ -8,8 +8,8 @@ import io.moyada.medivh.annotation.Return;
 import io.moyada.medivh.annotation.Throw;
 import io.moyada.medivh.regulation.*;
 import io.moyada.medivh.support.*;
-import io.moyada.medivh.util.TreeUtil;
 import io.moyada.medivh.util.CheckUtil;
+import io.moyada.medivh.util.TreeUtil;
 import io.moyada.medivh.util.TypeUtil;
 
 import javax.annotation.processing.Messager;
@@ -211,7 +211,7 @@ public class ValidationTranslator extends BaseTranslator {
      */
     private JCTree.JCStatement getReturn(String classType, String method, String[] values) {
         JCTree.JCExpression returnValue;
-        Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(classType);
+        Symbol.ClassSymbol classSymbol = syntaxTreeMaker.getTypeElement(classType);
         boolean errorType;
         if (null == classSymbol) {
             // primitive type
@@ -236,7 +236,7 @@ public class ValidationTranslator extends BaseTranslator {
         if (!method.isEmpty()) {
             List<JCTree.JCExpression> paramType;
             if (values.length == 0) {
-                paramType = TreeUtil.emptyParam();
+                paramType = TreeUtil.emptyExpression();
             } else {
                 paramType = getParamType(classSymbol, false, values);
                 if (null == paramType) {
@@ -262,7 +262,7 @@ public class ValidationTranslator extends BaseTranslator {
                 returnExpr = syntaxTreeMaker.getDefaultPrimitiveValue(primitive);
                 if (null == returnExpr) {
                     messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't find primitive return, " +
-                            "please make sure ");
+                            "please make sure that system options is correct.");
                 }
             } else {
                 returnExpr = getEmptyType(classType);
@@ -288,14 +288,17 @@ public class ValidationTranslator extends BaseTranslator {
             }
         }
 
+        Symbol.ClassSymbol typeElement = syntaxTreeMaker.getTypeElement(classType);
+        if (typeElement.isInner()) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Unsupported return inner class " + classType);
+        }
         // 类构造方法
-        JCTree.JCExpression returnType = syntaxTreeMaker.findClass(classType);
         List<JCTree.JCExpression> paramType = getParamType(classSymbol, true, values);
         if (null == paramType) {
             // 无匹配的构造方法
             messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't find match param constructor from " + classType + " by " + Arrays.toString(values));
         }
-        returnValue = treeMaker.NewClass(null, TreeUtil.emptyParam(), returnType, paramType, null);
+        returnValue = syntaxTreeMaker.NewClass(classType, paramType);
         return treeMaker.Return(returnValue);
     }
 
@@ -309,8 +312,11 @@ public class ValidationTranslator extends BaseTranslator {
         if (null != TypeUtil.getBaseType(returnTypeName)) {
             messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Can't find return value to " + returnTypeName);
         }
-        JCTree.JCExpression returnType = syntaxTreeMaker.findClass(returnTypeName);
-        return treeMaker.NewClass(null, TreeUtil.emptyParam(), returnType, TreeUtil.emptyParam(), null);
+        Symbol.ClassSymbol typeElement = syntaxTreeMaker.getTypeElement(returnTypeName);
+        if (typeElement.isInner()) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "[Return Error] Unsupported return inner class " + returnTypeName);
+        }
+        return syntaxTreeMaker.NewClass(returnTypeName, List.<JCTree.JCExpression>nil());
     }
 
     /**
@@ -387,7 +393,7 @@ public class ValidationTranslator extends BaseTranslator {
             JCTree.JCStatement action = checkData.getAction(msgField);
             EqualsRegulation equalsRegulation = new EqualsRegulation(TypeUtil.OBJECT, false);
 
-            statements.append(syntaxTreeMaker.assignCallback(self, msgField, CheckUtil.getCheckMethod(paramTypeName), TreeUtil.emptyParam()));
+            statements.append(syntaxTreeMaker.assignCallback(self, msgField, CheckUtil.getCheckMethod(paramTypeName), TreeUtil.emptyExpression()));
             statements = equalsRegulation.handle(syntaxTreeMaker, statements, varName, msgField, action);
 
             isEmpty = false;

@@ -58,6 +58,9 @@ public class CustomRuleTranslator extends BaseTranslator {
         }
 
         Symbol.ClassSymbol classSymbol = jcClassDecl.sym;
+        if (null == classSymbol) {
+            return;
+        }
         String className = classSymbol.className();
         java.util.List<String> items = ruleItems.get(className);
         if (null == items) {
@@ -133,7 +136,7 @@ public class CustomRuleTranslator extends BaseTranslator {
             // 获取方法引用
             Name methodName = methodDecl.name;
             JCTree.JCIdent ident = treeMaker.Ident(methodName);
-            self = treeMaker.Apply(TreeUtil.emptyParam(), ident, TreeUtil.emptyParam());
+            self = treeMaker.Apply(TreeUtil.emptyExpression(), ident, TreeUtil.emptyExpression());
 
             // 使用临时变量保存方法回调数据
             localVar = treeMaker.VarDef(treeMaker.Modifiers(0L), methodName, methodDecl.restype, self);
@@ -151,22 +154,22 @@ public class CustomRuleTranslator extends BaseTranslator {
 
         byte classType = getClassType(typeName);
         java.util.List<Regulation> regulations = RegulationBuilder.findBasicRule(symbol, typeName, classType);
-        boolean empty = regulations.isEmpty();
+        boolean notEmpty = !regulations.isEmpty();
 
-        Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType, !empty);
+        Boolean checkNull = RegulationBuilder.checkNotNull(symbol, classType, notEmpty);
         // 非原始类型增加空校验/非空包装
         if (null != checkNull) {
             if (checkNull) {
                 regulations.add(new NullCheckRegulation());
             } else {
                 // 无规则不使用非空包装
-                if (!empty) {
+                if (notEmpty) {
                     regulations.add(new NotNullWrapperRegulation());
                 }
             }
         }
 
-        if (empty) {
+        if (regulations.isEmpty()) {
             return;
         }
 
@@ -213,13 +216,10 @@ public class CustomRuleTranslator extends BaseTranslator {
      * @return 方法元素
      */
     private JCTree.JCMethodDecl createMethod(String methodName, JCTree.JCBlock body, boolean isInterface) {
-        List<JCTree.JCTypeParameter> param = List.nil();
-        List<JCTree.JCVariableDecl> var = List.nil();
-        List<JCTree.JCExpression> thrown = List.nil();
         return treeMaker.MethodDef(treeMaker.Modifiers(TreeUtil.getNewMethodFlag(isInterface)),
                 syntaxTreeMaker.getName(methodName),
                 syntaxTreeMaker.findClass(String.class.getName()),
-                param, var, thrown,
+                List.<JCTree.JCTypeParameter>nil(), List.<JCTree.JCVariableDecl>nil(), TreeUtil.emptyExpression(),
                 body, null);
     }
 }

@@ -26,6 +26,7 @@ public final class RegulationBuilder {
      * 获取非空校验处理方式
      * @param symbol 元素
      * @param classType 类型
+     * @param hasAnyRule 是否存在规则
      * @return null 为不需，true 为进行非空校验，false 需要保证其他操作不抛出 NPE
      */
     public static Boolean checkNotNull(Symbol symbol, byte classType, boolean hasAnyRule) {
@@ -49,13 +50,6 @@ public final class RegulationBuilder {
         return nullcheck;
     }
 
-    /**
-     * 获取校验方法规则链
-     * @param symbol 元素
-     * @param className 类名
-     * @param type 类型
-     * @return 执行规则链
-     */
     public static List<Regulation> findBasicRule(Symbol symbol, String className, byte type) {
         return findBasicRule(symbol, className, type, null);
     }
@@ -179,11 +173,6 @@ public final class RegulationBuilder {
         return null;
     }
 
-    /**
-     * 获取大小信息，小于等于 0 或大于 {@code Integer.MAX_VALUE} 则返回 null
-     * @param size 设置大小
-     * @return 大小对象
-     */
     private static Integer getSize(int size) {
         if (size < 1) {
             return null;
@@ -196,6 +185,7 @@ public final class RegulationBuilder {
 
     /**
      * 数值范围是否无效
+     * 最小值和最大值均为空，或者最小值大于最大值
      * @param min 最大值
      * @param max 最小值
      * @return 无效则返回 true
@@ -212,12 +202,6 @@ public final class RegulationBuilder {
         return false;
     }
 
-    /**
-     * 数值是否相等
-     * @param min 最小值
-     * @param max 最大值
-     * @return 非空且相等则返回 true
-     */
     private static boolean isEquals(Integer min, Integer max) {
         return null != min && null != max && min.intValue() == max.intValue();
     }

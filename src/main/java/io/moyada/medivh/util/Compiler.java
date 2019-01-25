@@ -15,8 +15,8 @@ public final class Compiler {
     public final static byte CURRENT_VERSION;
     public final static byte JAVA_6 = 0;
     public final static byte JAVA_7 = 1;
-    final static byte JAVA_8 = 2;
-    final static byte JAVA_9 = 3;
+    public final static byte JAVA_8 = 2;
+    public final static byte JAVA_9 = 3;
 
     // 获取编译器版本号
     static {

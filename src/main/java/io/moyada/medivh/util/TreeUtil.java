@@ -25,8 +25,8 @@ public final class TreeUtil {
      * 空参数
      * @return 空参数
      */
-    public static List<JCTree.JCExpression> emptyParam(){
-        return List.nil();
+    public static List<JCTree.JCExpression> emptyExpression(){
+        return List.<JCTree.JCExpression>nil();
     }
 
     /**

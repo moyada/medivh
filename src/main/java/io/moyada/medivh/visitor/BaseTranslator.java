@@ -2,7 +2,6 @@ package io.moyada.medivh.visitor;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
@@ -10,8 +9,8 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import io.moyada.medivh.support.SyntaxTreeMaker;
 import io.moyada.medivh.support.TypeTag;
-import io.moyada.medivh.util.TreeUtil;
 import io.moyada.medivh.util.CheckUtil;
+import io.moyada.medivh.util.TreeUtil;
 import io.moyada.medivh.util.TypeUtil;
 
 import javax.annotation.processing.Messager;
@@ -32,18 +31,12 @@ abstract class BaseTranslator extends TreeTranslator {
 
     // 语法树构造器
     final TreeMaker treeMaker;
-    // 元素获取器
-    final JavacElements javacElements;
-    // 名称构造器
-    final Object namesInstance ;
 
     BaseTranslator(SyntaxTreeMaker syntaxTreeMaker, Messager messager) {
         this.syntaxTreeMaker = syntaxTreeMaker;
         this.messager = messager;
 
         this.treeMaker = syntaxTreeMaker.getTreeMaker();
-        this.namesInstance = syntaxTreeMaker.getNamesInstance();
-        this.javacElements = syntaxTreeMaker.getJavacElements();
     }
 
     /**
@@ -52,7 +45,7 @@ abstract class BaseTranslator extends TreeTranslator {
      * @return 无字符串构造函数则返回 false
      */
     boolean checkException(String exceptionTypeName) {
-        Symbol.ClassSymbol typeElement = javacElements.getTypeElement(exceptionTypeName);
+        Symbol.ClassSymbol typeElement = syntaxTreeMaker.getTypeElement(exceptionTypeName);
         for (Symbol element : typeElement.getEnclosedElements()) {
             if (element.getKind() != ElementKind.CONSTRUCTOR) {
                 continue;
@@ -99,7 +92,7 @@ abstract class BaseTranslator extends TreeTranslator {
      * @return 是否属于字符序列
      */
     private boolean isString(String className) {
-        Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(className);
+        Symbol.ClassSymbol classSymbol = syntaxTreeMaker.getTypeElement(className);
         // primitive 类型
         if (null == classSymbol) {
             return false;
@@ -170,13 +163,13 @@ abstract class BaseTranslator extends TreeTranslator {
             return true;
         }
 
-        Symbol.ClassSymbol classSymbol = javacElements.getTypeElement(className);
+        Symbol.ClassSymbol classSymbol = syntaxTreeMaker.getTypeElement(className);
         // primitive 类型
         if (null == classSymbol) {
             return false;
         }
 
-        Symbol.ClassSymbol typeElement = javacElements.getTypeElement(targetClass);
+        Symbol.ClassSymbol typeElement = syntaxTreeMaker.getTypeElement(targetClass);
         // primitive 类型
         if (null == typeElement) {
             return false;
@@ -193,7 +186,7 @@ abstract class BaseTranslator extends TreeTranslator {
      * @return 是否属于 Collection 或 Map
      */
     private boolean isCollection(Symbol typeSymbol) {
-        return isInstanceOf(typeSymbol, syntaxTreeMaker.getCollectionSymbol()) || isInstanceOf(typeSymbol, syntaxTreeMaker.getMapSymbol());
+        return isInstanceOf(typeSymbol, syntaxTreeMaker.collectionSymbol) || isInstanceOf(typeSymbol, syntaxTreeMaker.mapSymbol);
     }
 
     /**
@@ -202,7 +195,7 @@ abstract class BaseTranslator extends TreeTranslator {
      * @return 是否属于 CharSequence
      */
     private boolean isString(Symbol typeSymbol) {
-        return isInstanceOf(typeSymbol, syntaxTreeMaker.getStringSymbol());
+        return isInstanceOf(typeSymbol, syntaxTreeMaker.stringSymbol);
     }
 
     /**
